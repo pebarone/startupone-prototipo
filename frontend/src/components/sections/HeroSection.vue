@@ -11,11 +11,6 @@
       
       <!-- Text Area -->
       <div class="flex flex-col items-start hero-text">
-        <div class="inline-flex gap-2 items-center px-4 py-2 rounded-full bg-white shadow-sm border border-slate-200 text-sm font-medium text-slate-700 mb-8 overflow-hidden relative spotlight-badge">
-          <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-          A nova era de segurança para seus pertences
-        </div>
-        
         <h1 class="text-5xl lg:text-7xl font-heading font-black tracking-tight text-slate-900 leading-tight mb-6" style="clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);">
           <span class="block translate-y-[100%] opacity-0 title-line">Guarde com</span>
           <span class="block text-brand-600 translate-y-[100%] opacity-0 title-line">Confiança.</span>
@@ -93,7 +88,7 @@
         </div>
 
         <!-- Floating Cards -->
-        <div class="absolute -left-12 top-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-1">
+        <div class="absolute z-20 -left-12 top-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-1">
           <div class="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
@@ -103,7 +98,7 @@
           </div>
         </div>
         
-        <div class="absolute -right-8 bottom-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-2">
+        <div class="absolute z-30 -right-8 bottom-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-2">
           <div class="w-10 h-10 rounded-lg bg-brand-900 text-white flex items-center justify-center">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           </div>

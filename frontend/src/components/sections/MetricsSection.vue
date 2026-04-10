@@ -42,7 +42,8 @@ onMounted(() => {
   gsap.from('.metrics-grid > div', {
     scrollTrigger: {
       trigger: '.metrics-grid',
-      start: 'top 80%'
+      start: 'top 80%',
+      toggleActions: 'play reverse play reverse'
     },
     y: 40,
     opacity: 0,

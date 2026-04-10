@@ -50,7 +50,8 @@ onMounted(() => {
   gsap.from('.benefits-header', {
     scrollTrigger: {
        trigger: '.benefits-header',
-       start: 'top 85%'
+       start: 'top 85%',
+       toggleActions: 'play reverse play reverse'
     },
     y: 30,
     opacity: 0,
@@ -63,7 +64,7 @@ onMounted(() => {
       scrollTrigger: {
          trigger: '.benefits-cards',
          start: 'top 75%',
-         toggleActions: 'play none none none'
+         toggleActions: 'play reverse play reverse'
       },
       y: 0,
       opacity: 1,

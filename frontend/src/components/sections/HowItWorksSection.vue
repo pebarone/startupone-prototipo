@@ -65,7 +65,8 @@ onMounted(() => {
   gsap.from('.section-header', {
     scrollTrigger: {
       trigger: '.section-header',
-      start: 'top 85%'
+      start: 'top 85%',
+      toggleActions: 'play reverse play reverse'
     },
     y: 30,
     opacity: 0,
@@ -78,7 +79,7 @@ onMounted(() => {
       scrollTrigger: {
         trigger: '.steps-container',
         start: 'top 75%',
-        toggleActions: 'play none none none'
+        toggleActions: 'play reverse play reverse'
       },
       y: 0,
       opacity: 1,
@@ -92,7 +93,7 @@ onMounted(() => {
     scrollTrigger: {
       trigger: '.step-line',
       start: 'top 75%',
-      toggleActions: 'play none none none'
+      toggleActions: 'play reverse play reverse'
     },
     scaleX: 1,
     duration: 1.5,
