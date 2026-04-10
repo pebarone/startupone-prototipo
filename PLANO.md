@@ -1,12 +1,10 @@
-# Plano de Desenvolvimento do MVP - Lockers Digitais
+# Plano de Desenvolvimento do MVP - FastLock
 
 ## 1. Objetivo
 
-Construir um MVP funcional para demonstrar que e possivel controlar o acesso a lockers de forma digital, escalavel e integrada a parceiros.
+Construir um MVP funcional para demonstrar o controle digital de acesso a lockers.
 
-O sistema deve permitir que um usuario escolha um locker disponivel, realize um pagamento simulado, receba um codigo unico de acesso, abra o locker por meio desse codigo e permita que o parceiro acompanhe o status e metricas simples no dashboard.
-
-O nome da startup será FastLock.
+O sistema deve permitir que um usuario escolha um locker disponivel, simule um pagamento, receba um codigo unico de acesso, abra o locker por meio desse codigo e permita que o parceiro acompanhe status e metricas simples em um dashboard.
 
 ## 2. Escopo do MVP
 
@@ -15,6 +13,10 @@ O nome da startup será FastLock.
 - Landing page com apresentacao da solucao.
 - Fluxo de uso do usuario.
 - Dashboard simples para parceiro.
+- API REST em Bun + TypeScript + Fastify.
+- Banco Postgres.
+- Inicializacao do banco por script SQL.
+- Controle de migrations versionadas.
 - Cadastro e atualizacao de lockers.
 - Criacao de alugueis.
 - Geracao de codigo unico.
@@ -31,17 +33,18 @@ O nome da startup será FastLock.
 - Integracao com hardware real.
 - Integracao com seguro.
 - Sistema completo de usuarios e permissoes.
+- Multi-tenant real para parceiros.
 
 ## 3. Arquitetura Proposta
 
 ### Frontend
 
-Stack sugerida:
+Stack atual/sugerida:
 
 - Vue.js + Vite.
-- Vue router para a navegação
-- Tailwind
-- Biblioteca simples para QR Code
+- Vue Router para navegacao.
+- Tailwind.
+- Biblioteca simples para QR Code, se houver tempo.
 
 Paginas:
 
@@ -49,420 +52,637 @@ Paginas:
 - `/use`: fluxo do usuario.
 - `/partner`: dashboard do parceiro.
 
-O projeto deve conter uma landing page. 
-
 ### Backend
 
-Stack sugerida:
+Stack definida:
 
-- API REST em Node.js.
+- Bun como runtime e gerenciador de pacotes.
+- TypeScript.
+- Fastify para API HTTP.
+- Postgres como banco relacional.
+- Driver `pg` para conexao com Postgres.
+- Validacao de payloads com schemas JSON do Fastify ou Zod, escolhendo uma abordagem e mantendo consistente.
+- Migrations SQL versionadas no repositorio.
 
-- Banco postgres via supabase
+O backend deve ficar em uma pasta propria:
 
-Recursos principais:
+```txt
+backend/
+  package.json
+  tsconfig.json
+  .env.example
+  src/
+    server.ts
+    app.ts
+    config/
+      env.ts
+    db/
+      pool.ts
+      migrate.ts
+      seed.ts
+    modules/
+      lockers/
+        lockers.routes.ts
+        lockers.repository.ts
+        lockers.schemas.ts
+      rentals/
+        rentals.routes.ts
+        rentals.repository.ts
+        rentals.schemas.ts
+      dashboard/
+        dashboard.routes.ts
+        dashboard.repository.ts
+  db/
+    init/
+      001_create_database.sql
+    migrations/
+      000001_create_migrations_table.sql
+      000002_create_lockers.sql
+      000003_create_rentals.sql
+      000004_create_unlock_events.sql
+    seeds/
+      000001_seed_lockers.sql
+```
 
-- Lockers.
-- Rentals.
-- Unlock.
-- Dashboard.
+## 4. Banco de Dados
 
-## 4. Modelo de Dados
+### Estrategia
 
-### Lockers
+- Usar Postgres local no desenvolvimento.
+- Manter schema em migrations SQL versionadas.
+- Criar uma tabela `schema_migrations` para registrar migrations aplicadas.
+- Rodar migrations via comando do backend, sem depender de alteracoes manuais no banco.
+- Rodar seed separadamente para dados de demonstracao.
+
+### Variaveis de ambiente
+
+Arquivo `backend/.env.example`:
+
+```env
+PORT=3333
+DATABASE_URL=postgres://fastlock:fastlock@localhost:5432/fastlock
+```
+
+### DB init
+
+O DB init deve preparar usuario, database e extensoes necessarias.
+
+Arquivo sugerido: `backend/db/init/001_create_database.sql`
+
+```sql
+CREATE USER fastlock WITH PASSWORD 'fastlock';
+CREATE DATABASE fastlock OWNER fastlock;
+
+\connect fastlock
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+```
+
+Observacao: se o ambiente local usar Docker, este arquivo pode ser montado em `/docker-entrypoint-initdb.d/` do container Postgres. Se o banco for criado manualmente ou via Supabase, o init pode ser adaptado para executar apenas as extensoes e permissao de schema.
+
+### Docker opcional para Postgres local
+
+Arquivo sugerido na raiz: `docker-compose.yml`
+
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    container_name: fastlock-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - fastlock-postgres-data:/var/lib/postgresql/data
+      - ./backend/db/init:/docker-entrypoint-initdb.d
+
+volumes:
+  fastlock-postgres-data:
+```
+
+Nesse formato, o container sobe com o superusuario `postgres` e o script de init cria o usuario e o database da aplicacao (`fastlock`). Isso evita conflito entre as variaveis do container e o SQL de inicializacao.
+
+Comandos planejados:
+
+```bash
+docker compose up -d postgres
+cd backend
+bun install
+bun run db:migrate
+bun run db:seed
+bun run dev
+```
+
+## 5. Controle de Migrations
+
+### Modelo escolhido
+
+Controlar migrations com arquivos SQL e um runner em TypeScript executado pelo Bun.
+
+Motivo:
+
+- O MVP precisa de controle claro e auditavel do schema.
+- SQL puro e suficiente para poucas tabelas.
+- Evita amarrar o MVP cedo demais a um ORM.
+- Mantem compatibilidade direta com Postgres local e Supabase, se for usado depois.
+
+### Tabela de controle
+
+Migration base: `backend/db/migrations/000001_create_migrations_table.sql`
+
+```sql
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id text PRIMARY KEY,
+  name text NOT NULL,
+  applied_at timestamptz NOT NULL DEFAULT now()
+);
+```
+
+### Regra do runner
+
+O script `backend/src/db/migrate.ts` deve:
+
+1. Abrir conexao com `DATABASE_URL`.
+2. Garantir que `schema_migrations` existe.
+3. Ler arquivos `backend/db/migrations/*.sql` em ordem lexicografica.
+4. Para cada arquivo ainda nao registrado, executar dentro de uma transacao.
+5. Registrar o arquivo em `schema_migrations`.
+6. Interromper a execucao se qualquer migration falhar.
+
+Scripts planejados em `backend/package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "bun src/db/migrate.ts",
+    "db:seed": "bun src/db/seed.ts"
+  }
+}
+```
+
+### Convencao de nomes
+
+Formato:
+
+```txt
+000001_create_migrations_table.sql
+000002_create_lockers.sql
+000003_create_rentals.sql
+000004_create_unlock_events.sql
+```
+
+Regras:
+
+- Nunca editar uma migration que ja foi aplicada em outro ambiente.
+- Criar nova migration para mudancas de schema.
+- Usar transacoes no runner, nao dentro de cada arquivo SQL.
+- Seeds nao devem ficar na pasta de migrations.
+
+## 6. Modelo de Dados
+
+### `lockers`
 
 Campos:
 
-- `id`: identificador unico.
+- `id`: UUID gerado no banco.
+- `code`: identificador humano curto, unico, exemplo `LCK-001`.
 - `size`: tamanho do locker. Valores esperados: `P`, `M`, `G`.
-- `status`: estado atual. Valores esperados: `free`, `occupied`.
+- `status`: estado atual. Valores esperados: `free`, `occupied`, `maintenance`.
+- `created_at`: data de criacao.
+- `updated_at`: data da ultima atualizacao.
 
-Exemplo:
+Migration sugerida:
 
-```json
-{
-  "id": "locker-001",
-  "size": "M",
-  "status": "free"
-}
+```sql
+CREATE TABLE lockers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  code text NOT NULL UNIQUE,
+  size text NOT NULL CHECK (size IN ('P', 'M', 'G')),
+  status text NOT NULL DEFAULT 'free' CHECK (status IN ('free', 'occupied', 'maintenance')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX lockers_status_idx ON lockers (status);
+CREATE INDEX lockers_size_idx ON lockers (size);
 ```
 
-### Rentals
+### `rentals`
 
 Campos:
 
-- `id`: identificador unico.
+- `id`: UUID gerado no banco.
 - `locker_id`: locker associado ao aluguel.
-- `code`: codigo unico de acesso.
-- `start_time`: data e hora de inicio.
-- `end_time`: data e hora de fim, quando finalizado.
-- `status`: estado atual. Valores esperados: `active`, `finished`.
+- `access_code`: codigo unico de acesso.
+- `status`: estado atual. Valores esperados: `active`, `finished`, `cancelled`.
+- `started_at`: data de inicio.
+- `finished_at`: data de finalizacao.
+- `created_at`: data de criacao.
+- `updated_at`: data da ultima atualizacao.
 
-Exemplo:
+Migration sugerida:
+
+```sql
+CREATE TABLE rentals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  locker_id uuid NOT NULL REFERENCES lockers(id),
+  access_code text NOT NULL,
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'finished', 'cancelled')),
+  started_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX rentals_active_access_code_unique
+  ON rentals (access_code)
+  WHERE status = 'active';
+
+CREATE INDEX rentals_locker_id_idx ON rentals (locker_id);
+CREATE INDEX rentals_status_idx ON rentals (status);
+```
+
+### `unlock_events`
+
+Campos:
+
+- `id`: UUID gerado no banco.
+- `rental_id`: aluguel associado quando o codigo for valido.
+- `locker_id`: locker associado quando o codigo for valido.
+- `access_code`: codigo informado.
+- `success`: se a tentativa foi aceita.
+- `reason`: motivo em caso de falha.
+- `created_at`: data da tentativa.
+
+Migration sugerida:
+
+```sql
+CREATE TABLE unlock_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  rental_id uuid REFERENCES rentals(id),
+  locker_id uuid REFERENCES lockers(id),
+  access_code text NOT NULL,
+  success boolean NOT NULL,
+  reason text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX unlock_events_created_at_idx ON unlock_events (created_at);
+CREATE INDEX unlock_events_success_idx ON unlock_events (success);
+```
+
+## 7. API REST
+
+Prefixo recomendado: `/api`.
+
+### Health
+
+#### `GET /api/health`
+
+Retorna status basico da API.
+
+Resposta:
 
 ```json
 {
-  "id": "rental-001",
-  "locker_id": "locker-001",
-  "code": "839204",
-  "start_time": "2026-04-09T10:00:00.000Z",
-  "end_time": null,
-  "status": "active"
+  "status": "ok"
 }
 ```
 
-## 5. API REST
-
 ### Lockers
 
-#### `GET /lockers`
+#### `GET /api/lockers`
 
-Lista todos os lockers.
+Lista lockers.
+
+Query params opcionais:
+
+- `status`: `free`, `occupied`, `maintenance`.
+- `size`: `P`, `M`, `G`.
 
 Uso no MVP:
 
 - Exibir lockers disponiveis no fluxo do usuario.
 - Exibir status no dashboard do parceiro.
 
-#### `POST /lockers`
+#### `POST /api/lockers`
 
-Cria um novo locker.
+Cria um locker.
 
-Payload sugerido:
+Payload:
 
 ```json
 {
+  "code": "LCK-001",
   "size": "M"
 }
 ```
 
-Comportamento esperado:
+Comportamento:
 
 - Criar locker com status inicial `free`.
+- Validar `code` unico.
 - Retornar o locker criado.
 
-#### `PATCH /lockers/:id`
+#### `PATCH /api/lockers/:id`
 
-Atualiza dados de um locker.
+Atualiza um locker.
 
-Payload sugerido:
+Payload:
 
 ```json
 {
-  "status": "occupied"
+  "status": "maintenance"
 }
 ```
 
-Comportamento esperado:
+Comportamento:
 
 - Validar se o locker existe.
-- Atualizar apenas os campos enviados.
+- Atualizar apenas campos enviados.
 - Retornar o locker atualizado.
 
 ### Rentals
 
-#### `POST /rentals`
+#### `POST /api/rentals`
 
-Cria um novo aluguel.
+Cria um aluguel.
 
-Payload sugerido:
+Payload:
 
 ```json
 {
-  "locker_id": "locker-001"
+  "locker_id": "uuid-do-locker"
 }
 ```
 
-Comportamento esperado:
+Comportamento:
 
 - Validar se o locker existe.
-- Validar se o locker esta livre.
-- Gerar codigo unico.
+- Validar se o locker esta `free`.
+- Gerar `access_code` unico entre alugueis ativos.
 - Criar rental com status `active`.
 - Marcar locker como `occupied`.
-- Retornar rental criado com o codigo de acesso.
+- Executar criacao do aluguel e atualizacao do locker na mesma transacao.
+- Retornar rental criado com codigo de acesso.
 
-#### `GET /rentals/:id`
+#### `GET /api/rentals/:id`
 
 Busca um aluguel especifico.
 
-Comportamento esperado:
+Comportamento:
 
 - Validar se o aluguel existe.
 - Retornar dados do aluguel e do locker associado.
 
 ### Unlock
 
-#### `POST /unlock`
+#### `POST /api/unlock`
 
 Valida o codigo de acesso e simula a abertura do locker.
 
-Payload sugerido:
+Payload:
 
 ```json
 {
-  "code": "839204"
+  "access_code": "839204"
 }
 ```
 
-Comportamento esperado:
+Comportamento:
 
-- Validar se o codigo existe.
-- Verificar se o aluguel esta `active`.
-- Simular liberacao de acesso.
-- Retornar mensagem `Locker aberto`.
-- Opcionalmente finalizar o aluguel e liberar o locker.
+- Validar se existe aluguel ativo com esse codigo.
+- Registrar tentativa em `unlock_events`.
+- Retornar mensagem `Locker aberto` quando valido.
+- Para o MVP, finalizar automaticamente o aluguel e liberar o locker apos abertura.
+- Executar finalizacao do aluguel, liberacao do locker e registro do evento em transacao.
 
-Resposta sugerida:
+Resposta:
 
 ```json
 {
   "message": "Locker aberto",
-  "rental_id": "rental-001",
-  "locker_id": "locker-001"
+  "rental_id": "uuid-do-rental",
+  "locker_id": "uuid-do-locker"
 }
 ```
 
 ### Dashboard
 
-#### `GET /dashboard`
+#### `GET /api/dashboard`
 
 Retorna metricas simples para o parceiro.
 
-Metricas sugeridas:
+Metricas:
 
 - Total de lockers.
 - Lockers livres.
 - Lockers ocupados.
+- Lockers em manutencao.
 - Alugueis ativos.
 - Alugueis finalizados.
 - Total de alugueis criados.
+- Tentativas de abertura com sucesso.
+- Tentativas de abertura recusadas.
 
-Exemplo de resposta:
+Exemplo:
 
 ```json
 {
   "total_lockers": 10,
   "free_lockers": 6,
-  "occupied_lockers": 4,
-  "active_rentals": 4,
+  "occupied_lockers": 3,
+  "maintenance_lockers": 1,
+  "active_rentals": 3,
   "finished_rentals": 12,
-  "total_rentals": 16
+  "total_rentals": 15,
+  "successful_unlocks": 12,
+  "failed_unlocks": 2
 }
 ```
 
-## 6. Fluxos Principais
-
-### Fluxo do usuario
-
-1. Usuario acessa `/use`.
-2. Sistema lista lockers disponiveis.
-3. Usuario escolhe um locker.
-4. Usuario clica em `Pagar`.
-5. Sistema simula o pagamento.
-6. Sistema cria um aluguel.
-7. Sistema gera um codigo unico.
-8. Sistema marca o locker como ocupado.
-9. Usuario visualiza o codigo de acesso.
-10. Usuario informa o codigo para abrir o locker.
-11. Sistema valida o codigo.
-12. Sistema exibe `Locker aberto`.
-
-### Fluxo do parceiro
-
-1. Parceiro acessa `/partner`.
-2. Sistema carrega metricas via `GET /dashboard`.
-3. Sistema exibe quantidade de lockers livres e ocupados.
-4. Sistema exibe alugueis ativos e finalizados.
-5. Sistema permite acompanhar o status operacional do MVP.
-
-## 7. Telas
-
-### `/` - Landing Page
-
-Conteudo sugerido:
-
-- Nome da solucao.
-- Proposta de valor.
-- Chamada para iniciar o fluxo de uso.
-- Link para dashboard do parceiro.
-
-### `/use` - Fluxo do Usuario
-
-Componentes sugeridos:
-
-- Lista de lockers livres.
-- Filtro ou indicacao por tamanho: `P`, `M`, `G`.
-- Botao `Pagar`.
-- Area com codigo gerado.
-- Campo para inserir codigo de abertura.
-- Mensagem de sucesso: `Locker aberto`.
-- Mensagem de erro para codigo invalido ou aluguel finalizado.
-
-### `/partner` - Dashboard
-
-Componentes sugeridos:
-
-- Cards de metricas.
-- Lista ou tabela de lockers.
-- Indicador visual de status: livre ou ocupado.
-- Lista simples de alugueis recentes, se houver tempo.
-
-## 8. Logica Principal
+## 8. Regras de Negocio
 
 ### Criacao de aluguel
-
-Regras:
 
 - O locker escolhido deve existir.
 - O locker escolhido deve estar com status `free`.
 - O codigo gerado deve ser unico entre alugueis ativos.
-- Ao criar o aluguel, o locker deve mudar para `occupied`.
+- A criacao do aluguel e a mudanca do locker para `occupied` devem ocorrer na mesma transacao.
+- Se a transacao falhar, nenhum estado parcial deve ficar salvo.
 
-Resultado esperado:
+### Geracao de codigo
 
-- Rental criado com status `active`.
-- Locker marcado como `occupied`.
-- Codigo retornado para o usuario.
+- Gerar codigo numerico de 6 digitos para facilitar a demonstracao.
+- Antes de salvar, verificar conflito com `rentals_active_access_code_unique`.
+- Em caso de colisao, tentar gerar novamente.
+- Limitar tentativas e retornar erro interno se houver falha repetida.
 
 ### Abertura do locker
 
-Regras:
+- O codigo informado deve existir em um aluguel `active`.
+- O sistema deve registrar tentativa valida ou invalida em `unlock_events`.
+- No MVP, abertura valida finaliza o aluguel e libera o locker.
+- Codigo invalido nao altera locker nem rental.
 
-- O codigo informado deve existir.
-- O aluguel associado deve estar `active`.
-- O sistema deve retornar uma confirmacao de abertura.
-- A finalizacao do uso pode ser automatica ou acionada como uma etapa separada.
+## 9. Fluxos Principais
 
-Resultado esperado:
+### Fluxo do usuario
 
-- Mensagem `Locker aberto`.
-- Opcionalmente, rental muda para `finished`.
-- Opcionalmente, locker volta para `free`.
+1. Usuario acessa `/use`.
+2. Frontend chama `GET /api/lockers?status=free`.
+3. Usuario escolhe um locker.
+4. Usuario clica em `Pagar`.
+5. Frontend simula pagamento aprovado.
+6. Frontend chama `POST /api/rentals`.
+7. Backend cria aluguel, gera codigo e ocupa o locker.
+8. Usuario visualiza o codigo de acesso.
+9. Usuario informa o codigo para abrir o locker.
+10. Frontend chama `POST /api/unlock`.
+11. Backend valida o codigo, registra evento, finaliza rental e libera locker.
+12. Frontend exibe `Locker aberto`.
 
-## 9. Simulacoes
+### Fluxo do parceiro
 
-### Pagamento
+1. Parceiro acessa `/partner`.
+2. Frontend chama `GET /api/dashboard`.
+3. Frontend chama `GET /api/lockers`.
+4. Sistema exibe quantidade de lockers livres, ocupados e em manutencao.
+5. Sistema exibe alugueis ativos e finalizados.
+6. Sistema permite acompanhar o status operacional do MVP.
 
-Implementacao:
+## 10. Seed de Demonstracao
 
-- Botao fake `Pagar`.
-- Ao clicar, considerar pagamento aprovado.
-- Seguir para criacao do aluguel.
+Arquivo sugerido: `backend/db/seeds/000001_seed_lockers.sql`
 
-### Abertura
+```sql
+INSERT INTO lockers (code, size, status)
+VALUES
+  ('LCK-001', 'P', 'free'),
+  ('LCK-002', 'M', 'free'),
+  ('LCK-003', 'G', 'free'),
+  ('LCK-004', 'M', 'maintenance'),
+  ('LCK-005', 'P', 'free')
+ON CONFLICT (code) DO NOTHING;
+```
 
-Implementacao:
+O script `backend/src/db/seed.ts` deve executar os arquivos de seed em ordem e usar `ON CONFLICT` para permitir reexecucao segura.
 
-- Enviar codigo para `POST /unlock`.
-- Exibir mensagem `Locker aberto` em caso de sucesso.
-- Exibir mensagem de erro em caso de codigo invalido.
+## 11. Etapas de Desenvolvimento
 
-### QR Code
-
-Implementacao opcional:
-
-- Gerar QR Code com o codigo de acesso.
-- O QR pode representar o proprio codigo ou uma URL de abertura.
-- Usar biblioteca simples se houver tempo.
-
-## 10. Etapas de Desenvolvimento
-
-### Semana 1 - Setup e estrutura base
-
-Entregas:
-
-- Criar estrutura do projeto.
-- Configurar frontend com React + Vite ou Next.js.
-- Criar paginas `/`, `/use` e `/partner`.
-- Definir estrutura inicial da API.
-- Definir modelos `Locker` e `Rental`.
-- Criar dados mockados iniciais, se necessario.
-
-Critério de conclusao:
-
-- Aplicacao roda localmente.
-- Rotas principais existem.
-- Estrutura de dados inicial definida.
-
-### Semana 2 - API basica e fluxo inicial
+### Etapa 1 - Setup do backend
 
 Entregas:
 
-- Implementar `GET /lockers`.
-- Implementar `POST /lockers`.
-- Implementar `PATCH /lockers/:id`.
-- Implementar `POST /rentals`.
-- Listar lockers livres na tela `/use`.
-- Permitir escolha de locker.
-- Simular pagamento com botao `Pagar`.
+- Criar pasta `backend`.
+- Configurar Bun + TypeScript.
+- Instalar Fastify, `pg` e ferramentas de desenvolvimento.
+- Criar `src/app.ts` e `src/server.ts`.
+- Criar `GET /api/health`.
+- Criar `.env.example`.
 
-Critério de conclusao:
+Criterio de conclusao:
 
-- Usuario consegue escolher um locker livre.
-- Sistema consegue criar um aluguel.
-- Locker escolhido passa para status `occupied`.
+- `bun run dev` inicia a API.
+- `GET /api/health` responde `status: ok`.
 
-### Semana 3 - Codigo de acesso e abertura
+### Etapa 2 - Postgres, init e migrations
 
 Entregas:
 
+- Criar `docker-compose.yml` para Postgres local, se o projeto usar Docker.
+- Criar `backend/db/init/001_create_database.sql`.
+- Criar pasta `backend/db/migrations`.
+- Criar migration de `schema_migrations`.
+- Criar runner `backend/src/db/migrate.ts`.
+- Criar scripts `db:migrate` e `db:seed`.
+
+Criterio de conclusao:
+
+- Banco sobe localmente.
+- `bun run db:migrate` aplica migrations em ordem.
+- `schema_migrations` registra os arquivos aplicados.
+- Rodar o comando novamente nao reaplica migrations ja registradas.
+
+### Etapa 3 - Schema inicial
+
+Entregas:
+
+- Criar migration `lockers`.
+- Criar migration `rentals`.
+- Criar migration `unlock_events`.
+- Criar seed inicial de lockers.
+
+Criterio de conclusao:
+
+- Tabelas existem no Postgres.
+- Seed cria lockers de demonstracao.
+- Constraints impedem status e tamanhos invalidos.
+
+### Etapa 4 - Rotas de lockers
+
+Entregas:
+
+- Implementar `GET /api/lockers`.
+- Implementar `POST /api/lockers`.
+- Implementar `PATCH /api/lockers/:id`.
+- Validar payloads.
+
+Criterio de conclusao:
+
+- API lista lockers do banco.
+- API cria lockers com `code` unico.
+- API atualiza status de locker existente.
+
+### Etapa 5 - Rotas de rentals
+
+Entregas:
+
+- Implementar `POST /api/rentals`.
+- Implementar `GET /api/rentals/:id`.
+- Implementar transacao para criar aluguel e ocupar locker.
 - Implementar geracao de codigo unico.
-- Implementar `GET /rentals/:id`.
-- Implementar `POST /unlock`.
-- Criar tela ou bloco de abertura no fluxo do usuario.
-- Validar codigo informado.
-- Exibir mensagem `Locker aberto`.
-- Tratar erros de codigo invalido.
 
-Critério de conclusao:
+Criterio de conclusao:
 
-- Usuario recebe um codigo unico.
-- Usuario consegue abrir locker com codigo valido.
-- Codigo invalido nao libera acesso.
+- Usuario consegue criar aluguel para locker livre.
+- Locker ocupado nao pode ser alugado novamente.
+- Rental criado retorna codigo de acesso.
 
-### Semana 4 - Dashboard do parceiro
+### Etapa 6 - Unlock e dashboard
 
 Entregas:
 
-- Implementar `GET /dashboard`.
-- Criar cards de metricas em `/partner`.
-- Exibir total de lockers, lockers livres e lockers ocupados.
-- Exibir alugueis ativos e finalizados.
-- Exibir lista simples de lockers com status.
+- Implementar `POST /api/unlock`.
+- Registrar tentativas em `unlock_events`.
+- Finalizar rental e liberar locker em caso de sucesso.
+- Implementar `GET /api/dashboard`.
 
-Critério de conclusao:
+Criterio de conclusao:
 
-- Parceiro visualiza o estado atual do sistema.
-- Metricas refletem os dados atualizados pelos fluxos de uso.
+- Codigo valido abre locker.
+- Codigo invalido nao altera estado.
+- Dashboard reflete lockers, rentals e tentativas de abertura.
 
-### Semana 5 - Ajustes finais e apresentacao
+### Etapa 7 - Integracao com frontend
 
 Entregas:
 
-- Melhorar UX das telas principais.
-- Revisar mensagens de erro e sucesso.
-- Ajustar responsividade.
-- Adicionar QR Code, se houver tempo.
-- Preparar dados de demonstracao.
-- Validar fluxo completo ponta a ponta.
+- Configurar base URL da API no frontend.
+- Trocar dados mockados por chamadas HTTP.
+- Conectar `/use` aos endpoints de lockers, rentals e unlock.
+- Conectar `/partner` ao endpoint de dashboard.
 
-Critério de conclusao:
+Criterio de conclusao:
 
-- MVP esta pronto para demonstracao.
-- Fluxo completo funciona sem intervencao manual no banco.
-- Dashboard atualiza os indicadores esperados.
-
-## 11. Critérios de Sucesso
-
-O MVP sera considerado bem-sucedido se demonstrar:
-
-- Criacao de uso/aluguel.
-- Geracao de codigo unico.
-- Validacao de acesso.
-- Simulacao de abertura do locker.
-- Atualizacao de status do locker.
-- Visualizacao das metricas no dashboard.
-- Separacao clara entre fluxo do usuario e dashboard do parceiro.
+- Fluxo completo funciona ponta a ponta.
+- Dashboard atualiza conforme o uso do MVP.
 
 ## 12. Riscos e Cuidados
 
@@ -474,8 +694,8 @@ Risco:
 
 Mitigacao:
 
-- Validar unicidade antes de salvar o aluguel.
-- Considerar apenas rentals com status `active` na validacao inicial.
+- Usar indice unico parcial em `rentals(access_code)` para status `active`.
+- Tentar gerar novo codigo em caso de colisao.
 
 ### Estado inconsistente
 
@@ -485,42 +705,57 @@ Risco:
 
 Mitigacao:
 
-- Centralizar a regra de criacao do aluguel no backend.
-- Atualizar rental e locker na mesma operacao logica.
+- Usar transacao no backend.
+- Centralizar regra de criacao de aluguel no modulo de rentals.
+
+### Migrations fora de controle
+
+Risco:
+
+- Ambientes com schema diferente por alteracoes manuais.
+
+Mitigacao:
+
+- Toda mudanca de schema deve virar nova migration.
+- `schema_migrations` deve ser a fonte de controle de aplicacao.
+- Seeds ficam separados das migrations.
 
 ### Demonstracao sem dados
 
 Risco:
 
-- Dashboard vazio ou sem informacao util na apresentacao.
+- Dashboard vazio ou sem informacao util.
 
 Mitigacao:
 
-- Criar seed de lockers iniciais.
-- Preparar alguns alugueis de exemplo, se necessario.
+- Manter seed idempotente de lockers.
+- Criar alugueis pela propria interface durante a demonstracao.
 
 ## 13. Roteiro de Demonstracao
 
-1. Acessar `/`.
-2. Explicar a proposta de lockers digitais.
-3. Acessar `/use`.
-4. Escolher um locker livre.
-5. Clicar em `Pagar`.
-6. Exibir o codigo unico gerado.
-7. Informar o codigo para abrir o locker.
-8. Exibir mensagem `Locker aberto`.
-9. Acessar `/partner`.
-10. Mostrar status atualizado dos lockers.
-11. Mostrar metricas simples no dashboard.
+1. Subir Postgres.
+2. Rodar `bun run db:migrate`.
+3. Rodar `bun run db:seed`.
+4. Rodar backend com `bun run dev`.
+5. Rodar frontend.
+6. Acessar `/`.
+7. Acessar `/use`.
+8. Escolher um locker livre.
+9. Clicar em `Pagar`.
+10. Exibir o codigo unico gerado.
+11. Informar o codigo para abrir o locker.
+12. Exibir mensagem `Locker aberto`.
+13. Acessar `/partner`.
+14. Mostrar status atualizado dos lockers.
+15. Mostrar metricas simples no dashboard.
 
 ## 14. Backlog Opcional
-
-Itens que podem ser incluidos apenas se o MVP basico estiver pronto:
 
 - QR Code para codigo de acesso.
 - Historico de alugueis no dashboard.
 - Filtro por tamanho do locker.
 - Botao para finalizar aluguel manualmente.
 - Tela de administracao para criar lockers.
-- Persistencia em SQLite.
-- Deploy simples para demonstracao.
+- Autenticacao simples para parceiro.
+- Deploy do backend.
+- Deploy do Postgres gerenciado.
