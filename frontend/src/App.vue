@@ -1,27 +1,55 @@
 <template>
   <div class="app-container overflow-hidden min-h-screen flex flex-col antialiased">
-    <NavBar />
+
+    <!-- Global loading screen (while auth initializes) -->
+    <div
+      v-if="isInitializing"
+      class="fixed inset-0 bg-white z-[100] flex items-center justify-center"
+    >
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/30">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-slate-200 border-t-brand-600 animate-spin" />
+      </div>
+    </div>
+
+    <!-- NavBar: only for landing/public pages -->
+    <NavBar v-if="!isPartnerRoute && !isAuthRoute" />
+
     <main class="flex-grow">
       <router-view />
     </main>
-    <FooterSection />
+
+    <!-- Footer: only for landing/public pages -->
+    <FooterSection v-if="!isPartnerRoute && !isAuthRoute" />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 import NavBar from '@/components/layout/NavBar.vue'
 import FooterSection from '@/components/layout/FooterSection.vue'
 
-onMounted(() => {
-  // Global setups
+const route = useRoute()
+const { initializeAuth, isInitializing } = useAuth()
+
+// Routes that use their own layout (partner dashboard has its own sidebar)
+const isPartnerRoute = computed(() => route.path.startsWith('/partner'))
+
+// Routes with their own full-page layout (no NavBar/Footer needed)
+const isAuthRoute = computed(() =>
+  ['/login', '/auth/callback', '/oauth/callback', '/account'].includes(route.path)
+)
+
+onMounted(async () => {
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual'
   }
-  window.scrollTo(0, 0)
+  await initializeAuth()
 })
 </script>
-
-<style>
-/* Global styles can go here */
-</style>

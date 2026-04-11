@@ -1,0 +1,31 @@
+import { buildApp } from "./app";
+import { env } from "./config/env";
+import { pool } from "./db/pool";
+
+const app = buildApp();
+
+async function start() {
+  try {
+    await app.listen({ port: env.PORT, host: env.HOST });
+  } catch (error) {
+    app.log.error(error);
+    await pool.end();
+    process.exit(1);
+  }
+}
+
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, "Shutting down API");
+  await app.close();
+  await pool.end();
+};
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
+
+void start();

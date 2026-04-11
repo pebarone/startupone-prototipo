@@ -1,0 +1,52 @@
+const DEFAULT_PORT = 3333;
+
+function readNumber(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid ${name}: expected a positive integer.`);
+  }
+
+  return parsed;
+}
+
+function readBoolean(name: string, fallback: boolean): boolean {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+
+  return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
+}
+
+function readString(name: string, fallback: string): string {
+  return process.env[name]?.trim() || fallback;
+}
+
+export const env = Object.freeze({
+  PORT: readNumber("PORT", DEFAULT_PORT),
+  HOST: readString("HOST", "0.0.0.0"),
+  DATABASE_URL: readString("DATABASE_URL", ""),
+  DATABASE_SSL: readBoolean("DATABASE_SSL", false),
+  CORS_ORIGIN: readString("CORS_ORIGIN", "http://localhost:5173"),
+  LOG_LEVEL: readString("LOG_LEVEL", "info"),
+  ADMIN_API_KEY: readString("ADMIN_API_KEY", ""),
+  RATE_LIMIT_MAX: readNumber("RATE_LIMIT_MAX", 100),
+  RATE_LIMIT_WINDOW: readString("RATE_LIMIT_WINDOW", "1 minute"),
+  SUPABASE_URL: readString("SUPABASE_URL", ""),
+  SUPABASE_PUBLISHABLE_KEY: readString("SUPABASE_PUBLISHABLE_KEY", "")
+});
+
+export function parseCorsOrigin(): true | string[] {
+  if (env.CORS_ORIGIN === "*") {
+    return true;
+  }
+
+  return env.CORS_ORIGIN.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
