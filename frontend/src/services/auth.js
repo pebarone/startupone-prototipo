@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
+import { runtimeSupabaseOAuthProvider } from '@/lib/runtime-config'
 
-const defaultProvider = import.meta.env.VITE_SUPABASE_OAUTH_PROVIDER || 'google'
+const defaultProvider = runtimeSupabaseOAuthProvider
 
 export async function signInWithOAuth(provider = defaultProvider) {
   assertSupabaseConfigured()

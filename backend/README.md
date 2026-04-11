@@ -191,7 +191,11 @@ O deploy em container agora builda o frontend e serve o bundle pela propria API 
 Build:
 
 ```bash
-docker build -t fastlock-monolith .
+docker build \
+  --build-arg VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co \
+  --build-arg VITE_SUPABASE_PUBLISHABLE_KEY=SEU_PUBLISHABLE_KEY \
+  --build-arg VITE_SUPABASE_OAUTH_PROVIDER=google \
+  -t fastlock-monolith .
 ```
 
 Run:
@@ -206,3 +210,9 @@ Comportamento:
 - `GET /api-docs`: Swagger UI
 - `GET /assets/*`: assets do frontend
 - demais rotas `GET`: fallback para `index.html` do SPA
+
+Observacao importante:
+
+- `VITE_*` e resolvido no build da imagem
+- `SUPABASE_*` do backend e lido em runtime
+- para Azure Container Apps, trocar o projeto/frontend exige rebuild e push da imagem

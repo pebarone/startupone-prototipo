@@ -5,8 +5,9 @@
 
 import axios from 'axios'
 import { supabase } from '@/lib/supabase'
+import { runtimeApiBaseUrl } from '@/lib/runtime-config'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+const baseURL = runtimeApiBaseUrl
 
 export const api = axios.create({
   baseURL,
@@ -18,6 +19,10 @@ export const api = axios.create({
 // Attach Bearer Token from Supabase session
 api.interceptors.request.use(
   async (config) => {
+    if (!supabase) {
+      return config
+    }
+
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`

@@ -658,7 +658,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DashboardMetrics"
+                $ref: "#/components/schemas/OrganizationDashboard"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1191,6 +1191,42 @@ components:
         total_rentals: { type: integer, minimum: 0 }
         successful_unlocks: { type: integer, minimum: 0 }
         failed_unlocks: { type: integer, minimum: 0 }
+    DashboardLockerPreview:
+      type: object
+      required:
+        - id
+        - code
+        - size
+        - status
+        - location_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        size:
+          type: string
+          enum: [P, M, G]
+        status:
+          type: string
+          enum: [free, occupied, maintenance]
+        location_id:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+    OrganizationDashboard:
+      allOf:
+        - $ref: "#/components/schemas/DashboardMetrics"
+        - type: object
+          required:
+            - lockers_preview
+          properties:
+            lockers_preview:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardLockerPreview"
     Problem:
       type: object
       required: [type, title, status]

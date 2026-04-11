@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { api } from '@/composables/useApi'
+import { runtimeSupabaseOAuthProvider } from '@/lib/runtime-config'
 
 /**
  * @typedef {Object} AppUser
@@ -81,6 +82,13 @@ export function useAuth() {
     initialized = true
     isInitializing.value = true
     try {
+      if (!supabase) {
+        session.value = null
+        user.value = null
+        memberships.value = []
+        return
+      }
+
       const { data } = await supabase.auth.getSession()
       session.value = data.session
       user.value = data.session?.user ?? null
@@ -105,10 +113,14 @@ export function useAuth() {
 
   /** @returns {Promise<void>} */
   async function signInWithGoogle() {
+    if (!supabase) {
+      throw new Error('Supabase Auth is not configured.')
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: runtimeSupabaseOAuthProvider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${window.location.origin}/oauth/callback`
       }
     })
     if (error) throw error
@@ -116,6 +128,13 @@ export function useAuth() {
 
   /** @returns {Promise<void>} */
   async function signOut() {
+    if (!supabase) {
+      session.value = null
+      user.value = null
+      memberships.value = []
+      return
+    }
+
     const { error } = await supabase.auth.signOut()
     if (error) throw error
     session.value = null

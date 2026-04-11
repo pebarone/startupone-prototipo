@@ -8,6 +8,19 @@
       </div>
     </div>
 
+    <div v-else-if="loadError" class="max-w-xl">
+      <div class="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
+        <p class="text-base font-bold text-slate-900 mb-2">Nao foi possivel carregar o dashboard</p>
+        <p class="text-sm text-slate-500 mb-4">{{ loadError }}</p>
+        <button
+          @click="initializeDashboard"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-500 transition-colors"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </div>
+
     <div v-else>
 
       <!-- Page header -->
@@ -159,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineComponent, h, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { api } from '@/composables/useApi'
 import { useAuth } from '@/composables/useAuth'
@@ -169,7 +182,7 @@ import PartnerLayout from '@/components/layout/PartnerLayout.vue'
 
 const route = useRoute()
 const orgId = route.params.orgId
-const { user } = useAuth()
+const { user, memberships, isInitializing, isAuthenticated, fetchMe } = useAuth()
 const { fetchOrganization, setCurrentOrganization, currentOrganization } = useOrganization()
 const { error: toastError } = useToast()
 
@@ -178,9 +191,10 @@ const lockers = ref([])
 const isLoading = ref(true)
 const isRefreshing = ref(false)
 const isLockersLoading = ref(false)
+const isFetchingDashboard = ref(false)
 const lastAutoRefreshAt = ref(0)
+const loadError = ref('')
 
-const DASHBOARD_LOCKERS_PREVIEW_LIMIT = 12
 const AUTO_REFRESH_COOLDOWN_MS = 30000
 
 const firstName = computed(() => {
@@ -208,43 +222,107 @@ const unlockPct = computed(() => {
 
 /** @param {boolean} [quiet] */
 async function fetchAll(quiet = false) {
-  if ((quiet && isRefreshing.value) || (!quiet && isLoading.value)) {
+  if (isFetchingDashboard.value || (quiet && isRefreshing.value)) {
     return
   }
+
+  isFetchingDashboard.value = true
 
   if (quiet) isRefreshing.value = true
   else isLoading.value = true
 
   isLockersLoading.value = true
-
-  const metricsPromise = api.get(`/organizations/${orgId}/dashboard`)
-  const lockersPromise = api.get(`/organizations/${orgId}/lockers?limit=${DASHBOARD_LOCKERS_PREVIEW_LIMIT}`)
+  if (!quiet) {
+    loadError.value = ''
+  }
 
   try {
-    const metricsRes = await metricsPromise
-    m.value = metricsRes
+    const dashboard = await api.get(`/organizations/${orgId}/dashboard`)
+    m.value = dashboard
+    lockers.value = dashboard.lockers_preview || []
     lastAutoRefreshAt.value = Date.now()
   } catch (err) {
+    loadError.value = err.response?.data?.detail || 'Verifique sua permissao nesta organizacao e tente novamente.'
     toastError('Erro ao carregar dados do dashboard.')
     console.error(err)
   } finally {
+    isFetchingDashboard.value = false
+    isLockersLoading.value = false
+    isRefreshing.value = false
     if (!quiet) {
       isLoading.value = false
     }
   }
+}
 
-  try {
-    const lockersRes = await lockersPromise
-    lockers.value = lockersRes.data || []
-  } catch (err) {
-    if (!quiet) {
-      toastError('Erro ao carregar a lista de lockers do dashboard.')
-    }
-    console.error(err)
-  } finally {
-    isLockersLoading.value = false
-    isRefreshing.value = false
+function syncCurrentOrganization() {
+  if (currentOrganization.value?.id === orgId) {
+    return Promise.resolve()
   }
+
+  const activeMembership = memberships.value.find((membership) =>
+    membership.organization_id === orgId &&
+    membership.status === 'active' &&
+    membership.organization
+  )
+
+  if (activeMembership?.organization) {
+    setCurrentOrganization({
+      ...activeMembership.organization,
+      current_membership: {
+        id: activeMembership.id,
+        role: activeMembership.role,
+        status: activeMembership.status
+      }
+    })
+
+    return Promise.resolve()
+  }
+
+  return fetchOrganization(orgId)
+    .then((org) => {
+      if (org) {
+        setCurrentOrganization(org)
+      }
+    })
+    .catch((err) => {
+      console.error(err)
+    })
+}
+
+function waitForAuthReady() {
+  if (!isInitializing.value) {
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve) => {
+    const stop = watch(isInitializing, (value) => {
+      if (!value) {
+        stop()
+        resolve()
+      }
+    })
+  })
+}
+
+async function initializeDashboard() {
+  isLoading.value = true
+  loadError.value = ''
+
+  await waitForAuthReady()
+
+  if (!isAuthenticated.value) {
+    isLoading.value = false
+    loadError.value = 'Sua sessao nao esta autenticada.'
+    return
+  }
+
+  if (memberships.value.length === 0) {
+    await fetchMe()
+  }
+
+  await syncCurrentOrganization()
+  await fetchAll()
 }
 
 const statusColors = {
@@ -271,19 +349,7 @@ const icons = {
 
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
-
-  const orgPromise = fetchOrganization(orgId)
-    .then((org) => {
-      if (org) {
-        setCurrentOrganization(org)
-      }
-    })
-    .catch((err) => {
-      console.error(err)
-    })
-
-  await fetchAll()
-  await orgPromise
+  await initializeDashboard()
 })
 
 onUnmounted(() => {

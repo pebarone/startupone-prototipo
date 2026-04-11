@@ -2,8 +2,9 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import gsap from 'gsap'
+import { runtimeApiBaseUrl } from '@/lib/runtime-config'
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
+const apiBase = runtimeApiBaseUrl
 
 /** @type {import('vue').Ref<any>} */
 const metrics = ref(null)

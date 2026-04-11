@@ -15,8 +15,41 @@ import { organizationsRoutes } from "./modules/organizations/organizations.route
 import { rentalsRoutes } from "./modules/rentals/rentals.routes";
 import { unlockRoutes } from "./modules/unlock/unlock.routes";
 
+type HelmetDirectiveValue =
+  ReturnType<typeof helmet.contentSecurityPolicy.getDefaultDirectives>[string] extends Iterable<infer T> ? T : never;
+
+function resolveOrigin(url: string): string | null {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isDefined<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
+function asDirectiveArray(
+  value: Iterable<HelmetDirectiveValue> | null | undefined
+): HelmetDirectiveValue[] {
+  return value ? Array.from(value) : [];
+}
+
 export async function buildApp() {
   const openApiBaseDir = fileURLToPath(new URL("..", import.meta.url));
+  const supabaseOrigin = resolveOrigin(env.SUPABASE_URL);
+  const supabaseWssOrigin = supabaseOrigin?.startsWith("https://")
+    ? `wss://${new URL(supabaseOrigin).host}`
+    : null;
+  const cspSources = ["'self'", supabaseOrigin, supabaseWssOrigin, "https://nominatim.openstreetmap.org"].filter(isDefined);
+  const defaultDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+  const defaultConnectSrc = asDirectiveArray(defaultDirectives["connect-src"]);
+  const defaultImgSrc = asDirectiveArray(defaultDirectives["img-src"]);
 
   const app = Fastify({
     logger: {
@@ -30,7 +63,15 @@ export async function buildApp() {
     reply.header("X-Request-ID", request.id);
   });
 
-  app.register(helmet);
+  app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        ...defaultDirectives,
+        "connect-src": [...defaultConnectSrc, ...cspSources],
+        "img-src": [...defaultImgSrc, "blob:", "https:"]
+      }
+    }
+  });
 
   app.register(rateLimit, {
     max: env.RATE_LIMIT_MAX,

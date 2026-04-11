@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { env } from "../config/env";
 
 const frontendRoots = [
   fileURLToPath(new URL("../../public", import.meta.url)),
@@ -44,6 +45,12 @@ export async function registerFrontend(app: FastifyInstance) {
   const assetsRoot = path.join(frontendDistRoot, "assets");
   const indexPath = path.join(frontendDistRoot, "index.html");
   const indexHtml = await readFile(indexPath, "utf8");
+  const appConfigScript = `window.__APP_CONFIG__ = ${JSON.stringify({
+    apiBaseUrl: "/api",
+    supabaseUrl: env.SUPABASE_URL,
+    supabasePublishableKey: env.SUPABASE_PUBLISHABLE_KEY,
+    supabaseOAuthProvider: process.env.SUPABASE_OAUTH_PROVIDER?.trim() || "google"
+  })};`;
 
   await app.register(fastifyStatic, {
     root: assetsRoot,
@@ -52,6 +59,11 @@ export async function registerFrontend(app: FastifyInstance) {
     cacheControl: true,
     immutable: true,
     maxAge: "30d"
+  });
+
+  app.get("/app-config.js", async (_request, reply) => {
+    reply.header("Cache-Control", "no-cache, no-store, must-revalidate");
+    return reply.type("application/javascript; charset=utf-8").send(appConfigScript);
   });
 
   app.get("/", async (_request, reply) => {
