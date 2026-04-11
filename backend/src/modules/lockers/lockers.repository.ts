@@ -38,13 +38,18 @@ export async function listLockersByOrganization(
     conditions.push(`size = $${values.length}`);
   }
 
+  if (query.location_id) {
+    values.push(query.location_id);
+    conditions.push(`location_id = $${values.length}`);
+  }
+
   const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const count = await db.query<{ total: number }>(`SELECT count(*)::int AS total FROM lockers ${whereSql}`, values);
 
   values.push(limit, offset);
   const lockers = await db.query<Locker>(
     `
-    SELECT id, organization_id, code, size, status, created_at, updated_at
+    SELECT id, organization_id, location_id, code, size, status, created_at, updated_at
     FROM lockers
     ${whereSql}
     ORDER BY code ASC
@@ -89,13 +94,18 @@ export async function listPublicLockers(query: ListPublicLockersQuery, db: Query
     conditions.push(`size = $${values.length}`);
   }
 
+  if (query.location_id) {
+    values.push(query.location_id);
+    conditions.push(`location_id = $${values.length}`);
+  }
+
   const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   const count = await db.query<{ total: number }>(`SELECT count(*)::int AS total FROM lockers ${whereSql}`, values);
 
   values.push(limit, offset);
   const lockers = await db.query<Locker>(
     `
-    SELECT id, organization_id, code, size, status, created_at, updated_at
+    SELECT id, organization_id, location_id, code, size, status, created_at, updated_at
     FROM lockers
     ${whereSql}
     ORDER BY code ASC
@@ -130,14 +140,32 @@ export function listOrganizationLockers(
 export async function insertLocker(organizationId: string, input: CreateLockerBody, db: Queryable = pool): Promise<Locker> {
   const result = await db.query<Locker>(
     `
-    INSERT INTO lockers (organization_id, code, size, status)
-    VALUES ($1, $2, $3, 'free')
-    RETURNING id, organization_id, code, size, status, created_at, updated_at
+    INSERT INTO lockers (organization_id, location_id, code, size, status)
+    VALUES ($1, $2, $3, $4, 'free')
+    RETURNING id, organization_id, location_id, code, size, status, created_at, updated_at
     `,
-    [organizationId, input.code, input.size]
+    [organizationId, input.location_id ?? null, input.code, input.size]
   );
 
   return result.rows[0];
+}
+
+export async function findLockerById(
+  organizationId: string,
+  id: string,
+  db: Queryable = pool
+): Promise<Locker | null> {
+  const result = await db.query<Locker>(
+    `
+    SELECT id, organization_id, location_id, code, size, status, created_at, updated_at
+    FROM lockers
+    WHERE organization_id = $1
+      AND id = $2
+    `,
+    [organizationId, id]
+  );
+
+  return result.rows[0] ?? null;
 }
 
 export async function updateLockerById(
@@ -164,6 +192,11 @@ export async function updateLockerById(
     assignments.push(`status = $${values.length}`);
   }
 
+  if (input.location_id !== undefined) {
+    values.push(input.location_id);
+    assignments.push(`location_id = $${values.length}`);
+  }
+
   if (assignments.length === 0) {
     return null;
   }
@@ -176,10 +209,27 @@ export async function updateLockerById(
     SET ${assignments.join(", ")}, updated_at = now()
     WHERE organization_id = $${values.length - 1}
       AND id = $${values.length}
-    RETURNING id, organization_id, code, size, status, created_at, updated_at
+    RETURNING id, organization_id, location_id, code, size, status, created_at, updated_at
     `,
     values
   );
 
   return result.rows[0] ?? null;
+}
+
+export async function deleteLockerById(
+  organizationId: string,
+  id: string,
+  db: Queryable = pool
+): Promise<boolean> {
+  const result = await db.query(
+    `
+    DELETE FROM lockers
+    WHERE organization_id = $1
+      AND id = $2
+    `,
+    [organizationId, id]
+  );
+
+  return (result.rowCount ?? 0) > 0;
 }

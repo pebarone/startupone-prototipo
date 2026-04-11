@@ -55,6 +55,7 @@ export async function findRentalById(id: string): Promise<RentalWithLocker | nul
       json_build_object(
         'id', l.id,
         'organization_id', l.organization_id,
+        'location_id', l.location_id,
         'code', l.code,
         'size', l.size,
         'status', l.status,

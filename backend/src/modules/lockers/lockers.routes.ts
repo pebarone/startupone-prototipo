@@ -2,12 +2,14 @@ import type { FastifyInstance } from "fastify";
 import { requireOrganizationAdminOrAdmin, requireOrganizationMemberOrAdmin } from "../../security/admin-auth";
 import {
   createLockerController,
+  deleteLockerController,
   listOrganizationLockersController,
   listPublicLockersController,
   updateLockerController
 } from "./lockers.controller";
 import {
   createLockerSchema,
+  deleteLockerSchema,
   listOrganizationLockersSchema,
   listPublicLockersSchema,
   updateLockerSchema,
@@ -41,5 +43,11 @@ export async function lockersRoutes(app: FastifyInstance) {
     "/organizations/:organizationId/lockers/:id",
     { schema: updateLockerSchema, preHandler: requireOrganizationAdminOrAdmin },
     updateLockerController
+  );
+
+  app.delete<{ Params: OrganizationLockerParams }>(
+    "/organizations/:organizationId/lockers/:id",
+    { schema: deleteLockerSchema, preHandler: requireOrganizationAdminOrAdmin },
+    deleteLockerController
   );
 }

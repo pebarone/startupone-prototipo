@@ -1,0 +1,499 @@
+<template>
+  <PartnerLayout :org-id="orgId" page-title="Localizações">
+    <div v-if="isLoading" class="flex min-h-[50vh] items-center justify-center">
+      <div class="flex flex-col items-center gap-3">
+        <div class="h-7 w-7 rounded-full border-2 border-slate-200 border-t-brand-600 animate-spin" />
+        <p class="text-sm text-slate-400">Carregando localizações...</p>
+      </div>
+    </div>
+
+    <template v-else>
+      <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Mapa operacional</p>
+          <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Localizações dos lockers</h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Cadastre os pontos do parceiro com endereço e coordenadas. O mapa público usa esses locais para mostrar os lockers livres.
+          </p>
+        </div>
+
+        <button
+          v-if="canAdmin"
+          type="button"
+          class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-[background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-md active:scale-[0.98]"
+          @click="openCreateModal"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Nova localização
+        </button>
+      </div>
+
+      <div v-if="!locations.length" class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+          <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.657 16.657L13.414 20.9a2 2 0 0 1-2.828 0l-4.243-4.243a8 8 0 1 1 11.314 0zM15 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+          </svg>
+        </div>
+        <h2 class="mt-5 text-xl font-black tracking-tight text-slate-900">Nenhuma localização cadastrada ainda.</h2>
+        <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+          Crie o primeiro ponto do parceiro para organizar lockers por endereço e liberar o mapa público.
+        </p>
+        <button
+          v-if="canAdmin"
+          type="button"
+          class="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-900 active:scale-[0.98]"
+          @click="openCreateModal"
+        >
+          Criar primeira localização
+        </button>
+      </div>
+
+      <div v-else class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <aside class="space-y-4">
+          <article
+            v-for="location in locations"
+            :key="location.id"
+            class="rounded-lg border bg-white p-4 shadow-sm transition-[border-color,transform,box-shadow] duration-200 ease-out"
+            :class="location.id === selectedLocationId ? 'border-brand-300 shadow-[0_18px_34px_rgba(22,163,74,0.12)]' : 'border-slate-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md'"
+          >
+            <button type="button" class="block w-full text-left" @click="selectLocation(location)">
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="truncate text-lg font-black tracking-tight text-slate-900">{{ location.name }}</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-500">{{ location.address }}</p>
+                </div>
+
+                <div class="flex flex-shrink-0 items-center gap-2">
+                  <span class="inline-flex h-9 min-w-[56px] items-center justify-center rounded-full bg-brand-50 px-3 text-sm font-black text-brand-700">
+                    {{ location.free_lockers }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Livres</p>
+                  <p class="mt-1 text-lg font-black text-slate-900">{{ location.free_lockers }}</p>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Total</p>
+                  <p class="mt-1 text-lg font-black text-slate-900">{{ location.total_lockers }}</p>
+                </div>
+              </div>
+            </button>
+
+            <div v-if="canAdmin" class="mt-4 flex gap-2">
+              <button
+                type="button"
+                class="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-[border-color,color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 active:scale-[0.98]"
+                @click="openEditModal(location)"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                class="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-100 active:scale-[0.98]"
+                @click="removeLocation(location)"
+              >
+                Excluir
+              </button>
+            </div>
+          </article>
+        </aside>
+
+        <section class="space-y-4">
+          <LockerMap
+            :locations="locations"
+            :selected-location-id="selectedLocationId"
+            height="560px"
+            @select-location="selectLocation"
+          />
+
+          <div v-if="selectedLocation" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
+                <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 lg:min-w-[220px]">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Livres</p>
+                  <p class="mt-1 text-2xl font-black text-slate-900">{{ selectedLocation.free_lockers }}</p>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Total</p>
+                  <p class="mt-1 text-2xl font-black text-slate-900">{{ selectedLocation.total_lockers }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </template>
+
+    <BaseModal
+      :model-value="showModal"
+      :title="editingLocationId ? 'Editar localização' : 'Nova localização'"
+      max-width="2xl"
+      @update:model-value="showModal = $event"
+      @close="resetForm"
+    >
+      <div class="space-y-5">
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div>
+            <label for="location-name" class="mb-1.5 block text-sm font-medium text-slate-300">Nome do ponto *</label>
+            <input
+              id="location-name"
+              v-model="form.name"
+              type="text"
+              placeholder="Ex: Estação da Sé"
+              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+            />
+          </div>
+
+          <div>
+            <label for="location-address" class="mb-1.5 block text-sm font-medium text-slate-300">Endereço *</label>
+            <div class="flex gap-2">
+              <input
+                id="location-address"
+                v-model="form.address"
+                type="text"
+                placeholder="Rua, numero, bairro, cidade"
+                class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+                @keyup.enter="searchLocation"
+              />
+              <button
+                type="button"
+                class="inline-flex h-[42px] items-center justify-center rounded-lg border border-slate-600 px-3.5 text-sm font-semibold text-slate-200 transition-colors hover:border-brand-400 hover:text-white"
+                @click="searchLocation"
+              >
+                {{ isSearching ? 'Buscando...' : 'Buscar' }}
+              </button>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Use o endereço mais completo possível para posicionar o pin.</p>
+          </div>
+        </div>
+
+        <div v-if="searchResults.length" class="rounded-lg border border-slate-700 bg-slate-800/70 p-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Resultados</p>
+          <div class="mt-3 space-y-2">
+            <button
+              v-for="result in searchResults"
+              :key="result.id"
+              type="button"
+              class="block w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-3 text-left transition-colors hover:border-brand-500 hover:bg-slate-900"
+              @click="applySearchResult(result)"
+            >
+              <p class="text-sm font-semibold text-white">{{ result.name }}</p>
+              <p class="mt-1 text-xs leading-5 text-slate-400">{{ result.address }}</p>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <LockerMap
+            :locations="previewLocations"
+            :interactive="false"
+            :fit-to-locations="true"
+            :selected-location-id="previewLocations[0]?.id || ''"
+            height="260px"
+            empty-label="Busque um endereço para visualizar o ponto no mapa."
+          />
+
+          <div class="space-y-3 rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Latitude</p>
+              <p class="mt-1 text-sm font-semibold text-white">{{ formattedLatitude }}</p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Longitude</p>
+              <p class="mt-1 text-sm font-semibold text-white">{{ formattedLongitude }}</p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
+              <p class="mt-1 text-sm text-slate-300">
+                {{ hasCoordinates ? 'Posicionado no mapa' : 'Aguardando busca de endereço' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="formError" class="rounded-lg border border-red-800 bg-red-950/60 px-3.5 py-3 text-sm text-red-300">
+          {{ formError }}
+        </div>
+      </div>
+
+      <template #footer>
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:text-white"
+          @click="showModal = false"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+          :disabled="isSaving || !form.name.trim() || !form.address.trim() || !hasCoordinates"
+          @click="saveLocation"
+        >
+          <span v-if="isSaving" class="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+          {{ isSaving ? 'Salvando...' : editingLocationId ? 'Salvar localização' : 'Criar localização' }}
+        </button>
+      </template>
+    </BaseModal>
+  </PartnerLayout>
+</template>
+
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import LockerMap from '@/components/map/LockerMap.vue'
+import PartnerLayout from '@/components/layout/PartnerLayout.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import { api } from '@/composables/useApi'
+import { useOrganization } from '@/composables/useOrganization'
+import { useToast } from '@/composables/useToast'
+import { searchAddresses } from '@/services/geocoding'
+
+const route = useRoute()
+const orgId = route.params.orgId
+const { canAdmin, fetchOrganization, setCurrentOrganization } = useOrganization()
+const { success, error: toastError } = useToast()
+
+/** @type {import('vue').Ref<any[]>} */
+const locations = ref([])
+const isLoading = ref(true)
+const showModal = ref(false)
+const isSaving = ref(false)
+const isSearching = ref(false)
+const selectedLocationId = ref('')
+const editingLocationId = ref('')
+const searchResults = ref([])
+const formError = ref('')
+
+const form = ref({
+  name: '',
+  address: '',
+  latitude: null,
+  longitude: null
+})
+
+const selectedLocation = computed(() =>
+  locations.value.find((location) => location.id === selectedLocationId.value) || null
+)
+
+const hasCoordinates = computed(() =>
+  Number.isFinite(Number(form.value.latitude)) && Number.isFinite(Number(form.value.longitude))
+)
+
+const previewLocations = computed(() => {
+  if (!hasCoordinates.value) {
+    return []
+  }
+
+  return [
+    {
+      id: 'draft-location',
+      name: form.value.name.trim() || 'Nova localização',
+      address: form.value.address.trim() || 'Endereço em definição',
+      latitude: Number(form.value.latitude),
+      longitude: Number(form.value.longitude),
+      total_lockers: 0,
+      free_lockers: 0,
+      available_lockers: []
+    }
+  ]
+})
+
+const formattedLatitude = computed(() =>
+  hasCoordinates.value ? Number(form.value.latitude).toFixed(6) : '---'
+)
+
+const formattedLongitude = computed(() =>
+  hasCoordinates.value ? Number(form.value.longitude).toFixed(6) : '---'
+)
+
+onMounted(async () => {
+  const org = await fetchOrganization(orgId)
+
+  if (org) {
+    setCurrentOrganization(org)
+  }
+
+  await fetchLocations()
+})
+
+async function fetchLocations() {
+  isLoading.value = true
+
+  try {
+    const response = await api.get(`/organizations/${orgId}/locations?limit=200`)
+    locations.value = response.data || []
+
+    if (!locations.value.length) {
+      selectedLocationId.value = ''
+      return
+    }
+
+    if (!locations.value.some(({ id }) => id === selectedLocationId.value)) {
+      selectedLocationId.value = locations.value[0].id
+    }
+  } catch (error) {
+    toastError('Falha ao carregar localizações.')
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function openCreateModal() {
+  editingLocationId.value = ''
+  showModal.value = true
+  resetForm()
+}
+
+/** @param {any} location */
+function openEditModal(location) {
+  editingLocationId.value = location.id
+  form.value = {
+    name: location.name,
+    address: location.address,
+    latitude: Number(location.latitude),
+    longitude: Number(location.longitude)
+  }
+  formError.value = ''
+  searchResults.value = []
+  showModal.value = true
+}
+
+function resetForm() {
+  if (!showModal.value) {
+    editingLocationId.value = ''
+  }
+
+  form.value = {
+    name: '',
+    address: '',
+    latitude: null,
+    longitude: null
+  }
+  formError.value = ''
+  searchResults.value = []
+  isSearching.value = false
+}
+
+/**
+ * @param {any} location
+ * @returns {void}
+ */
+function selectLocation(location) {
+  selectedLocationId.value = location.id
+}
+
+async function searchLocation() {
+  formError.value = ''
+
+  if (form.value.address.trim().length < 4) {
+    formError.value = 'Digite um endereço mais completo para buscar no mapa.'
+    return
+  }
+
+  isSearching.value = true
+
+  try {
+    const results = await searchAddresses(form.value.address)
+    searchResults.value = results
+
+    if (!results.length) {
+      formError.value = 'Nenhum endereço encontrado. Tente detalhar melhor o local.'
+    }
+  } catch (error) {
+    formError.value = error?.message || 'Não foi possível buscar o endereço agora.'
+  } finally {
+    isSearching.value = false
+  }
+}
+
+/**
+ * @param {{ name: string, address: string, latitude: number, longitude: number }} result
+ */
+function applySearchResult(result) {
+  form.value.address = result.address
+  form.value.latitude = result.latitude
+  form.value.longitude = result.longitude
+
+  if (!form.value.name.trim()) {
+    form.value.name = result.name
+  }
+
+  searchResults.value = []
+  formError.value = ''
+}
+
+async function saveLocation() {
+  isSaving.value = true
+  formError.value = ''
+
+  const payload = {
+    name: form.value.name.trim(),
+    address: form.value.address.trim(),
+    latitude: Number(form.value.latitude),
+    longitude: Number(form.value.longitude)
+  }
+
+  try {
+    let savedLocationId = editingLocationId.value
+
+    if (editingLocationId.value) {
+      const updatedLocation = await api.patch(`/organizations/${orgId}/locations/${editingLocationId.value}`, payload)
+      savedLocationId = updatedLocation?.id || editingLocationId.value
+      success('Localização atualizada.')
+    } else {
+      const createdLocation = await api.post(`/organizations/${orgId}/locations`, payload)
+      savedLocationId = createdLocation?.id || ''
+      success('Localização criada.')
+    }
+
+    showModal.value = false
+    resetForm()
+    await fetchLocations()
+
+    if (savedLocationId && locations.value.some(({ id }) => id === savedLocationId)) {
+      selectedLocationId.value = savedLocationId
+    }
+  } catch (error) {
+    formError.value = error?.response?.data?.detail || error?.message || 'Não foi possível salvar a localização.'
+  } finally {
+    isSaving.value = false
+  }
+}
+
+/**
+ * @param {any} location
+ */
+async function removeLocation(location) {
+  const confirmed = window.confirm(`Excluir a localização "${location.name}"?`)
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await api.delete(`/organizations/${orgId}/locations/${location.id}`)
+    success('Localização removida.')
+
+    if (selectedLocationId.value === location.id) {
+      selectedLocationId.value = ''
+    }
+
+    await fetchLocations()
+  } catch (error) {
+    toastError(error?.response?.data?.detail || 'Não foi possível excluir a localização.')
+  }
+}
+</script>

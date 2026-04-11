@@ -64,6 +64,7 @@ backend/db/migrations/000005_create_audit_events.sql
 backend/db/migrations/000006_enable_rls.sql
 backend/db/migrations/000007_create_organizations_and_users.sql
 backend/db/migrations/000008_enable_multi_tenant_rls.sql
+backend/db/migrations/000009_create_locker_locations.sql
 backend/db/seeds/000001_seed_lockers.sql
 ```
 
@@ -181,3 +182,27 @@ Frontend local com OAuth:
 
 - `Site URL` no Supabase: `http://localhost:3000`
 - redirect permitido: `http://localhost:3000/oauth/callback`
+- no dev, o Vite faz proxy de `/api` e `/api-docs` para `http://localhost:3333`
+
+## Container monolitico
+
+O deploy em container agora builda o frontend e serve o bundle pela propria API Fastify na mesma imagem.
+
+Build:
+
+```bash
+docker build -t fastlock-monolith .
+```
+
+Run:
+
+```bash
+docker run --env-file backend/.env -p 3333:3333 fastlock-monolith
+```
+
+Comportamento:
+
+- `GET /api/*`: API
+- `GET /api-docs`: Swagger UI
+- `GET /assets/*`: assets do frontend
+- demais rotas `GET`: fallback para `index.html` do SPA

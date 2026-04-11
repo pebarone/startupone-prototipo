@@ -20,9 +20,9 @@
 
       <!-- Desktop nav — only on home -->
       <nav v-if="isHomePage" class="hidden md:flex gap-7 items-center text-sm font-medium flex-1 justify-center">
-        <a href="#solucao" @click.prevent="scrollTo('#solucao')" class="text-slate-600 hover:text-brand-600 transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-brand-600 hover:after:w-full after:transition-all after:duration-300">A Solução</a>
+        <a href="#parceiros" @click.prevent="scrollTo('#parceiros')" class="text-slate-600 hover:text-brand-600 transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-brand-600 hover:after:w-full after:transition-all after:duration-300">Parceiros</a>
         <a href="#como-funciona" @click.prevent="scrollTo('#como-funciona')" class="text-slate-600 hover:text-brand-600 transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-brand-600 hover:after:w-full after:transition-all after:duration-300">Como Funciona</a>
-        <a href="#parceiros" @click.prevent="scrollTo('#parceiros')" class="text-slate-600 hover:text-brand-600 transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-brand-600 hover:after:w-full after:transition-all after:duration-300">Para Parceiros</a>
+        <a href="#solucao" @click.prevent="scrollTo('#solucao')" class="text-slate-600 hover:text-brand-600 transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-brand-600 hover:after:w-full after:transition-all after:duration-300">A Solução</a>
       </nav>
       <div v-else class="flex-1" />
 
@@ -95,9 +95,9 @@
     <Transition name="slideDown">
       <div v-if="mobileOpen" class="md:hidden bg-white border-t border-slate-100 px-6 py-4 space-y-3">
         <template v-if="isHomePage">
-          <a href="#solucao" @click.prevent="scrollTo('#solucao'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">A Solução</a>
+          <a href="#parceiros" @click.prevent="scrollTo('#parceiros'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">Parceiros</a>
           <a href="#como-funciona" @click.prevent="scrollTo('#como-funciona'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">Como Funciona</a>
-          <a href="#parceiros" @click.prevent="scrollTo('#parceiros'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">Para Parceiros</a>
+          <a href="#solucao" @click.prevent="scrollTo('#solucao'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">A Solução</a>
           <div class="border-t border-slate-100" />
         </template>
         <a href="/use" class="block text-sm font-medium text-slate-700 py-2">Usar um Locker</a>

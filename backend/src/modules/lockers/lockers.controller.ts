@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { getRequestContext } from "../../context/request-context";
 import {
   createLockerService,
+  deleteLockerService,
   listOrganizationLockersService,
   listPublicLockersService,
   updateLockerService
@@ -41,4 +42,17 @@ export async function updateLockerController(
     request.body,
     getRequestContext(request, "admin")
   );
+}
+
+export async function deleteLockerController(
+  request: FastifyRequest<{ Params: OrganizationLockerParams }>,
+  reply: FastifyReply
+) {
+  await deleteLockerService(
+    request.params.organizationId,
+    request.params.id,
+    getRequestContext(request, "admin")
+  );
+
+  return reply.code(204).send();
 }

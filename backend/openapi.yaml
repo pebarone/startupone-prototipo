@@ -262,7 +262,6 @@ paths:
       parameters:
         - name: organization_id
           in: query
-          required: true
           schema:
             type: string
             format: uuid
@@ -274,6 +273,11 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/LockerSize"
+        - name: location_id
+          in: query
+          schema:
+            type: string
+            format: uuid
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Offset"
       responses:
@@ -305,6 +309,11 @@ paths:
           in: query
           schema:
             $ref: "#/components/schemas/LockerSize"
+        - name: location_id
+          in: query
+          schema:
+            type: string
+            format: uuid
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Offset"
       responses:
@@ -378,6 +387,146 @@ paths:
                 $ref: "#/components/schemas/Locker"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/locations:
+    get:
+      tags: [Locations]
+      operationId: listPublicLocations
+      summary: List public locker locations with live availability
+      parameters:
+        - name: organization_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Paginated public location list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLockerLocationList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/organizations/{organizationId}/locations:
+    get:
+      tags: [Locations]
+      operationId: listOrganizationLocations
+      summary: List locations inside an organization
+      security:
+        - SupabaseBearer: []
+        - AdminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Paginated organization location list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockerLocationList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    post:
+      tags: [Locations]
+      operationId: createOrganizationLocation
+      summary: Create a location inside an organization
+      security:
+        - SupabaseBearer: []
+        - AdminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLocationRequest"
+      responses:
+        "201":
+          description: Location created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockerLocationWithStats"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/organizations/{organizationId}/locations/{id}:
+    patch:
+      tags: [Locations]
+      operationId: updateOrganizationLocation
+      summary: Update a location inside an organization
+      security:
+        - SupabaseBearer: []
+        - AdminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLocationRequest"
+      responses:
+        "200":
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LockerLocationWithStats"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+    delete:
+      tags: [Locations]
+      operationId: deleteOrganizationLocation
+      summary: Delete a location inside an organization
+      security:
+        - SupabaseBearer: []
+        - AdminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Location deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -802,12 +951,116 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrganizationMembership"
-    Locker:
+    LocationLockerPreview:
       type: object
-      required: [id, organization_id, code, size, status, created_at, updated_at]
+      required: [id, code, size]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, example: LCK-001 }
+        size: { $ref: "#/components/schemas/LockerSize" }
+    LockerLocation:
+      type: object
+      required: [id, organization_id, name, address, latitude, longitude, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         organization_id: { type: string, format: uuid }
+        name: { type: string, example: "Estacao da Se" }
+        address: { type: string, example: "Praca da Se, Se, Sao Paulo - SP" }
+        latitude: { type: number, example: -23.55052 }
+        longitude: { type: number, example: -46.633308 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    LockerLocationWithStats:
+      allOf:
+        - $ref: "#/components/schemas/LockerLocation"
+        - type: object
+          required: [total_lockers, free_lockers]
+          properties:
+            total_lockers: { type: integer, minimum: 0 }
+            free_lockers: { type: integer, minimum: 0 }
+    PublicLockerLocation:
+      allOf:
+        - $ref: "#/components/schemas/LockerLocationWithStats"
+        - type: object
+          required: [available_lockers]
+          properties:
+            available_lockers:
+              type: array
+              items:
+                $ref: "#/components/schemas/LocationLockerPreview"
+    LockerLocationList:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LockerLocationWithStats"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+    PublicLockerLocationList:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicLockerLocation"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+    CreateLocationRequest:
+      type: object
+      required: [name, address, latitude, longitude]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        address:
+          type: string
+          minLength: 5
+          maxLength: 255
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+    UpdateLocationRequest:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        address:
+          type: string
+          minLength: 5
+          maxLength: 255
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+    Locker:
+      type: object
+      required: [id, organization_id, location_id, code, size, status, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        organization_id: { type: string, format: uuid }
+        location_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
         code: { type: string, example: LCK-001 }
         size: { $ref: "#/components/schemas/LockerSize" }
         status: { $ref: "#/components/schemas/LockerStatus" }
@@ -835,6 +1088,11 @@ components:
           pattern: "^[A-Z0-9-]+$"
         size:
           $ref: "#/components/schemas/LockerSize"
+        location_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
     UpdateLockerRequest:
       type: object
       minProperties: 1
@@ -849,6 +1107,11 @@ components:
           $ref: "#/components/schemas/LockerSize"
         status:
           $ref: "#/components/schemas/LockerStatus"
+        location_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
     Rental:
       type: object
       required: [id, organization_id, locker_id, access_code, status, started_at, created_at, updated_at]

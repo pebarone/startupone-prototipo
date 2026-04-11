@@ -291,6 +291,38 @@ CREATE POLICY audit_events_select_member
     AND private.is_active_organization_member(organization_id)
   );
 
+CREATE TABLE IF NOT EXISTS locker_locations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  address text NOT NULL,
+  latitude double precision NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude double precision NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS locker_locations_organization_name_unique
+  ON locker_locations (organization_id, lower(name));
+
+CREATE INDEX IF NOT EXISTS locker_locations_org_idx
+  ON locker_locations (organization_id);
+
+ALTER TABLE lockers
+  ADD COLUMN IF NOT EXISTS location_id uuid REFERENCES locker_locations(id);
+
+CREATE INDEX IF NOT EXISTS lockers_location_id_idx
+  ON lockers (location_id);
+
+ALTER TABLE IF EXISTS locker_locations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS locker_locations_select_member ON locker_locations;
+CREATE POLICY locker_locations_select_member
+  ON locker_locations
+  FOR SELECT
+  TO authenticated
+  USING (private.is_active_organization_member(organization_id));
+
 INSERT INTO schema_migrations (id, name)
 VALUES
   ('000001', '000001_create_migrations_table.sql'),
@@ -300,18 +332,33 @@ VALUES
   ('000005', '000005_create_audit_events.sql'),
   ('000006', '000006_enable_rls.sql'),
   ('000007', '000007_create_organizations_and_users.sql'),
-  ('000008', '000008_enable_multi_tenant_rls.sql')
+  ('000008', '000008_enable_multi_tenant_rls.sql'),
+  ('000009', '000009_create_locker_locations.sql')
 ON CONFLICT (id) DO NOTHING;
 
-WITH seeded_organization AS (
+WITH demo_organization AS (
   INSERT INTO organizations (name, slug, status)
   VALUES ('Demo Organization', 'demo-organization', 'active')
-  ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, status = EXCLUDED.status, updated_at = now()
+  ON CONFLICT (slug) DO UPDATE
+  SET
+    name = EXCLUDED.name,
+    status = EXCLUDED.status,
+    updated_at = now()
+  RETURNING id
+),
+legacy_organization AS (
+  INSERT INTO organizations (name, slug, status)
+  VALUES ('Legacy Organization', 'legacy-organization', 'active')
+  ON CONFLICT (slug) DO UPDATE
+  SET
+    name = EXCLUDED.name,
+    status = EXCLUDED.status,
+    updated_at = now()
   RETURNING id
 )
 INSERT INTO lockers (organization_id, code, size, status)
-SELECT seeded_organization.id, seeded_values.code, seeded_values.size, seeded_values.status
-FROM seeded_organization
+SELECT demo_organization.id, seeded_values.code, seeded_values.size, seeded_values.status
+FROM demo_organization
 CROSS JOIN (
   VALUES
     ('LCK-001', 'P', 'free'),
@@ -321,3 +368,72 @@ CROSS JOIN (
     ('LCK-005', 'P', 'free')
 ) AS seeded_values(code, size, status)
 ON CONFLICT (organization_id, code) DO NOTHING;
+
+WITH seeded_locations AS (
+  INSERT INTO locker_locations (organization_id, name, address, latitude, longitude)
+  VALUES
+    (
+      (SELECT id FROM organizations WHERE slug = 'demo-organization'),
+      'Estacao da Se',
+      'Praca da Se, Se, Sao Paulo - SP',
+      -23.55052,
+      -46.633308
+    ),
+    (
+      (SELECT id FROM organizations WHERE slug = 'demo-organization'),
+      'Paulista MASP',
+      'Avenida Paulista, 1578, Bela Vista, Sao Paulo - SP',
+      -23.561414,
+      -46.655881
+    ),
+    (
+      (SELECT id FROM organizations WHERE slug = 'legacy-organization'),
+      'Pinheiros',
+      'Rua dos Pinheiros, 450, Pinheiros, Sao Paulo - SP',
+      -23.567742,
+      -46.692867
+    ),
+    (
+      (SELECT id FROM organizations WHERE slug = 'legacy-organization'),
+      'Vila Mariana',
+      'Rua Domingos de Morais, 2565, Vila Mariana, Sao Paulo - SP',
+      -23.589034,
+      -46.634631
+    )
+  ON CONFLICT DO NOTHING
+  RETURNING id
+)
+SELECT count(*) FROM seeded_locations;
+
+UPDATE lockers
+SET location_id = (
+  SELECT id
+  FROM locker_locations
+  WHERE organization_id = lockers.organization_id
+    AND name = 'Estacao da Se'
+  LIMIT 1
+)
+WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'demo-organization')
+  AND code IN ('LCK-001', 'LCK-002');
+
+UPDATE lockers
+SET location_id = (
+  SELECT id
+  FROM locker_locations
+  WHERE organization_id = lockers.organization_id
+    AND name = 'Paulista MASP'
+  LIMIT 1
+)
+WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'demo-organization')
+  AND code IN ('LCK-003', 'LCK-004', 'LCK-005');
+
+UPDATE lockers
+SET location_id = (
+  SELECT id
+  FROM locker_locations
+  WHERE organization_id = lockers.organization_id
+    AND name = 'Pinheiros'
+  LIMIT 1
+)
+WHERE organization_id = (SELECT id FROM organizations WHERE slug = 'legacy-organization')
+  AND location_id IS NULL;

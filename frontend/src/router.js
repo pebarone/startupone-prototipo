@@ -10,6 +10,7 @@ import UseView from './views/UseView.vue'
 // Partner views (lazy loaded)
 const PartnerDashboardView = () => import('./views/partner/PartnerDashboardView.vue')
 const PartnerLockersView = () => import('./views/partner/PartnerLockersView.vue')
+const PartnerLocationsView = () => import('./views/partner/PartnerLocationsView.vue')
 const PartnerMembersView = () => import('./views/partner/PartnerMembersView.vue')
 
 const routes = [
@@ -66,6 +67,12 @@ const routes = [
     path: '/partner/:orgId/lockers',
     name: 'partner-lockers',
     component: PartnerLockersView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/partner/:orgId/locations',
+    name: 'partner-locations',
+    component: PartnerLocationsView,
     meta: { requiresAuth: true }
   },
   {

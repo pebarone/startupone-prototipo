@@ -36,7 +36,7 @@
           <span class="relative z-10">Começar a Guardar</span>
           <svg class="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
         </a>
-        <a href="#partner" class="px-8 py-4 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 hover:-translate-y-1 border border-slate-700 hover:border-brand-500 transition-all duration-300 flex items-center justify-center gap-3 group">
+          <a :href="partnerCtaHref" class="px-8 py-4 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 hover:-translate-y-1 border border-slate-700 hover:border-brand-500 transition-all duration-300 flex items-center justify-center gap-3 group">
            <svg class="w-5 h-5 text-brand-400 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
            Cadastrar Estabelecimento
         </a>
@@ -46,9 +46,13 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useAuth } from '@/composables/useAuth'
+
+const { isAuthenticated } = useAuth()
+const partnerCtaHref = computed(() => (isAuthenticated.value ? '/account' : '/login'))
 
 onMounted(() => {
   gsap.to('.cta-bg', {

@@ -49,7 +49,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <p class="text-slate-900 font-semibold">Falha na autenticacao</p>
+        <p class="text-slate-900 font-semibold">Falha na autenticação</p>
         <p class="text-slate-500 text-sm mt-1 mb-4">{{ errorMsg }}</p>
         <a
           href="/login"
@@ -77,7 +77,7 @@ const errorMsg = ref('')
 onMounted(async () => {
   if (!supabase) {
     state.value = 'error'
-    errorMsg.value = 'Supabase nao configurado. Contate o suporte.'
+    errorMsg.value = 'Supabase não configurado. Contate o suporte.'
     return
   }
 
@@ -86,7 +86,7 @@ onMounted(async () => {
 
   if (providerError) {
     state.value = 'error'
-    errorMsg.value = 'O provedor de login recusou a autenticacao. Tente novamente.'
+    errorMsg.value = 'O provedor de login recusou a autenticação. Tente novamente.'
     return
   }
 
@@ -95,7 +95,7 @@ onMounted(async () => {
 
     if (!session) {
       state.value = 'error'
-      errorMsg.value = 'Sessao nao encontrada. Faca login novamente.'
+      errorMsg.value = 'Sessão não encontrada. Faça login novamente.'
       return
     }
 
@@ -106,7 +106,7 @@ onMounted(async () => {
     await router.replace('/account')
   } catch (_error) {
     state.value = 'error'
-    errorMsg.value = 'Nao foi possivel concluir o login. Tente novamente.'
+    errorMsg.value = 'Não foi possível concluir o login. Tente novamente.'
   }
 })
 

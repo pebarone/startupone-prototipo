@@ -14,7 +14,7 @@
       <div class="flex items-start justify-between mb-8">
         <div>
           <h1 class="text-2xl font-black text-slate-900 tracking-tight">
-            Bom dia, {{ firstName }} 👋
+            Bom dia, {{ firstName }}
           </h1>
           <p class="text-slate-400 text-sm mt-1">{{ currentOrganization?.name }} · última atualização agora</p>
         </div>
@@ -115,7 +115,14 @@
           </router-link>
         </div>
 
-        <div v-if="lockers.length === 0" class="px-6 py-10 text-center">
+        <div v-if="isLockersLoading" class="px-6 py-10 text-center">
+          <div class="inline-flex items-center gap-2 text-slate-400 text-sm">
+            <span class="w-4 h-4 rounded-full border-2 border-slate-200 border-t-brand-600 animate-spin" />
+            Carregando lockers...
+          </div>
+        </div>
+
+        <div v-else-if="lockers.length === 0" class="px-6 py-10 text-center">
           <p class="text-slate-400 text-sm">Nenhum locker cadastrado ainda.</p>
           <router-link :to="`/partner/${orgId}/lockers`" class="text-brand-600 text-sm font-medium hover:underline mt-1 inline-block">
             Adicionar agora →
@@ -152,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineComponent, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { api } from '@/composables/useApi'
 import { useAuth } from '@/composables/useAuth'
@@ -170,6 +177,11 @@ const m = ref({})
 const lockers = ref([])
 const isLoading = ref(true)
 const isRefreshing = ref(false)
+const isLockersLoading = ref(false)
+const lastAutoRefreshAt = ref(0)
+
+const DASHBOARD_LOCKERS_PREVIEW_LIMIT = 12
+const AUTO_REFRESH_COOLDOWN_MS = 30000
 
 const firstName = computed(() => {
   const name = user.value?.full_name || user.value?.email || 'Gestor'
@@ -196,20 +208,41 @@ const unlockPct = computed(() => {
 
 /** @param {boolean} [quiet] */
 async function fetchAll(quiet = false) {
+  if ((quiet && isRefreshing.value) || (!quiet && isLoading.value)) {
+    return
+  }
+
   if (quiet) isRefreshing.value = true
   else isLoading.value = true
+
+  isLockersLoading.value = true
+
+  const metricsPromise = api.get(`/organizations/${orgId}/dashboard`)
+  const lockersPromise = api.get(`/organizations/${orgId}/lockers?limit=${DASHBOARD_LOCKERS_PREVIEW_LIMIT}`)
+
   try {
-    const [metricsRes, lockersRes] = await Promise.all([
-      api.get(`/organizations/${orgId}/dashboard`),
-      api.get(`/organizations/${orgId}/lockers`)
-    ])
+    const metricsRes = await metricsPromise
     m.value = metricsRes
-    lockers.value = lockersRes.data || []
+    lastAutoRefreshAt.value = Date.now()
   } catch (err) {
     toastError('Erro ao carregar dados do dashboard.')
     console.error(err)
   } finally {
-    isLoading.value = false
+    if (!quiet) {
+      isLoading.value = false
+    }
+  }
+
+  try {
+    const lockersRes = await lockersPromise
+    lockers.value = lockersRes.data || []
+  } catch (err) {
+    if (!quiet) {
+      toastError('Erro ao carregar a lista de lockers do dashboard.')
+    }
+    console.error(err)
+  } finally {
+    isLockersLoading.value = false
     isRefreshing.value = false
   }
 }
@@ -237,10 +270,36 @@ const icons = {
 }
 
 onMounted(async () => {
-  const org = await fetchOrganization(orgId)
-  if (org) setCurrentOrganization(org)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
+  const orgPromise = fetchOrganization(orgId)
+    .then((org) => {
+      if (org) {
+        setCurrentOrganization(org)
+      }
+    })
+    .catch((err) => {
+      console.error(err)
+    })
+
   await fetchAll()
+  await orgPromise
 })
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible' && shouldAutoRefresh()) {
+    void fetchAll(true)
+  }
+}
+
+function shouldAutoRefresh() {
+  const now = Date.now()
+  return now - lastAutoRefreshAt.value >= AUTO_REFRESH_COOLDOWN_MS
+}
 
 // ─── MetricCard (large KPI) ───────────────────────────────
 const MetricCard = defineComponent({

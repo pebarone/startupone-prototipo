@@ -9,6 +9,7 @@ export type LockerStatus = (typeof lockerStatuses)[number];
 export type Locker = {
   id: string;
   organization_id: string;
+  location_id: string | null;
   code: string;
   size: LockerSize;
   status: LockerStatus;
@@ -19,6 +20,7 @@ export type Locker = {
 export type LockerListFilters = {
   status?: LockerStatus;
   size?: LockerSize;
+  location_id?: string;
   limit?: number;
   offset?: number;
 };
@@ -32,12 +34,14 @@ export type ListOrganizationLockersQuery = LockerListFilters;
 export type CreateLockerBody = {
   code: string;
   size: LockerSize;
+  location_id?: string | null;
 };
 
 export type UpdateLockerBody = {
   code?: string;
   size?: LockerSize;
   status?: LockerStatus;
+  location_id?: string | null;
 };
 
 export type LockerParams = {
@@ -54,10 +58,11 @@ const timestampSchema = { type: "string", format: "date-time" };
 
 export const lockerSchema = {
   type: "object",
-  required: ["id", "organization_id", "code", "size", "status", "created_at", "updated_at"],
+  required: ["id", "organization_id", "location_id", "code", "size", "status", "created_at", "updated_at"],
   properties: {
     id: uuidSchema,
     organization_id: uuidSchema,
+    location_id: { anyOf: [uuidSchema, { type: "null" }] },
     code: { type: "string" },
     size: { type: "string", enum: lockerSizes },
     status: { type: "string", enum: lockerStatuses },
@@ -91,6 +96,7 @@ const listLockersQuerySchema = {
   properties: {
     status: { type: "string", enum: lockerStatuses },
     size: { type: "string", enum: lockerSizes },
+    location_id: uuidSchema,
     limit: { type: "integer", minimum: 1, maximum: 100, default: 50 },
     offset: { type: "integer", minimum: 0, default: 0 }
   },
@@ -118,6 +124,7 @@ export const listPublicLockersSchema = {
       organization_id: { type: "string", format: "uuid" },
       status: { type: "string", enum: lockerStatuses },
       size: { type: "string", enum: lockerSizes },
+      location_id: uuidSchema,
       limit: { type: "integer", minimum: 1, maximum: 100, default: 50 },
       offset: { type: "integer", minimum: 0, default: 0 }
     },
@@ -143,7 +150,8 @@ export const createLockerSchema = {
     required: ["code", "size"],
     properties: {
       code: { type: "string", minLength: 3, maxLength: 32, pattern: "^[A-Z0-9-]+$" },
-      size: { type: "string", enum: lockerSizes }
+      size: { type: "string", enum: lockerSizes },
+      location_id: { anyOf: [uuidSchema, { type: "null" }] }
     },
     additionalProperties: false
   },
@@ -168,11 +176,27 @@ export const updateLockerSchema = {
     properties: {
       code: { type: "string", minLength: 3, maxLength: 32, pattern: "^[A-Z0-9-]+$" },
       size: { type: "string", enum: lockerSizes },
-      status: { type: "string", enum: lockerStatuses }
+      status: { type: "string", enum: lockerStatuses },
+      location_id: { anyOf: [uuidSchema, { type: "null" }] }
     },
     additionalProperties: false
   },
   response: {
     200: lockerSchema
+  }
+} as const;
+
+export const deleteLockerSchema = {
+  params: {
+    type: "object",
+    required: ["organizationId", "id"],
+    properties: {
+      organizationId: uuidSchema,
+      id: uuidSchema
+    },
+    additionalProperties: false
+  },
+  response: {
+    204: { type: "null" }
   }
 } as const;

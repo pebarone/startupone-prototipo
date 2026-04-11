@@ -3,7 +3,7 @@
     <Transition name="modal">
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 z-[2500] flex items-center justify-center p-4"
         @mousedown.self="closeOnBackdrop && close()"
       >
         <!-- Backdrop -->

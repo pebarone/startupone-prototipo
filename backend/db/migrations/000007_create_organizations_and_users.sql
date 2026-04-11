@@ -80,7 +80,7 @@ CREATE INDEX IF NOT EXISTS organization_memberships_user_id_idx
 CREATE INDEX IF NOT EXISTS organization_memberships_org_status_idx
   ON organization_memberships (organization_id, status);
 
-ALTER TABLE lockers ADD COLUMN organization_id uuid REFERENCES organizations(id);
+ALTER TABLE lockers ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
 
 UPDATE lockers
 SET organization_id = (SELECT id FROM organizations WHERE slug = 'legacy-organization')
@@ -93,7 +93,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS lockers_organization_code_unique ON lockers (o
 CREATE INDEX IF NOT EXISTS lockers_organization_status_idx ON lockers (organization_id, status);
 CREATE INDEX IF NOT EXISTS lockers_organization_size_idx ON lockers (organization_id, size);
 
-ALTER TABLE rentals ADD COLUMN organization_id uuid REFERENCES organizations(id);
+ALTER TABLE rentals ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
 
 UPDATE rentals AS rentals_to_update
 SET organization_id = lockers.organization_id
@@ -106,7 +106,7 @@ ALTER TABLE rentals ALTER COLUMN organization_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS rentals_organization_id_idx ON rentals (organization_id);
 CREATE INDEX IF NOT EXISTS rentals_organization_status_idx ON rentals (organization_id, status);
 
-ALTER TABLE unlock_events ADD COLUMN organization_id uuid REFERENCES organizations(id);
+ALTER TABLE unlock_events ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
 
 UPDATE unlock_events AS unlock_events_to_update
 SET organization_id = rentals.organization_id
@@ -122,7 +122,7 @@ WHERE unlock_events_to_update.locker_id = lockers.id
 
 CREATE INDEX IF NOT EXISTS unlock_events_organization_id_idx ON unlock_events (organization_id);
 
-ALTER TABLE audit_events ADD COLUMN organization_id uuid REFERENCES organizations(id);
+ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES organizations(id);
 
 CREATE INDEX IF NOT EXISTS audit_events_organization_id_idx ON audit_events (organization_id, created_at DESC);
 

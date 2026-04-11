@@ -1,304 +1,412 @@
 <template>
   <PartnerLayout :org-id="orgId" page-title="Lockers">
-
-    <div v-if="isLoading" class="flex items-center justify-center min-h-[50vh]">
-      <div class="w-7 h-7 rounded-full border-2 border-slate-200 border-t-brand-600 animate-spin" />
+    <div v-if="isLoading" class="flex min-h-[50vh] items-center justify-center">
+      <div class="flex flex-col items-center gap-3">
+        <div class="h-7 w-7 rounded-full border-2 border-slate-200 border-t-brand-600 animate-spin" />
+        <p class="text-sm text-slate-400">Carregando lockers...</p>
+      </div>
     </div>
 
     <template v-else>
-      <!-- Header -->
-      <div class="flex items-start justify-between mb-6">
+      <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 class="text-xl font-bold text-white tracking-tight">Lockers</h1>
-          <p class="text-slate-500 text-sm mt-0.5">{{ lockers.length }} cadastrado{{ lockers.length !== 1 ? 's' : '' }}</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Operação</p>
+          <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Lockers da organização</h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Cadastre, organize e atribua cada locker a uma localização para aparecer corretamente no mapa público.
+          </p>
         </div>
-        <div v-if="canAdmin" class="flex gap-2">
+
+        <div v-if="canAdmin" class="flex flex-col gap-2 sm:flex-row">
           <button
-            id="btn-bulk-lockers"
+            type="button"
+            class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-[border-color,color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md active:scale-[0.98]"
             @click="openBulkModal"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 text-sm font-medium shadow-sm transition-all duration-150 active:scale-[0.97]"
           >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
             Adicionar vários
           </button>
+
           <button
-            id="btn-new-locker"
-            @click="openSingleModal"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-500 shadow-sm shadow-brand-600/20 transition-all duration-150 active:scale-[0.97]"
+            type="button"
+            class="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-[background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-md active:scale-[0.98]"
+            @click="openCreateModal"
           >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Novo locker
           </button>
         </div>
       </div>
 
-      <!-- Filter tabs -->
-      <div class="flex gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 w-fit mb-6">
+      <div class="mb-6 grid gap-3 sm:grid-cols-3">
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Total</p>
+          <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ lockers.length }}</p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Com localização</p>
+          <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ assignedLockersCount }}</p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Sem localização</p>
+          <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ unassignedLockersCount }}</p>
+        </div>
+      </div>
+
+      <div class="mb-6 flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-slate-100 p-1">
         <button
-          v-for="f in filters"
-          :key="f.value"
-          @click="activeFilter = f.value"
-          :class="[
-            'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150',
-            activeFilter === f.value
-              ? 'bg-white text-slate-800 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
-          ]"
+          v-for="filter in filters"
+          :key="filter.value"
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
+          :class="activeFilter === filter.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+          @click="activeFilter = filter.value"
         >
-          {{ f.label }}
-          <span :class="['ml-1 tabular-nums', activeFilter === f.value ? 'text-slate-300' : 'text-slate-600']">
-            {{ f.value === 'all' ? lockers.length : lockers.filter(l => l.status === f.value).length }}
-          </span>
+          {{ filter.label }}
+          <span class="ml-1 text-xs text-slate-400">{{ filterCount(filter.value) }}</span>
         </button>
       </div>
 
-      <!-- Empty state -->
-      <div v-if="filteredLockers.length === 0 && activeFilter === 'all'" class="rounded-2xl border border-slate-100 border-dashed p-12 text-center bg-white">
-        <div class="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center mx-auto mb-4">
-          <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+      <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <label for="location-filter" class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Filtrar por localização
+        </label>
+        <select
+          id="location-filter"
+          v-model="activeLocationFilter"
+          class="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/30"
+        >
+          <option value="all">Todas ({{ locationFilterCount('all') }})</option>
+          <option value="unassigned">Sem localização ({{ locationFilterCount('unassigned') }})</option>
+          <option v-for="location in locations" :key="location.id" :value="location.id">
+            {{ location.name }} ({{ locationFilterCount(location.id) }})
+          </option>
+        </select>
+      </div>
+
+      <div
+        v-if="!filteredLockers.length && activeFilter === 'all' && activeLocationFilter === 'all'"
+        class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm"
+      >
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+          <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z" />
           </svg>
         </div>
-        <p class="text-slate-800 font-semibold mb-1">Nenhum locker cadastrado</p>
-        <p class="text-slate-500 text-sm mb-5">Adicione seu primeiro locker para começar</p>
+        <h2 class="mt-5 text-xl font-black tracking-tight text-slate-900">Nenhum locker cadastrado.</h2>
+        <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+          Crie o primeiro locker e vincule-o a uma localização para aparecer no mapa público.
+        </p>
         <button
-          @click="openSingleModal"
-          class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-500 transition-colors active:scale-[0.97]"
+          v-if="canAdmin"
+          type="button"
+          class="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-900 active:scale-[0.98]"
+          @click="openCreateModal"
         >
-          Adicionar locker
+          Criar primeiro locker
         </button>
       </div>
 
-      <div v-else-if="filteredLockers.length === 0" class="rounded-2xl border border-slate-100 p-8 text-center text-slate-400 text-sm bg-white">
-        Nenhum locker com este status.
+      <div v-else-if="!filteredLockers.length" class="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+        Nenhum locker encontrado com os filtros selecionados.
       </div>
 
-      <!-- Lockers grid -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        <div
+      <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <article
           v-for="locker in filteredLockers"
           :key="locker.id"
-          class="group bg-white rounded-2xl border p-4 shadow-sm hover:shadow-md transition-all duration-200"
+          class="group rounded-lg border bg-white p-5 shadow-sm transition-[border-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
           :class="statusBorder(locker.status)"
         >
-          <!-- Status indicator strip -->
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs text-slate-500 font-medium">Size {{ locker.size }}</span>
-            <span
-              class="w-2 h-2 rounded-full flex-shrink-0"
-              :style="{ backgroundColor: statusColor(locker.status) }"
-            />
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tamanho {{ locker.size }}</p>
+              <p class="mt-2 font-mono text-2xl font-black tracking-tight text-slate-900">{{ locker.code }}</p>
+            </div>
+            <span class="mt-1 inline-flex h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: statusColor(locker.status) }" />
           </div>
 
-          <p class="text-lg font-black text-slate-900 font-mono tracking-tight mb-3 leading-none">{{ locker.code }}</p>
+          <div class="mt-4 flex items-center justify-between">
+            <span class="text-sm font-semibold" :style="{ color: statusColor(locker.status) }">
+              {{ statusLabel(locker.status) }}
+            </span>
+            <span
+              class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
+              :class="locker.location_id ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-amber-200 bg-amber-50 text-amber-700'"
+            >
+              {{ locationLabel(locker.location_id) }}
+            </span>
+          </div>
 
-          <p class="text-xs font-semibold mb-4" :style="{ color: statusColor(locker.status) }">
-            {{ statusLabel(locker.status) }}
-          </p>
+          <div v-if="canAdmin" class="mt-5 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-[border-color,color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 active:scale-[0.98]"
+              :disabled="deletingId === locker.id"
+              @click="openEditModal(locker)"
+            >
+              Editar
+            </button>
 
-          <!-- Actions (admin only) -->
-          <div v-if="canAdmin" class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
             <button
               v-if="locker.status !== 'free'"
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 active:scale-[0.98]"
+              :disabled="updatingId === locker.id || deletingId === locker.id"
               @click="patchStatus(locker.id, 'free')"
-              :disabled="updatingId === locker.id"
-              class="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors active:scale-[0.97] disabled:opacity-40"
             >
               Liberar
             </button>
+
             <button
               v-if="locker.status !== 'maintenance'"
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-100 active:scale-[0.98]"
+              :disabled="updatingId === locker.id || deletingId === locker.id"
               @click="patchStatus(locker.id, 'maintenance')"
-              :disabled="updatingId === locker.id"
-              class="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors active:scale-[0.97] disabled:opacity-40"
             >
               Manutenção
             </button>
+
+            <button
+              type="button"
+              class="inline-flex h-10 items-center justify-center rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-50 active:scale-[0.98]"
+              :disabled="deletingId === locker.id || updatingId === locker.id"
+              @click="removeLocker(locker)"
+            >
+              {{ deletingId === locker.id ? 'Excluindo...' : 'Excluir' }}
+            </button>
           </div>
-        </div>
+        </article>
       </div>
     </template>
 
-    <!-- ─── Single locker modal ─── -->
-    <BaseModal :model-value="showSingleModal" @update:model-value="showSingleModal = $event" title="Novo Locker" max-width="sm">
-      <div class="space-y-4">
+    <BaseModal
+      :model-value="showLockerModal"
+      :title="editingLockerId ? 'Editar locker' : 'Novo locker'"
+      max-width="lg"
+      @update:model-value="showLockerModal = $event"
+      @close="resetLockerForm"
+    >
+      <div class="space-y-5">
         <div>
-          <label for="locker-code" class="block text-sm font-medium text-slate-700 mb-1.5">Código *</label>
+          <label for="locker-code" class="mb-1.5 block text-sm font-medium text-slate-300">Código *</label>
           <input
             id="locker-code"
-            v-model="singleForm.code"
+            v-model="lockerForm.code"
             type="text"
             placeholder="Ex: LCK-007"
-            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition-all text-sm font-mono uppercase"
-            @input="singleForm.code = singleForm.code.toUpperCase()"
+            class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm font-mono uppercase text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+            @input="lockerForm.code = lockerForm.code.toUpperCase()"
           />
-          <p class="text-xs text-slate-400 mt-1">Apenas letras maiúsculas, números e hífens (ex: LCK-001)</p>
         </div>
+
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">Tamanho *</label>
+          <label class="mb-1.5 block text-sm font-medium text-slate-300">Tamanho *</label>
           <div class="grid grid-cols-3 gap-2">
             <button
-              v-for="sz in sizes"
-              :key="sz.v"
-              @click="singleForm.size = sz.v"
-              :class="[
-                'py-3 rounded-xl text-sm font-bold border transition-all duration-150 active:scale-[0.97]',
-                singleForm.size === sz.v
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 bg-white'
-              ]"
+              v-for="size in sizes"
+              :key="size.value"
+              type="button"
+              class="rounded-lg border px-3 py-3 text-sm font-bold transition-colors"
+              :class="lockerForm.size === size.value ? 'border-brand-500 bg-brand-600/15 text-brand-300' : 'border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'"
+              @click="lockerForm.size = size.value"
             >
-              <div class="text-base">{{ sz.v }}</div>
-              <div class="text-xs font-normal opacity-60 mt-0.5">{{ sz.label }}</div>
+              <span class="block text-base">{{ size.value }}</span>
+              <span class="mt-1 block text-xs font-medium opacity-70">{{ size.label }}</span>
             </button>
           </div>
         </div>
-        <div v-if="singleError" class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
-          {{ singleError }}
+
+        <div>
+          <label for="locker-location" class="mb-1.5 block text-sm font-medium text-slate-300">Localização</label>
+          <select
+            id="locker-location"
+            v-model="lockerForm.location_id"
+            class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+          >
+            <option value="">Sem localização</option>
+            <option v-for="location in locations" :key="location.id" :value="location.id">
+              {{ location.name }}
+            </option>
+          </select>
+          <p class="mt-1 text-xs text-slate-500">
+            O locker só aparece no mapa público quando estiver vinculado a um ponto.
+          </p>
+        </div>
+
+        <div v-if="lockerError" class="rounded-lg border border-red-800 bg-red-950/60 px-3.5 py-3 text-sm text-red-300">
+          {{ lockerError }}
         </div>
       </div>
+
       <template #footer>
-        <button @click="showSingleModal = false" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors">Cancelar</button>
         <button
-          id="btn-save-locker"
-          @click="createSingle"
-          :disabled="!singleForm.code.trim() || !singleForm.size || isCreatingSingle"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-500 transition-colors disabled:opacity-40 active:scale-95"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:text-white"
+          @click="showLockerModal = false"
         >
-          <div v-if="isCreatingSingle" class="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-          {{ isCreatingSingle ? 'Criando…' : 'Criar Locker' }}
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+          :disabled="isSavingLocker || !lockerForm.code.trim() || !lockerForm.size"
+          @click="saveLocker"
+        >
+          <span v-if="isSavingLocker" class="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+          {{ isSavingLocker ? 'Salvando...' : editingLockerId ? 'Salvar locker' : 'Criar locker' }}
         </button>
       </template>
     </BaseModal>
 
-    <!-- ─── Bulk locker modal ─── -->
-    <BaseModal :model-value="showBulkModal" @update:model-value="showBulkModal = $event" title="Adicionar Vários Lockers" max-width="lg">
+    <BaseModal
+      :model-value="showBulkModal"
+      title="Adicionar varios lockers"
+      max-width="lg"
+      @update:model-value="showBulkModal = $event"
+      @close="resetBulkForm"
+    >
       <div class="space-y-5">
-        <p class="text-sm text-slate-400">Configure o padrão de código e o tamanho, depois informe quantos lockers deseja criar de uma vez.</p>
-
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-1.5">Prefixo dos Códigos *</label>
+            <label for="bulk-prefix" class="mb-1.5 block text-sm font-medium text-slate-300">Prefixo *</label>
             <input
+              id="bulk-prefix"
               v-model="bulkForm.prefix"
               type="text"
               placeholder="Ex: LCK"
-              class="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 text-sm font-mono uppercase"
+              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm font-mono uppercase text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
               @input="bulkForm.prefix = bulkForm.prefix.toUpperCase().replace(/[^A-Z0-9]/g, '')"
             />
-            <p class="text-xs text-slate-500 mt-1">Só letras e números</p>
           </div>
+
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-1.5">Número inicial</label>
+            <label for="bulk-start" class="mb-1.5 block text-sm font-medium text-slate-300">Número inicial</label>
             <input
+              id="bulk-start"
               v-model.number="bulkForm.startAt"
               type="number"
               min="1"
               max="999"
-              placeholder="1"
-              class="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 text-sm font-mono"
+              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm font-mono text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
             />
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">Quantidade *</label>
+          <label class="mb-1.5 block text-sm font-medium text-slate-300">Quantidade *</label>
           <div class="flex items-center gap-3">
-            <input
-              v-model.number="bulkForm.count"
-              type="range"
-              min="1"
-              max="50"
-              class="flex-1 accent-brand-500"
-            />
-            <span class="w-16 text-center text-white font-black text-xl tabular-nums">{{ bulkForm.count }}</span>
-          </div>
-          <p class="text-xs text-slate-500 mt-1">Máximo 50 lockers por vez</p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">Tamanho *</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button
-              v-for="sz in sizes"
-              :key="sz.v"
-              @click="bulkForm.size = sz.v"
-              :class="[
-                'py-2.5 rounded-lg text-sm font-bold border transition-all duration-150 active:scale-95',
-                bulkForm.size === sz.v
-                  ? 'border-brand-500 bg-brand-600/15 text-brand-300'
-                  : 'border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
-              ]"
-            >{{ sz.v }} · {{ sz.label }}</button>
+            <input v-model.number="bulkForm.count" type="range" min="1" max="50" class="flex-1 accent-brand-500" />
+            <span class="w-16 text-center text-xl font-black text-white">{{ bulkForm.count }}</span>
           </div>
         </div>
 
-        <!-- Preview -->
-        <div v-if="bulkPreview.length" class="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-          <p class="text-xs text-slate-500 mb-2 font-medium">Pré-visualização dos códigos:</p>
-          <div class="flex flex-wrap gap-1.5">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-slate-300">Tamanho *</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="size in sizes"
+                :key="size.value"
+                type="button"
+                class="rounded-lg border px-3 py-3 text-sm font-bold transition-colors"
+                :class="bulkForm.size === size.value ? 'border-brand-500 bg-brand-600/15 text-brand-300' : 'border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'"
+                @click="bulkForm.size = size.value"
+              >
+                {{ size.value }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label for="bulk-location" class="mb-1.5 block text-sm font-medium text-slate-300">Localização</label>
+            <select
+              id="bulk-location"
+              v-model="bulkForm.location_id"
+              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+            >
+              <option value="">Sem localização</option>
+              <option v-for="location in locations" :key="location.id" :value="location.id">
+                {{ location.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="bulkPreview.length" class="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Pré-visualização</p>
+          <div class="mt-3 flex flex-wrap gap-2">
             <span
               v-for="code in bulkPreview.slice(0, 20)"
               :key="code"
-              class="px-2 py-0.5 rounded bg-slate-700 text-slate-300 text-xs font-mono"
-            >{{ code }}</span>
-            <span v-if="bulkPreview.length > 20" class="text-xs text-slate-500 self-center">
+              class="rounded-md bg-slate-900 px-2 py-1 text-xs font-mono text-slate-300"
+            >
+              {{ code }}
+            </span>
+            <span v-if="bulkPreview.length > 20" class="self-center text-xs text-slate-500">
               +{{ bulkPreview.length - 20 }} mais
             </span>
           </div>
         </div>
 
-        <!-- Progress -->
-        <div v-if="bulkProgress.total > 0" class="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-          <div class="flex items-center justify-between text-sm mb-2">
-            <span class="text-slate-300 font-medium">Criando lockers…</span>
-            <span class="text-brand-400 font-bold tabular-nums">{{ bulkProgress.done }}/{{ bulkProgress.total }}</span>
+        <div v-if="bulkProgress.total > 0" class="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+          <div class="mb-2 flex items-center justify-between text-sm">
+            <span class="font-medium text-slate-300">Criando lockers...</span>
+            <span class="font-bold text-brand-400">{{ bulkProgress.done }}/{{ bulkProgress.total }}</span>
           </div>
-          <div class="h-1.5 rounded-full bg-slate-700 overflow-hidden">
+          <div class="h-1.5 overflow-hidden rounded-full bg-slate-700">
             <div
-              class="h-full rounded-full bg-brand-500"
-              :style="{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%`, transition: 'width 0.3s ease-out' }"
+              class="h-full rounded-full bg-brand-500 transition-[width] duration-300 ease-out"
+              :style="{ width: `${bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0}%` }"
             />
           </div>
-          <p v-if="bulkProgress.errors.length" class="text-xs text-red-400 mt-2">
-            {{ bulkProgress.errors.length }} erro{{ bulkProgress.errors.length > 1 ? 's' : '' }}: {{ bulkProgress.errors.slice(0, 2).join(', ') }}
+          <p v-if="bulkProgress.errors.length" class="mt-2 text-xs text-red-300">
+            {{ bulkProgress.errors.slice(0, 2).join(' | ') }}
           </p>
         </div>
 
-        <div v-if="bulkError" class="p-3 rounded-lg bg-red-950/60 border border-red-800/50 text-red-400 text-sm">
+        <div v-if="bulkError" class="rounded-lg border border-red-800 bg-red-950/60 px-3.5 py-3 text-sm text-red-300">
           {{ bulkError }}
         </div>
       </div>
 
       <template #footer>
-        <button @click="showBulkModal = false" :disabled="isCreatingBulk" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors disabled:opacity-40">Cancelar</button>
         <button
-          id="btn-create-bulk"
-          @click="createBulk"
-          :disabled="!bulkForm.prefix || !bulkForm.size || isCreatingBulk"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-500 transition-colors disabled:opacity-40 active:scale-95"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:text-white"
+          @click="showBulkModal = false"
         >
-          <div v-if="isCreatingBulk" class="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-          {{ isCreatingBulk ? `Criando ${bulkProgress.done}/${bulkProgress.total}…` : `Criar ${bulkForm.count} Locker${bulkForm.count > 1 ? 's' : ''}` }}
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+          :disabled="isCreatingBulk || !bulkForm.prefix || !bulkForm.size"
+          @click="createBulk"
+        >
+          <span v-if="isCreatingBulk" class="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+          {{ isCreatingBulk ? `Criando ${bulkProgress.done}/${bulkProgress.total}...` : `Criar ${bulkForm.count} lockers` }}
         </button>
       </template>
     </BaseModal>
-
   </PartnerLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import PartnerLayout from '@/components/layout/PartnerLayout.vue'
 import { api } from '@/composables/useApi'
 import { useOrganization } from '@/composables/useOrganization'
 import { useToast } from '@/composables/useToast'
-import PartnerLayout from '@/components/layout/PartnerLayout.vue'
-import BaseModal from '@/components/ui/BaseModal.vue'
 
 const route = useRoute()
 const orgId = route.params.orgId
@@ -307,27 +415,44 @@ const { success, error: toastError } = useToast()
 
 /** @type {import('vue').Ref<any[]>} */
 const lockers = ref([])
+/** @type {import('vue').Ref<any[]>} */
+const locations = ref([])
 const isLoading = ref(true)
-const updatingId = ref(null)
+const updatingId = ref('')
+const deletingId = ref('')
 const activeFilter = ref('all')
+const activeLocationFilter = ref('all')
 
-// Single modal state
-const showSingleModal = ref(false)
-const isCreatingSingle = ref(false)
-const singleError = ref('')
-const singleForm = ref({ code: '', size: '' })
+const showLockerModal = ref(false)
+const editingLockerId = ref('')
+const isSavingLocker = ref(false)
+const lockerError = ref('')
+const lockerForm = ref({
+  code: '',
+  size: '',
+  location_id: ''
+})
 
-// Bulk modal state
 const showBulkModal = ref(false)
 const isCreatingBulk = ref(false)
 const bulkError = ref('')
-const bulkForm = ref({ prefix: 'LCK', startAt: 1, count: 5, size: '' })
-const bulkProgress = ref({ total: 0, done: 0, errors: [] })
+const bulkForm = ref({
+  prefix: 'LCK',
+  startAt: 1,
+  count: 5,
+  size: '',
+  location_id: ''
+})
+const bulkProgress = ref({
+  total: 0,
+  done: 0,
+  errors: []
+})
 
 const sizes = [
-  { v: 'P', label: 'Pequeno' },
-  { v: 'M', label: 'Médio' },
-  { v: 'G', label: 'Grande' }
+  { value: 'P', label: 'Pequeno' },
+  { value: 'M', label: 'Médio' },
+  { value: 'G', label: 'Grande' }
 ]
 
 const filters = [
@@ -337,133 +462,333 @@ const filters = [
   { label: 'Manutenção', value: 'maintenance' }
 ]
 
-const filteredLockers = computed(() =>
-  activeFilter.value === 'all'
+const LOCKERS_FETCH_LIMIT = 100
+
+const filteredLockers = computed(() => {
+  const byStatus = activeFilter.value === 'all'
     ? lockers.value
-    : lockers.value.filter(l => l.status === activeFilter.value)
+    : lockers.value.filter((locker) => locker.status === activeFilter.value)
+
+  if (activeLocationFilter.value === 'all') {
+    return byStatus
+  }
+
+  if (activeLocationFilter.value === 'unassigned') {
+    return byStatus.filter((locker) => !locker.location_id)
+  }
+
+  return byStatus.filter((locker) => locker.location_id === activeLocationFilter.value)
+})
+
+const assignedLockersCount = computed(() =>
+  lockers.value.filter((locker) => !!locker.location_id).length
 )
 
-/** Preview codes for bulk creation */
+const unassignedLockersCount = computed(() =>
+  lockers.value.filter((locker) => !locker.location_id).length
+)
+
 const bulkPreview = computed(() => {
-  if (!bulkForm.value.prefix || !bulkForm.value.count) return []
+  if (!bulkForm.value.prefix || !bulkForm.value.count) {
+    return []
+  }
+
   const start = bulkForm.value.startAt || 1
-  return Array.from({ length: bulkForm.value.count }, (_, i) =>
-    `${bulkForm.value.prefix}-${String(start + i).padStart(3, '0')}`
+  return Array.from({ length: bulkForm.value.count }, (_, index) =>
+    `${bulkForm.value.prefix}-${String(start + index).padStart(3, '0')}`
   )
 })
 
-async function fetchLockers() {
+onMounted(async () => {
   isLoading.value = true
+
   try {
-    const res = await api.get(`/organizations/${orgId}/lockers`)
-    lockers.value = res.data || []
-  } catch (err) {
-    toastError('Falha ao carregar lockers.')
-    console.error(err)
+    const org = await fetchOrganization(orgId)
+
+    if (org) {
+      setCurrentOrganization(org)
+    }
+
+    await Promise.all([fetchLocations(), fetchLockers()])
+  } catch (error) {
+    toastError('Não foi possível carregar os dados de lockers.')
+    console.error(error)
   } finally {
     isLoading.value = false
   }
+})
+
+async function fetchLockers() {
+  const response = await api.get(`/organizations/${orgId}/lockers?limit=${LOCKERS_FETCH_LIMIT}`)
+  lockers.value = Array.isArray(response?.data) ? response.data : []
 }
 
-function openSingleModal() {
-  singleForm.value = { code: '', size: '' }
-  singleError.value = ''
-  showSingleModal.value = true
+async function fetchLocations() {
+  const response = await api.get(`/organizations/${orgId}/locations?limit=200`)
+  locations.value = Array.isArray(response?.data) ? response.data : []
+}
+
+function openCreateModal() {
+  editingLockerId.value = ''
+  lockerForm.value = {
+    code: '',
+    size: '',
+    location_id: ''
+  }
+  lockerError.value = ''
+  showLockerModal.value = true
+}
+
+/** @param {any} locker */
+function openEditModal(locker) {
+  editingLockerId.value = locker.id
+  lockerForm.value = {
+    code: locker.code,
+    size: locker.size,
+    location_id: locker.location_id || ''
+  }
+  lockerError.value = ''
+  showLockerModal.value = true
+}
+
+function resetLockerForm() {
+  if (!showLockerModal.value) {
+    editingLockerId.value = ''
+  }
+
+  lockerForm.value = {
+    code: '',
+    size: '',
+    location_id: ''
+  }
+  lockerError.value = ''
 }
 
 function openBulkModal() {
-  bulkForm.value = { prefix: 'LCK', startAt: lockers.value.length + 1, count: 5, size: '' }
+  bulkForm.value = {
+    prefix: 'LCK',
+    startAt: lockers.value.length + 1,
+    count: 5,
+    size: '',
+    location_id: ''
+  }
   bulkProgress.value = { total: 0, done: 0, errors: [] }
   bulkError.value = ''
   showBulkModal.value = true
 }
 
-async function createSingle() {
-  isCreatingSingle.value = true
-  singleError.value = ''
+function resetBulkForm() {
+  bulkProgress.value = { total: 0, done: 0, errors: [] }
+  bulkError.value = ''
+}
+
+async function saveLocker() {
+  isSavingLocker.value = true
+  lockerError.value = ''
+
+  const payload = {
+    code: lockerForm.value.code.trim(),
+    size: lockerForm.value.size,
+    location_id: lockerForm.value.location_id || null
+  }
+
   try {
-    const created = await api.post(`/organizations/${orgId}/lockers`, {
-      code: singleForm.value.code.trim(),
-      size: singleForm.value.size
-    })
-    lockers.value.push(created)
-    showSingleModal.value = false
-    success(`Locker ${created.code} criado!`)
-  } catch (err) {
-    const msg = err.response?.data?.message || err.message
-    singleError.value = msg?.includes('unique') ? `Código "${singleForm.value.code}" já existe.` : 'Erro ao criar locker.'
+    if (editingLockerId.value) {
+      const updatedLocker = await api.patch(`/organizations/${orgId}/lockers/${editingLockerId.value}`, payload)
+      const targetIndex = lockers.value.findIndex((locker) => locker.id === updatedLocker.id)
+
+      if (targetIndex !== -1) {
+        lockers.value[targetIndex] = updatedLocker
+      }
+
+      success('Locker atualizado.')
+    } else {
+      const createdLocker = await api.post(`/organizations/${orgId}/lockers`, payload)
+      lockers.value.push(createdLocker)
+      success(`Locker ${createdLocker.code} criado.`)
+    }
+
+    showLockerModal.value = false
+    resetLockerForm()
+  } catch (error) {
+    lockerError.value = error?.response?.data?.detail || error?.message || 'Não foi possível salvar o locker.'
   } finally {
-    isCreatingSingle.value = false
+    isSavingLocker.value = false
   }
 }
 
 async function createBulk() {
-  if (!bulkForm.value.prefix || !bulkForm.value.size || !bulkForm.value.count) return
-  const codes = bulkPreview.value
+  if (!bulkForm.value.prefix || !bulkForm.value.size) {
+    return
+  }
+
   isCreatingBulk.value = true
-  bulkProgress.value = { total: codes.length, done: 0, errors: [] }
   bulkError.value = ''
+  bulkProgress.value = {
+    total: bulkPreview.value.length,
+    done: 0,
+    errors: []
+  }
 
-  const results = []
-  for (const code of codes) {
+  /** @type {any[]} */
+  const createdLockers = []
+
+  for (const code of bulkPreview.value) {
     try {
-      const created = await api.post(`/organizations/${orgId}/lockers`, {
+      const createdLocker = await api.post(`/organizations/${orgId}/lockers`, {
         code,
-        size: bulkForm.value.size
+        size: bulkForm.value.size,
+        location_id: bulkForm.value.location_id || null
       })
-      results.push(created)
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message
-      bulkProgress.value.errors.push(code + ': ' + (msg?.includes('unique') ? 'já existe' : 'erro'))
+
+      createdLockers.push(createdLocker)
+    } catch (error) {
+      bulkProgress.value.errors.push(
+        `${code}: ${error?.response?.data?.detail || 'erro ao criar'}`
+      )
+    } finally {
+      bulkProgress.value.done += 1
     }
-    bulkProgress.value.done++
   }
 
-  lockers.value.push(...results)
-  isCreatingBulk.value = false
+  lockers.value.push(...createdLockers)
 
-  if (results.length > 0) {
-    success(`${results.length} locker${results.length > 1 ? 's' : ''} criado${results.length > 1 ? 's' : ''}!`)
-  }
-  if (bulkProgress.value.errors.length === 0) {
+  if (!bulkProgress.value.errors.length) {
     showBulkModal.value = false
   }
+
+  if (createdLockers.length) {
+    success(`${createdLockers.length} locker${createdLockers.length > 1 ? 's' : ''} criado${createdLockers.length > 1 ? 's' : ''}.`)
+  }
+
+  if (!createdLockers.length) {
+    bulkError.value = 'Nenhum locker foi criado. Revise o prefixo e os códigos.'
+  }
+
+  isCreatingBulk.value = false
 }
 
-/** @param {string} lockerId @param {string} status */
+/**
+ * @param {string} lockerId
+ * @param {string} status
+ */
 async function patchStatus(lockerId, status) {
   updatingId.value = lockerId
+
   try {
-    const updated = await api.patch(`/organizations/${orgId}/lockers/${lockerId}`, { status })
-    const idx = lockers.value.findIndex(l => l.id === lockerId)
-    if (idx !== -1) lockers.value[idx] = updated
-    success('Status atualizado!')
-  } catch (err) {
-    toastError('Falha ao atualizar locker.')
-    console.error(err)
+    const updatedLocker = await api.patch(`/organizations/${orgId}/lockers/${lockerId}`, { status })
+    const targetIndex = lockers.value.findIndex((locker) => locker.id === lockerId)
+
+    if (targetIndex !== -1) {
+      lockers.value[targetIndex] = updatedLocker
+    }
+
+    success('Status atualizado.')
+  } catch (error) {
+    toastError('Falha ao atualizar o locker.')
+    console.error(error)
   } finally {
-    updatingId.value = null
+    updatingId.value = ''
   }
 }
 
-/** @param {string} status */
+/**
+ * @param {any} locker
+ */
+async function removeLocker(locker) {
+  const confirmed = window.confirm(`Deseja excluir o locker ${locker.code}? Essa ação não pode ser desfeita.`)
+
+  if (!confirmed) {
+    return
+  }
+
+  deletingId.value = locker.id
+
+  try {
+    await api.delete(`/organizations/${orgId}/lockers/${locker.id}`)
+    lockers.value = lockers.value.filter((item) => item.id !== locker.id)
+    success(`Locker ${locker.code} excluído.`)
+  } catch (error) {
+    const detail = error?.response?.data?.detail || 'Não foi possível excluir o locker.'
+    toastError(detail)
+  } finally {
+    deletingId.value = ''
+  }
+}
+
+/**
+ * @param {'all'|'free'|'occupied'|'maintenance'} filterValue
+ * @returns {number}
+ */
+function filterCount(filterValue) {
+  if (filterValue === 'all') {
+    return lockers.value.length
+  }
+
+  return lockers.value.filter((locker) => locker.status === filterValue).length
+}
+
+/**
+ * @param {string} filterValue
+ * @returns {number}
+ */
+function locationFilterCount(filterValue) {
+  if (filterValue === 'all') {
+    return lockers.value.length
+  }
+
+  if (filterValue === 'unassigned') {
+    return lockers.value.filter((locker) => !locker.location_id).length
+  }
+
+  return lockers.value.filter((locker) => locker.location_id === filterValue).length
+}
+
+/**
+ * @param {string|null} locationId
+ * @returns {string}
+ */
+function locationLabel(locationId) {
+  if (!locationId) {
+    return 'Sem localização'
+  }
+
+  return locations.value.find((location) => location.id === locationId)?.name || 'Localização'
+}
+
+/**
+ * @param {string} status
+ * @returns {string}
+ */
 function statusColor(status) {
-  return { free: '#10b981', occupied: '#f59e0b', maintenance: '#ef4444' }[status] || '#64748b'
+  return {
+    free: '#16a34a',
+    occupied: '#d97706',
+    maintenance: '#dc2626'
+  }[status] || '#64748b'
 }
 
-/** @param {string} status */
+/**
+ * @param {string} status
+ * @returns {string}
+ */
 function statusLabel(status) {
-  return { free: 'Livre', occupied: 'Ocupado', maintenance: 'Manutenção' }[status] || status
+  return {
+    free: 'Livre',
+    occupied: 'Ocupado',
+    maintenance: 'Manutenção'
+  }[status] || status
 }
 
-/** @param {string} status */
+/**
+ * @param {string} status
+ * @returns {string}
+ */
 function statusBorder(status) {
-  return { free: 'border-emerald-100', occupied: 'border-amber-100', maintenance: 'border-red-100' }[status] || 'border-slate-100'
+  return {
+    free: 'border-emerald-200',
+    occupied: 'border-amber-200',
+    maintenance: 'border-red-200'
+  }[status] || 'border-slate-200'
 }
-
-onMounted(async () => {
-  const org = await fetchOrganization(orgId)
-  if (org) setCurrentOrganization(org)
-  await fetchLockers()
-})
 </script>

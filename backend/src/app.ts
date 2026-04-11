@@ -7,13 +7,15 @@ import Fastify from "fastify";
 import { fileURLToPath } from "node:url";
 import { env, parseCorsOrigin } from "./config/env";
 import { handleFastifyError } from "./errors";
+import { registerFrontend } from "./http/register-frontend";
 import { dashboardRoutes } from "./modules/dashboard/dashboard.routes";
 import { lockersRoutes } from "./modules/lockers/lockers.routes";
+import { locationsRoutes } from "./modules/locations/locations.routes";
 import { organizationsRoutes } from "./modules/organizations/organizations.routes";
 import { rentalsRoutes } from "./modules/rentals/rentals.routes";
 import { unlockRoutes } from "./modules/unlock/unlock.routes";
 
-export function buildApp() {
+export async function buildApp() {
   const openApiBaseDir = fileURLToPath(new URL("..", import.meta.url));
 
   const app = Fastify({
@@ -70,10 +72,12 @@ export function buildApp() {
   );
 
   app.register(lockersRoutes, { prefix: "/api" });
+  app.register(locationsRoutes, { prefix: "/api" });
   app.register(rentalsRoutes, { prefix: "/api" });
   app.register(unlockRoutes, { prefix: "/api" });
   app.register(dashboardRoutes, { prefix: "/api" });
   app.register(organizationsRoutes, { prefix: "/api" });
+  await registerFrontend(app);
 
   return app;
 }

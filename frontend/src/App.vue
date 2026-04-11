@@ -16,15 +16,15 @@
       </div>
     </div>
 
-    <!-- NavBar: only for landing/public pages -->
-    <NavBar v-if="!isPartnerRoute && !isAuthRoute" />
+    <!-- NavBar: visible on public pages and account -->
+    <NavBar v-if="!isPartnerRoute && !isHeaderlessRoute" />
 
     <main class="flex-grow">
       <router-view />
     </main>
 
-    <!-- Footer: only for landing/public pages -->
-    <FooterSection v-if="!isPartnerRoute && !isAuthRoute" />
+    <!-- Footer: hidden on partner/auth/account pages -->
+    <FooterSection v-if="!isFooterlessRoute" />
   </div>
 </template>
 
@@ -41,9 +41,14 @@ const { initializeAuth, isInitializing } = useAuth()
 // Routes that use their own layout (partner dashboard has its own sidebar)
 const isPartnerRoute = computed(() => route.path.startsWith('/partner'))
 
-// Routes with their own full-page layout (no NavBar/Footer needed)
-const isAuthRoute = computed(() =>
-  ['/login', '/auth/callback', '/oauth/callback', '/account'].includes(route.path)
+// Routes with their own full-page layout (no NavBar)
+const isHeaderlessRoute = computed(() =>
+  ['/login', '/auth/callback', '/oauth/callback'].includes(route.path)
+)
+
+// Routes where footer should be hidden
+const isFooterlessRoute = computed(() =>
+  isPartnerRoute.value || ['/login', '/auth/callback', '/oauth/callback', '/account'].includes(route.path)
 )
 
 onMounted(async () => {

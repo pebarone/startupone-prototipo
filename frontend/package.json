@@ -13,6 +13,7 @@
     "axios": "^1.15.0",
     "clsx": "^2.1.0",
     "gsap": "^3.12.5",
+    "leaflet": "^1.9.4",
     "lucide-vue-next": "^0.300.0",
     "tailwind-merge": "^2.2.0",
     "vue": "^3.4.0",

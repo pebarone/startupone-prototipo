@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import gsap from 'gsap'
 
-const apiBase = 'http://localhost:3333/api'
+const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
 
 /** @type {import('vue').Ref<any>} */
 const metrics = ref(null)
