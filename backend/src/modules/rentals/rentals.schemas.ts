@@ -9,17 +9,12 @@ export type Rental = {
   locker_id: string;
   access_code: string;
   status: RentalStatus;
-  // Pricing snapshot
   initial_fee_cents: number;
   hourly_rate_cents: number;
-  // Biometric
-  biometric_token: string | null;
-  // Lifecycle
   started_at: Date;
   unlocked_at: Date | null;
   retrieved_at: Date | null;
   finished_at: Date | null;
-  // Financial outcome
   extra_charge_cents: number;
   total_cents: number;
   elapsed_seconds?: number | null;
@@ -35,12 +30,39 @@ export type CreateRentalBody = {
   locker_id: string;
 };
 
-export type RegisterBiometricBody = {
-  biometric_token: string;
+export type WebAuthnRegistrationCredential = {
+  id: string;
+  rawId: string;
+  type: string;
+  authenticatorAttachment?: string | null;
+  response: {
+    clientDataJSON: string;
+    attestationObject: string;
+    transports?: string[];
+  };
+  clientExtensionResults?: Record<string, unknown>;
+};
+
+export type WebAuthnAuthenticationCredential = {
+  id: string;
+  rawId: string;
+  type: string;
+  authenticatorAttachment?: string | null;
+  response: {
+    clientDataJSON: string;
+    authenticatorData: string;
+    signature: string;
+    userHandle?: string | null;
+  };
+  clientExtensionResults?: Record<string, unknown>;
+};
+
+export type CompleteRegistrationBody = {
+  credential: WebAuthnRegistrationCredential;
 };
 
 export type RetrieveLockerBody = {
-  biometric_token: string;
+  credential: WebAuthnAuthenticationCredential;
 };
 
 export type RetrievalResult = {
@@ -68,13 +90,95 @@ export type BulkDeleteRentalsBody = {
   rental_ids: string[];
 };
 
+export type OverrideReleaseBody = {
+  reason: string;
+};
+
 const uuidSchema = { type: "string", format: "uuid" };
 const timestampSchema = { type: "string", format: "date-time" };
 const nullableTimestamp = { anyOf: [timestampSchema, { type: "null" }] };
 
+const clientExtensionResultsSchema = {
+  type: "object",
+  additionalProperties: true
+} as const;
+
+const webauthnRegistrationCredentialSchema = {
+  type: "object",
+  required: ["id", "rawId", "type", "response"],
+  properties: {
+    id: { type: "string", minLength: 1 },
+    rawId: { type: "string", minLength: 1 },
+    type: { type: "string", const: "public-key" },
+    authenticatorAttachment: { anyOf: [{ type: "string" }, { type: "null" }] },
+    response: {
+      type: "object",
+      required: ["clientDataJSON", "attestationObject"],
+      properties: {
+        clientDataJSON: { type: "string", minLength: 1 },
+        attestationObject: { type: "string", minLength: 1 },
+        transports: {
+          type: "array",
+          items: { type: "string" }
+        }
+      },
+      additionalProperties: true
+    },
+    clientExtensionResults: clientExtensionResultsSchema
+  },
+  additionalProperties: true
+} as const;
+
+const webauthnAuthenticationCredentialSchema = {
+  type: "object",
+  required: ["id", "rawId", "type", "response"],
+  properties: {
+    id: { type: "string", minLength: 1 },
+    rawId: { type: "string", minLength: 1 },
+    type: { type: "string", const: "public-key" },
+    authenticatorAttachment: { anyOf: [{ type: "string" }, { type: "null" }] },
+    response: {
+      type: "object",
+      required: ["clientDataJSON", "authenticatorData", "signature"],
+      properties: {
+        clientDataJSON: { type: "string", minLength: 1 },
+        authenticatorData: { type: "string", minLength: 1 },
+        signature: { type: "string", minLength: 1 },
+        userHandle: { anyOf: [{ type: "string" }, { type: "null" }] }
+      },
+      additionalProperties: true
+    },
+    clientExtensionResults: clientExtensionResultsSchema
+  },
+  additionalProperties: true
+} as const;
+
+const webauthnOptionsSchema = {
+  type: "object",
+  required: ["challenge", "timeout"],
+  properties: {
+    challenge: { type: "string", minLength: 1 },
+    timeout: { type: "integer", minimum: 1 }
+  },
+  additionalProperties: true
+} as const;
+
 export const rentalSchema = {
   type: "object",
-  required: ["id", "organization_id", "locker_id", "access_code", "status", "initial_fee_cents", "hourly_rate_cents", "extra_charge_cents", "total_cents", "started_at", "created_at", "updated_at"],
+  required: [
+    "id",
+    "organization_id",
+    "locker_id",
+    "access_code",
+    "status",
+    "initial_fee_cents",
+    "hourly_rate_cents",
+    "extra_charge_cents",
+    "total_cents",
+    "started_at",
+    "created_at",
+    "updated_at"
+  ],
   properties: {
     id: uuidSchema,
     organization_id: uuidSchema,
@@ -83,7 +187,6 @@ export const rentalSchema = {
     status: { type: "string", enum: rentalStatuses },
     initial_fee_cents: { type: "integer", minimum: 0 },
     hourly_rate_cents: { type: "integer", minimum: 0 },
-    biometric_token: { anyOf: [{ type: "string" }, { type: "null" }] },
     started_at: timestampSchema,
     unlocked_at: nullableTimestamp,
     retrieved_at: nullableTimestamp,
@@ -99,8 +202,19 @@ export const rentalSchema = {
 export const rentalWithLockerSchema = {
   type: "object",
   required: [
-    "id", "locker_id", "access_code", "status", "initial_fee_cents", "hourly_rate_cents",
-    "extra_charge_cents", "total_cents", "started_at", "created_at", "updated_at", "locker"
+    "id",
+    "organization_id",
+    "locker_id",
+    "access_code",
+    "status",
+    "initial_fee_cents",
+    "hourly_rate_cents",
+    "extra_charge_cents",
+    "total_cents",
+    "started_at",
+    "created_at",
+    "updated_at",
+    "locker"
   ],
   properties: {
     ...rentalSchema.properties,
@@ -134,7 +248,19 @@ export const getRentalSchema = {
   }
 } as const;
 
-export const registerBiometricSchema = {
+export const registrationOptionsSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: { id: uuidSchema },
+    additionalProperties: false
+  },
+  response: {
+    200: webauthnOptionsSchema
+  }
+} as const;
+
+export const completeRegistrationSchema = {
   params: {
     type: "object",
     required: ["id"],
@@ -143,14 +269,26 @@ export const registerBiometricSchema = {
   },
   body: {
     type: "object",
-    required: ["biometric_token"],
+    required: ["credential"],
     properties: {
-      biometric_token: { type: "string", minLength: 4 }
+      credential: webauthnRegistrationCredentialSchema
     },
     additionalProperties: false
   },
   response: {
     200: rentalSchema
+  }
+} as const;
+
+export const authenticationOptionsSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: { id: uuidSchema },
+    additionalProperties: false
+  },
+  response: {
+    200: webauthnOptionsSchema
   }
 } as const;
 
@@ -163,9 +301,9 @@ export const retrieveLockerSchema = {
   },
   body: {
     type: "object",
-    required: ["biometric_token"],
+    required: ["credential"],
     properties: {
-      biometric_token: { type: "string", minLength: 4 }
+      credential: webauthnAuthenticationCredentialSchema
     },
     additionalProperties: false
   },
@@ -300,5 +438,28 @@ export const bulkDeleteRentalsSchema = {
         }
       }
     }
+  }
+} as const;
+
+export const overrideReleaseSchema = {
+  params: {
+    type: "object",
+    required: ["organizationId", "id"],
+    properties: {
+      organizationId: uuidSchema,
+      id: uuidSchema
+    },
+    additionalProperties: false
+  },
+  body: {
+    type: "object",
+    required: ["reason"],
+    properties: {
+      reason: { type: "string", minLength: 8, maxLength: 500 }
+    },
+    additionalProperties: false
+  },
+  response: {
+    200: rentalSchema
   }
 } as const;

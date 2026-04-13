@@ -38,7 +38,10 @@ export const env = Object.freeze({
   RATE_LIMIT_MAX: readNumber("RATE_LIMIT_MAX", 100),
   RATE_LIMIT_WINDOW: readString("RATE_LIMIT_WINDOW", "1 minute"),
   SUPABASE_URL: readString("SUPABASE_URL", ""),
-  SUPABASE_PUBLISHABLE_KEY: readString("SUPABASE_PUBLISHABLE_KEY", "")
+  SUPABASE_PUBLISHABLE_KEY: readString("SUPABASE_PUBLISHABLE_KEY", ""),
+  WEBAUTHN_RP_ID: readString("WEBAUTHN_RP_ID", "localhost"),
+  WEBAUTHN_RP_NAME: readString("WEBAUTHN_RP_NAME", "FastLock"),
+  WEBAUTHN_ALLOWED_ORIGINS: readString("WEBAUTHN_ALLOWED_ORIGINS", "")
 });
 
 export function parseCorsOrigin(): true | string[] {
@@ -49,4 +52,18 @@ export function parseCorsOrigin(): true | string[] {
   return env.CORS_ORIGIN.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+}
+
+export function parseWebAuthnAllowedOrigins(): string[] {
+  if (env.WEBAUTHN_ALLOWED_ORIGINS) {
+    return env.WEBAUTHN_ALLOWED_ORIGINS.split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+  }
+
+  const corsOrigins = parseCorsOrigin();
+  const defaults = Array.isArray(corsOrigins) ? corsOrigins : [];
+  const appOrigin = `http://localhost:${env.PORT}`;
+
+  return [...new Set([...defaults, appOrigin])];
 }

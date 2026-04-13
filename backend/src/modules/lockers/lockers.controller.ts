@@ -3,6 +3,7 @@ import { getRequestContext } from "../../context/request-context";
 import {
   createLockerService,
   deleteLockerService,
+  getPublicLockerContextService,
   listOrganizationLockersService,
   listPublicLockersService,
   updateLockerService
@@ -11,12 +12,17 @@ import type {
   CreateLockerBody,
   ListOrganizationLockersQuery,
   ListPublicLockersQuery,
+  LockerParams,
   OrganizationLockerParams,
   UpdateLockerBody
 } from "./lockers.schemas";
 
 export async function listPublicLockersController(request: FastifyRequest<{ Querystring: ListPublicLockersQuery }>) {
   return listPublicLockersService(request.query);
+}
+
+export async function getPublicLockerContextController(request: FastifyRequest<{ Params: LockerParams }>) {
+  return getPublicLockerContextService(request.params.id);
 }
 
 export async function listOrganizationLockersController(

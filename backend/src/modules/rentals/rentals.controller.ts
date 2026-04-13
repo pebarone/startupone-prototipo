@@ -1,21 +1,26 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { getRequestContext } from "../../context/request-context";
 import {
+  completeRegistrationService,
+  confirmRetrievalPaymentService,
+  createAuthenticationOptionsService,
+  createRegistrationOptionsService,
+  createRentalService,
   deleteRentalHistoryBatchService,
   deleteRentalHistoryService,
-  confirmRetrievalPaymentService,
-  createRentalService,
   getRentalByIdService,
-  registerBiometricService,
+  listRentalsByOrg,
+  overrideReleaseService,
   retrieveLockerService
 } from "./rentals.service";
-import { listRentalsByOrg } from "./rentals.repository";
 import type {
   BulkDeleteRentalsBody,
+  CompleteRegistrationBody,
   CreateRentalBody,
   DeleteOrganizationRentalParams,
   OrganizationAuditParams,
-  RegisterBiometricBody,
+  OverrideReleaseBody,
   RentalParams,
   RetrieveLockerBody
 } from "./rentals.schemas";
@@ -32,16 +37,32 @@ export async function getRentalController(request: FastifyRequest<{ Params: Rent
   return getRentalByIdService(request.params.id);
 }
 
-export async function registerBiometricController(
-  request: FastifyRequest<{ Params: RentalParams; Body: RegisterBiometricBody }>,
+export async function createRegistrationOptionsController(
+  request: FastifyRequest<{ Params: RentalParams }>,
   reply: FastifyReply
 ) {
-  const rental = await registerBiometricService(
+  const options = await createRegistrationOptionsService(request.params.id, getRequestContext(request, "anonymous"));
+  return reply.code(200).send(options);
+}
+
+export async function completeRegistrationController(
+  request: FastifyRequest<{ Params: RentalParams; Body: CompleteRegistrationBody }>,
+  reply: FastifyReply
+) {
+  const rental = await completeRegistrationService(
     request.params.id,
-    request.body.biometric_token,
+    request.body.credential as RegistrationResponseJSON,
     getRequestContext(request, "anonymous")
   );
   return reply.code(200).send(rental);
+}
+
+export async function createAuthenticationOptionsController(
+  request: FastifyRequest<{ Params: RentalParams }>,
+  reply: FastifyReply
+) {
+  const options = await createAuthenticationOptionsService(request.params.id, getRequestContext(request, "anonymous"));
+  return reply.code(200).send(options);
 }
 
 export async function retrieveLockerController(
@@ -50,7 +71,7 @@ export async function retrieveLockerController(
 ) {
   const result = await retrieveLockerService(
     request.params.id,
-    request.body.biometric_token,
+    request.body.credential as AuthenticationResponseJSON,
     getRequestContext(request, "anonymous")
   );
   return reply.code(200).send(result);
@@ -107,4 +128,17 @@ export async function bulkDeleteRentalsController(
     getRequestContext(request, "partner")
   );
   return reply.code(200).send(result);
+}
+
+export async function overrideReleaseController(
+  request: FastifyRequest<{ Params: DeleteOrganizationRentalParams; Body: OverrideReleaseBody }>,
+  reply: FastifyReply
+) {
+  const rental = await overrideReleaseService(
+    request.params.id,
+    request.params.organizationId,
+    request.body.reason,
+    getRequestContext(request, "partner")
+  );
+  return reply.code(200).send(rental);
 }

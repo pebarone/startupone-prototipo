@@ -6,6 +6,7 @@ import LoginView from './views/LoginView.vue'
 import AccountView from './views/AccountView.vue'
 import AuthCallbackView from './views/AuthCallbackView.vue'
 import UseView from './views/UseView.vue'
+import LockerFlowView from './views/LockerFlowView.vue'
 import RetrieveView from './views/RetrieveView.vue'
 
 // Partner views (lazy loaded)
@@ -26,6 +27,11 @@ const routes = [
     path: '/use',
     name: 'use',
     component: UseView
+  },
+  {
+    path: '/locker/:lockerId',
+    name: 'locker-flow',
+    component: LockerFlowView
   },
   {
     path: '/retrieve/:rentalId',

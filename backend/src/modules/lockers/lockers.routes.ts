@@ -3,6 +3,7 @@ import { requireOrganizationAdminOrAdmin, requireOrganizationMemberOrAdmin } fro
 import {
   createLockerController,
   deleteLockerController,
+  getPublicLockerContextController,
   listOrganizationLockersController,
   listPublicLockersController,
   updateLockerController
@@ -10,12 +11,14 @@ import {
 import {
   createLockerSchema,
   deleteLockerSchema,
+  getPublicLockerContextSchema,
   listOrganizationLockersSchema,
   listPublicLockersSchema,
   updateLockerSchema,
   type CreateLockerBody,
   type ListOrganizationLockersQuery,
   type ListPublicLockersQuery,
+  type LockerParams,
   type OrganizationLockerParams,
   type UpdateLockerBody
 } from "./lockers.schemas";
@@ -25,6 +28,12 @@ export async function lockersRoutes(app: FastifyInstance) {
     "/lockers",
     { schema: listPublicLockersSchema },
     listPublicLockersController
+  );
+
+  app.get<{ Params: LockerParams }>(
+    "/lockers/:id/public-context",
+    { schema: getPublicLockerContextSchema },
+    getPublicLockerContextController
   );
 
   app.get<{ Params: { organizationId: string }; Querystring: ListOrganizationLockersQuery }>(

@@ -1,30 +1,51 @@
 import { randomInt } from "node:crypto";
+import type { RegistrationResponseJSON, AuthenticationResponseJSON } from "@simplewebauthn/server";
 import type { RequestContext } from "../../context/request-context";
 import { withTransaction } from "../../db/transaction";
-import { conflictError, internalError, notFoundError, validationError } from "../../errors";
+import { conflictError, internalError, isPgError, notFoundError, validationError } from "../../errors";
 import { recordAuditEvent } from "../audit/audit.repository";
 import {
+  activateRentalAfterRegistration,
+  cancelLiveRentalById,
+  clearPendingWebAuthnChallenges,
   deleteAuditEventsByRentalIds,
   deleteRentalHistoryByIds,
   deleteUnlockEventsByRentalIds,
+  findActiveRentalByIdForUpdate,
   findLockerForRentalUpdate,
   findLocationPricing,
+  findOpenWebAuthnChallengeForUpdate,
   findRentalById,
   findRentalHistoryDeleteCandidatesForUpdate,
+  findRentalWebAuthnCredentialByRentalId,
   findStoringRentalByIdForUpdate,
   finishRentalById,
   insertActiveRental,
+  insertWebAuthnChallenge,
+  listRentalsByOrg,
   markLockerFreeById,
   markLockerOccupied,
-  registerBiometricOnRental,
-  setRentalRetrievalCharges
+  markWebAuthnChallengeUsed,
+  setRentalRetrievalCharges,
+  updateRentalWebAuthnCounter,
+  upsertRentalWebAuthnCredential
 } from "./rentals.repository";
-import type { Rental, RentalWithLocker, RetrievalResult } from "./rentals.schemas";
+import type {
+  Rental,
+  RentalWithLocker,
+  RetrievalResult
+} from "./rentals.schemas";
+import {
+  buildAuthenticationOptions,
+  buildRegistrationOptions,
+  getWebAuthnChallengeExpiry,
+  verifyRentalAuthentication,
+  verifyRentalRegistration
+} from "./rentals.webauthn";
 
 const ACCESS_CODE_ATTEMPTS = 10;
 const RENTAL_HISTORY_DELETABLE_STATUSES = new Set(["finished", "cancelled"]);
 
-// Default hourly rates (centavos) when no location is set
 const DEFAULT_RATES: Record<string, number> = {
   P: 500,
   M: 1000,
@@ -43,7 +64,6 @@ export async function createRentalService(lockerId: string, context: RequestCont
       throw conflictError("Locker is not available.");
     }
 
-    // Snapshot pricing from location (or defaults)
     let initialFeeCents = 500;
     let hourlyRateCents = DEFAULT_RATES[locker.size] ?? 500;
 
@@ -78,7 +98,7 @@ export async function createRentalService(lockerId: string, context: RequestCont
     }
 
     if (!rental) {
-      throw internalError("Could not generate a unique access code.");
+      throw internalError("Could not create a live rental for this locker.");
     }
 
     await markLockerOccupied(lockerId, client);
@@ -113,37 +133,159 @@ export async function getRentalByIdService(id: string): Promise<RentalWithLocker
   return rental;
 }
 
-export async function registerBiometricService(
+export async function createRegistrationOptionsService(
   rentalId: string,
-  biometricToken: string,
   context: RequestContext
-): Promise<Rental> {
+) {
   return withTransaction(async (client) => {
-    const updated = await registerBiometricOnRental(rentalId, biometricToken, client);
+    const rental = await findActiveRentalByIdForUpdate(rentalId, client);
 
-    if (!updated) {
-      throw validationError("Rental not found or is not in 'active' status.");
+    if (!rental) {
+      throw validationError("Rental not found or is not waiting for WebAuthn registration.");
     }
 
-    await recordAuditEvent(
+    const existingCredential = await findRentalWebAuthnCredentialByRentalId(rentalId, client);
+    const options = await buildRegistrationOptions(
+      rentalId,
+      existingCredential
+        ? [{ id: existingCredential.credential_id, transports: existingCredential.transports }]
+        : []
+    );
+
+    await clearPendingWebAuthnChallenges(rentalId, "registration", client);
+    await insertWebAuthnChallenge(
       {
-        ...context,
-        organization_id: updated.organization_id,
-        action: "rental.biometric_registered",
-        resource_type: "rental",
-        resource_id: rentalId,
-        metadata: { locker_id: updated.locker_id }
+        rental_id: rentalId,
+        purpose: "registration",
+        challenge: options.challenge,
+        expires_at: getWebAuthnChallengeExpiry(),
+        ip_address: context.ip_address,
+        user_agent: context.user_agent
       },
       client
     );
 
-    return updated;
+    return options;
+  });
+}
+
+export async function completeRegistrationService(
+  rentalId: string,
+  credential: RegistrationResponseJSON,
+  context: RequestContext
+): Promise<Rental> {
+  try {
+    return await withTransaction(async (client) => {
+      const rental = await findActiveRentalByIdForUpdate(rentalId, client);
+
+      if (!rental) {
+        throw validationError("Rental not found or is not waiting for WebAuthn registration.");
+      }
+
+      const challenge = await findOpenWebAuthnChallengeForUpdate(rentalId, "registration", client);
+
+      if (!challenge || challenge.expires_at.getTime() <= Date.now()) {
+        throw validationError("The WebAuthn registration challenge has expired. Generate a new challenge.");
+      }
+
+      const verified = await verifyRentalRegistration(credential, challenge.challenge);
+
+      if (!verified) {
+        throw validationError("The WebAuthn registration response could not be verified.");
+      }
+
+      await upsertRentalWebAuthnCredential(
+        {
+          rental_id: rentalId,
+          organization_id: rental.organization_id,
+          locker_id: rental.locker_id,
+          credential_id: verified.credential_id,
+          public_key: verified.public_key,
+          counter: verified.counter,
+          transports: verified.transports ?? [],
+          device_type: verified.device_type,
+          backed_up: verified.backed_up
+        },
+        client
+      );
+
+      await markWebAuthnChallengeUsed(challenge.id, client);
+
+      const updated = await activateRentalAfterRegistration(rentalId, client);
+
+      if (!updated) {
+        throw validationError("Rental is no longer waiting for WebAuthn registration.");
+      }
+
+      await recordAuditEvent(
+        {
+          ...context,
+          organization_id: updated.organization_id,
+          action: "webauthn.registered",
+          resource_type: "rental",
+          resource_id: rentalId,
+          metadata: {
+            locker_id: updated.locker_id,
+            credential_device_type: verified.device_type,
+            credential_backed_up: verified.backed_up
+          }
+        },
+        client
+      );
+
+      return updated;
+    });
+  } catch (error) {
+    if (isPgError(error, "23505")) {
+      throw conflictError("This WebAuthn credential is already registered for another rental.");
+    }
+
+    throw normalizeWebAuthnError(error, "Could not complete WebAuthn registration.");
+  }
+}
+
+export async function createAuthenticationOptionsService(
+  rentalId: string,
+  context: RequestContext
+) {
+  return withTransaction(async (client) => {
+    const rental = await findStoringRentalByIdForUpdate(rentalId, client);
+
+    if (!rental) {
+      throw validationError("Rental is not ready for WebAuthn authentication.");
+    }
+
+    const credential = await findRentalWebAuthnCredentialByRentalId(rentalId, client);
+
+    if (!credential) {
+      throw validationError("No WebAuthn credential is registered for this rental.");
+    }
+
+    const options = await buildAuthenticationOptions({
+      id: credential.credential_id,
+      transports: credential.transports
+    });
+
+    await clearPendingWebAuthnChallenges(rentalId, "authentication", client);
+    await insertWebAuthnChallenge(
+      {
+        rental_id: rentalId,
+        purpose: "authentication",
+        challenge: options.challenge,
+        expires_at: getWebAuthnChallengeExpiry(),
+        ip_address: context.ip_address,
+        user_agent: context.user_agent
+      },
+      client
+    );
+
+    return options;
   });
 }
 
 export async function retrieveLockerService(
   rentalId: string,
-  biometricToken: string,
+  credential: AuthenticationResponseJSON,
   context: RequestContext
 ): Promise<RetrievalResult> {
   return withTransaction(async (client) => {
@@ -153,14 +295,40 @@ export async function retrieveLockerService(
       throw notFoundError("Active rental not found.");
     }
 
-    if (rental.biometric_token !== biometricToken) {
-      throw validationError("Biometric verification failed.");
+    const storedCredential = await findRentalWebAuthnCredentialByRentalId(rentalId, client);
+    const challenge = await findOpenWebAuthnChallengeForUpdate(rentalId, "authentication", client);
+
+    if (!storedCredential || !challenge || challenge.expires_at.getTime() <= Date.now()) {
+      await recordAuthenticationFailure(rental, context, "challenge_missing_or_expired", client);
+      throw validationError("The WebAuthn authentication challenge has expired. Generate a new challenge.");
     }
+
+    let verified;
+
+    try {
+      verified = await verifyRentalAuthentication(credential, challenge.challenge, {
+        id: storedCredential.credential_id,
+        public_key: storedCredential.public_key,
+        counter: storedCredential.counter,
+        transports: storedCredential.transports
+      });
+    } catch (error) {
+      await recordAuthenticationFailure(rental, context, "verification_error", client);
+      throw normalizeWebAuthnError(error, "WebAuthn authentication failed.");
+    }
+
+    if (!verified) {
+      await recordAuthenticationFailure(rental, context, "verification_failed", client);
+      throw validationError("WebAuthn authentication failed.");
+    }
+
+    await markWebAuthnChallengeUsed(challenge.id, client);
+    await updateRentalWebAuthnCounter(rentalId, verified.new_counter, client);
 
     const unlockedAt = new Date(rental.unlocked_at);
     const now = new Date();
     const minutesUsed = Math.max(1, Math.ceil((now.getTime() - unlockedAt.getTime()) / 60000));
-    const hoursUsed = Math.ceil(minutesUsed / 60); // charge by started hour
+    const hoursUsed = Math.ceil(minutesUsed / 60);
     const extraChargeCents = hoursUsed * rental.hourly_rate_cents;
     const totalCents = rental.initial_fee_cents + extraChargeCents;
     const paymentRequired = extraChargeCents > 0;
@@ -174,7 +342,13 @@ export async function retrieveLockerService(
         action: "rental.retrieved",
         resource_type: "rental",
         resource_id: rentalId,
-        metadata: { locker_id: rental.locker_id, minutes_used: minutesUsed, extra_charge_cents: extraChargeCents }
+        metadata: {
+          locker_id: rental.locker_id,
+          minutes_used: minutesUsed,
+          extra_charge_cents: extraChargeCents,
+          credential_device_type: verified.device_type,
+          credential_backed_up: verified.backed_up
+        }
       },
       client
     );
@@ -219,6 +393,41 @@ export async function confirmRetrievalPaymentService(
   });
 }
 
+export async function overrideReleaseService(
+  rentalId: string,
+  organizationId: string,
+  reason: string,
+  context: RequestContext
+): Promise<Rental> {
+  return withTransaction(async (client) => {
+    const cancelled = await cancelLiveRentalById(rentalId, organizationId, client);
+
+    if (!cancelled) {
+      throw notFoundError("Rental not found or cannot be override-released.");
+    }
+
+    await markLockerFreeById(cancelled.locker_id, client);
+
+    await recordAuditEvent(
+      {
+        ...context,
+        organization_id: organizationId,
+        action: "rental.override_released",
+        resource_type: "rental",
+        resource_id: rentalId,
+        metadata: {
+          locker_id: cancelled.locker_id,
+          previous_status: "live",
+          reason: reason.trim()
+        }
+      },
+      client
+    );
+
+    return cancelled;
+  });
+}
+
 export async function deleteRentalHistoryService(
   rentalId: string,
   organizationId: string,
@@ -248,18 +457,14 @@ export async function deleteRentalHistoryBatchService(
     if (rentals.length !== uniqueRentalIds.length) {
       const foundIds = new Set(rentals.map((rental) => rental.id));
       const missingIds = uniqueRentalIds.filter((rentalId) => !foundIds.has(rentalId));
-      throw notFoundError(
-        `Some rental records could not be found: ${missingIds.join(", ")}.`
-      );
+      throw notFoundError(`Some rental records could not be found: ${missingIds.join(", ")}.`);
     }
 
     const blockedRentals = rentals.filter((rental) => !RENTAL_HISTORY_DELETABLE_STATUSES.has(rental.status));
 
     if (blockedRentals.length) {
       const blockedCodes = blockedRentals.map((rental) => `${rental.locker_code} (${rental.status})`);
-      throw conflictError(
-        `Only finished or cancelled rentals can be deleted. Blocked records: ${blockedCodes.join(", ")}.`
-      );
+      throw conflictError(`Only finished or cancelled rentals can be deleted. Blocked records: ${blockedCodes.join(", ")}.`);
     }
 
     await deleteUnlockEventsByRentalIds(organizationId, uniqueRentalIds, client);
@@ -291,6 +496,42 @@ export async function deleteRentalHistoryBatchService(
       deleted_ids: uniqueRentalIds
     };
   });
+}
+
+export { listRentalsByOrg };
+
+async function recordAuthenticationFailure(
+  rental: { id: string; organization_id: string; locker_id: string },
+  context: RequestContext,
+  reason: string,
+  client: Parameters<typeof recordAuditEvent>[1]
+) {
+  await recordAuditEvent(
+    {
+      ...context,
+      organization_id: rental.organization_id,
+      action: "webauthn.authentication_failed",
+      resource_type: "rental",
+      resource_id: rental.id,
+      metadata: {
+        locker_id: rental.locker_id,
+        reason
+      }
+    },
+    client
+  );
+}
+
+function normalizeWebAuthnError(error: unknown, fallbackMessage: string) {
+  if (error instanceof Error && error.message) {
+    return validationError(error.message);
+  }
+
+  if (isPgError(error, "23505")) {
+    return conflictError(fallbackMessage);
+  }
+
+  return error;
 }
 
 function generateAccessCode(): string {

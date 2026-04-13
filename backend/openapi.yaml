@@ -291,6 +291,26 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+  /api/lockers/{id}/public-context:
+    get:
+      tags: [Lockers]
+      operationId: getPublicLockerContext
+      summary: Resolve the public QR context for a locker
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Public locker context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLockerContext"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/organizations/{organizationId}/lockers:
     get:
       tags: [Lockers]
@@ -581,6 +601,152 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/webauthn/registration-options:
+    post:
+      tags: [Rentals]
+      operationId: createRentalRegistrationOptions
+      summary: Create WebAuthn registration options for a rental
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Registration options generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnOptions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/webauthn/registrations:
+    post:
+      tags: [Rentals]
+      operationId: completeRentalRegistration
+      summary: Verify and persist a rental WebAuthn credential
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebAuthnRegistrationRequest"
+      responses:
+        "200":
+          description: Credential registered and rental moved to storing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/webauthn/authentication-options:
+    post:
+      tags: [Rentals]
+      operationId: createRentalAuthenticationOptions
+      summary: Create WebAuthn authentication options for a rental
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Authentication options generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnOptions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/retrieve:
+    post:
+      tags: [Rentals]
+      operationId: retrieveRentalLocker
+      summary: Authenticate with WebAuthn and calculate retrieval charges
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebAuthnAuthenticationRequest"
+      responses:
+        "200":
+          description: Retrieval calculated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrievalResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/confirm-retrieval:
+    post:
+      tags: [Rentals]
+      operationId: confirmRentalRetrieval
+      summary: Confirm payment and finish a rental
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Rental finished and locker released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/organizations/{organizationId}/rentals/{id}/override-release:
+    post:
+      tags: [Rentals]
+      operationId: overrideReleaseRental
+      summary: Cancel and release a live rental operationally
+      security:
+        - SupabaseBearer: []
+        - AdminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OverrideReleaseRequest"
+      responses:
+        "200":
+          description: Rental cancelled and locker released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/unlock-events:
     post:
       tags: [Unlock]
@@ -762,7 +928,7 @@ components:
       enum: [free, occupied, maintenance]
     RentalStatus:
       type: string
-      enum: [active, finished, cancelled]
+      enum: [active, storing, pending_retrieval_payment, finished, cancelled]
     OrganizationStatus:
       type: string
       enum: [active, inactive]
@@ -1076,6 +1242,67 @@ components:
             $ref: "#/components/schemas/Locker"
         pagination:
           $ref: "#/components/schemas/Pagination"
+    PublicLockerContextActiveRental:
+      type: object
+      required:
+        - id
+        - status
+        - started_at
+        - unlocked_at
+        - retrieved_at
+        - initial_fee_cents
+        - hourly_rate_cents
+        - extra_charge_cents
+        - total_cents
+        - can_authenticate
+      properties:
+        id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        status:
+          type: string
+          enum: [active, storing, pending_retrieval_payment]
+        started_at: { type: string, format: date-time }
+        unlocked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        retrieved_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        initial_fee_cents: { type: integer, minimum: 0 }
+        hourly_rate_cents: { type: integer, minimum: 0 }
+        extra_charge_cents: { type: integer, minimum: 0 }
+        total_cents: { type: integer, minimum: 0 }
+        can_authenticate: { type: boolean }
+    PublicLockerContext:
+      type: object
+      required: [mode, locker, location_name, location_address, initial_fee_cents, hourly_rate_cents, active_rental]
+      properties:
+        mode:
+          type: string
+          enum: [rent, retrieve, maintenance]
+        locker:
+          $ref: "#/components/schemas/Locker"
+        location_name:
+          anyOf:
+            - type: string
+            - type: "null"
+        location_address:
+          anyOf:
+            - type: string
+            - type: "null"
+        initial_fee_cents: { type: integer, minimum: 0 }
+        hourly_rate_cents: { type: integer, minimum: 0 }
+        active_rental:
+          anyOf:
+            - $ref: "#/components/schemas/PublicLockerContextActiveRental"
+            - type: "null"
     CreateLockerRequest:
       type: object
       required: [code, size]
@@ -1114,7 +1341,19 @@ components:
             - type: "null"
     Rental:
       type: object
-      required: [id, organization_id, locker_id, access_code, status, started_at, created_at, updated_at]
+      required:
+        - id
+        - organization_id
+        - locker_id
+        - access_code
+        - status
+        - initial_fee_cents
+        - hourly_rate_cents
+        - extra_charge_cents
+        - total_cents
+        - started_at
+        - created_at
+        - updated_at
       properties:
         id: { type: string, format: uuid }
         organization_id: { type: string, format: uuid }
@@ -1124,11 +1363,30 @@ components:
           pattern: "^[0-9]{6}$"
         status:
           $ref: "#/components/schemas/RentalStatus"
+        initial_fee_cents: { type: integer, minimum: 0 }
+        hourly_rate_cents: { type: integer, minimum: 0 }
         started_at: { type: string, format: date-time }
+        unlocked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        retrieved_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
         finished_at:
           anyOf:
             - type: string
               format: date-time
+            - type: "null"
+        extra_charge_cents: { type: integer, minimum: 0 }
+        total_cents: { type: integer, minimum: 0 }
+        elapsed_seconds:
+          anyOf:
+            - type: integer
+              minimum: 0
             - type: "null"
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
@@ -1148,6 +1406,98 @@ components:
         locker_id:
           type: string
           format: uuid
+    WebAuthnOptions:
+      type: object
+      required: [challenge, timeout]
+      properties:
+        challenge: { type: string }
+        timeout: { type: integer, minimum: 1 }
+      additionalProperties: true
+    WebAuthnRegistrationCredential:
+      type: object
+      required: [id, rawId, type, response]
+      properties:
+        id: { type: string }
+        rawId: { type: string }
+        type: { type: string, const: "public-key" }
+        authenticatorAttachment:
+          anyOf:
+            - type: string
+            - type: "null"
+        response:
+          type: object
+          required: [clientDataJSON, attestationObject]
+          properties:
+            clientDataJSON: { type: string }
+            attestationObject: { type: string }
+            transports:
+              type: array
+              items: { type: string }
+          additionalProperties: true
+        clientExtensionResults:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    WebAuthnAuthenticationCredential:
+      type: object
+      required: [id, rawId, type, response]
+      properties:
+        id: { type: string }
+        rawId: { type: string }
+        type: { type: string, const: "public-key" }
+        authenticatorAttachment:
+          anyOf:
+            - type: string
+            - type: "null"
+        response:
+          type: object
+          required: [clientDataJSON, authenticatorData, signature]
+          properties:
+            clientDataJSON: { type: string }
+            authenticatorData: { type: string }
+            signature: { type: string }
+            userHandle:
+              anyOf:
+                - type: string
+                - type: "null"
+          additionalProperties: true
+        clientExtensionResults:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    WebAuthnRegistrationRequest:
+      type: object
+      required: [credential]
+      additionalProperties: false
+      properties:
+        credential:
+          $ref: "#/components/schemas/WebAuthnRegistrationCredential"
+    WebAuthnAuthenticationRequest:
+      type: object
+      required: [credential]
+      additionalProperties: false
+      properties:
+        credential:
+          $ref: "#/components/schemas/WebAuthnAuthenticationCredential"
+    RetrievalResult:
+      type: object
+      required: [rental_id, locker_id, minutes_used, extra_charge_cents, total_cents, payment_required]
+      properties:
+        rental_id: { type: string, format: uuid }
+        locker_id: { type: string, format: uuid }
+        minutes_used: { type: integer, minimum: 0 }
+        extra_charge_cents: { type: integer, minimum: 0 }
+        total_cents: { type: integer, minimum: 0 }
+        payment_required: { type: boolean }
+    OverrideReleaseRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 8
+          maxLength: 500
     UnlockRequest:
       type: object
       required: [access_code]

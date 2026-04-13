@@ -13,7 +13,7 @@
           <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Historico</p>
           <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Auditoria de alugueis</h1>
           <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Consulte o historico da organizacao, filtre por localizacao e remova registros encerrados com motivo claro.
+            Consulte o historico da organizacao, filtre por localizacao, limpe registros encerrados e execute liberacao operacional quando um aluguel travar.
           </p>
         </div>
 
@@ -157,20 +157,33 @@
               {{ formatCents(rental.total_cents) }}
             </span>
 
-            <button
-              v-if="canDelete(rental.status)"
-              type="button"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-300 transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-500"
-              :title="`Excluir aluguel ${rental.locker_code}`"
-              @click="requestDelete([rental])"
-            >
-              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-            <span v-else class="w-8 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-300">
-              —
-            </span>
+            <div class="flex items-center justify-end gap-2">
+              <button
+                v-if="canOverride(rental.status)"
+                type="button"
+                class="inline-flex h-8 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-700 transition-colors hover:bg-amber-100"
+                :title="`Liberar operacionalmente ${rental.locker_code}`"
+                @click="requestOverride(rental)"
+              >
+                Liberar
+              </button>
+
+              <button
+                v-if="canDelete(rental.status)"
+                type="button"
+                class="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-slate-300 transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+                :title="`Excluir aluguel ${rental.locker_code}`"
+                @click="requestDelete([rental])"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+
+              <span v-if="!canDelete(rental.status) && !canOverride(rental.status)" class="w-8 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-300">
+                —
+              </span>
+            </div>
           </div>
 
           <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-slate-100 px-4 py-3">
@@ -266,6 +279,63 @@
         </div>
       </div>
     </BaseModal>
+
+    <BaseModal v-model="showOverrideModal" max-width="sm">
+      <div class="p-6">
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+
+        <h3 class="text-center text-lg font-black text-slate-900">Liberacao operacional</h3>
+        <p class="mt-2 text-center text-sm leading-6 text-slate-500">
+          Esta acao cancela o aluguel em andamento, libera o locker e grava a justificativa na auditoria.
+        </p>
+
+        <div v-if="overrideTarget" class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <p class="font-mono font-black text-slate-900">{{ overrideTarget.locker_code }}</p>
+          <p class="mt-1">{{ statusText(overrideTarget.status) }} · {{ overrideTarget.location_name || 'Sem localizacao' }}</p>
+        </div>
+
+        <label class="mt-4 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500" for="override-reason">
+          Motivo obrigatorio
+        </label>
+        <textarea
+          id="override-reason"
+          v-model="overrideReason"
+          rows="4"
+          class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+          placeholder="Ex.: celular perdido, falha de WebAuthn, atendimento presencial confirmado."
+        />
+
+        <div v-if="overrideError" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ overrideError }}
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button
+            type="button"
+            class="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            @click="closeOverrideModal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            :disabled="isOverriding"
+            class="flex-1 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:opacity-60"
+            @click="confirmOverride"
+          >
+            <span v-if="isOverriding" class="flex items-center justify-center gap-2">
+              <span class="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              Liberando...
+            </span>
+            <span v-else>Liberar locker</span>
+          </button>
+        </div>
+      </div>
+    </BaseModal>
   </PartnerLayout>
 </template>
 
@@ -299,6 +369,12 @@ const showDeleteModal = ref(false)
 const deleteTargets = ref([])
 const isDeleting = ref(false)
 const deleteError = ref('')
+const showOverrideModal = ref(false)
+/** @type {import('vue').Ref<any>} */
+const overrideTarget = ref(null)
+const overrideReason = ref('')
+const isOverriding = ref(false)
+const overrideError = ref('')
 
 const statusFilters = [
   { value: 'all', label: 'Todos' },
@@ -356,7 +432,7 @@ const pageNumbers = computed(() => {
 
 const stats = computed(() => {
   const finished = rentals.value.filter((rental) => rental.status === 'finished').length
-  const active = rentals.value.filter((rental) => ['storing', 'active', 'pending_retrieval_payment'].includes(rental.status)).length
+  const active = rentals.value.filter((rental) => canOverride(rental.status)).length
   const revenue = rentals.value.reduce((sum, rental) => sum + (rental.status === 'finished' ? rental.total_cents || 0 : 0), 0)
 
   return [
@@ -428,9 +504,9 @@ async function fetchHistory() {
     rentals.value = Array.isArray(data) ? data : (data?.data || [])
     clearSelection()
 
-    const blockedCount = rentals.value.filter((rental) => !canDelete(rental.status)).length
-    if (blockedCount > 0) {
-      loadWarning.value = `${blockedCount} registro(s) em andamento nao podem ser excluidos. Apenas finalizados ou cancelados entram na limpeza.`
+    const liveCount = rentals.value.filter((rental) => canOverride(rental.status)).length
+    if (liveCount > 0) {
+      loadWarning.value = `${liveCount} registro(s) seguem em andamento. Use a liberacao operacional apenas quando a operacao tiver confirmado o atendimento presencial.`
     }
   } catch (error) {
     toastError(getApiErrorMessage(error, 'Falha ao carregar historico de alugueis.'))
@@ -443,7 +519,9 @@ function clearSelection() {
   selectedRentalIds.value = []
 }
 
-/** @param {string} rentalId */
+/**
+ * @param {string} rentalId
+ */
 function toggleRentalSelection(rentalId) {
   if (selectedRentalIds.value.includes(rentalId)) {
     selectedRentalIds.value = selectedRentalIds.value.filter((id) => id !== rentalId)
@@ -471,7 +549,9 @@ function toggleSelectAllFiltered() {
   selectedRentalIds.value = [...new Set([...selectedRentalIds.value, ...deletableFilteredIds.value])]
 }
 
-/** @param {any[]} rentalsToDelete */
+/**
+ * @param {any[]} rentalsToDelete
+ */
 function requestDelete(rentalsToDelete) {
   deleteTargets.value = rentalsToDelete
   deleteError.value = ''
@@ -525,23 +605,92 @@ async function confirmDelete() {
   }
 }
 
-/** @param {string} status */
+/**
+ * @param {any} rental
+ */
+function requestOverride(rental) {
+  overrideTarget.value = rental
+  overrideReason.value = ''
+  overrideError.value = ''
+  showOverrideModal.value = true
+}
+
+function closeOverrideModal() {
+  showOverrideModal.value = false
+  overrideTarget.value = null
+  overrideReason.value = ''
+  overrideError.value = ''
+}
+
+async function confirmOverride() {
+  if (!overrideTarget.value) return
+
+  const reason = overrideReason.value.trim()
+
+  if (reason.length < 8) {
+    overrideError.value = 'Informe um motivo com pelo menos 8 caracteres.'
+    return
+  }
+
+  isOverriding.value = true
+  overrideError.value = ''
+
+  try {
+    const updated = await api.post(`/organizations/${orgId}/rentals/${overrideTarget.value.id}/override-release`, { reason })
+
+    rentals.value = rentals.value.map((rental) =>
+      rental.id === overrideTarget.value.id
+        ? {
+            ...rental,
+            status: updated.status,
+            finished_at: updated.finished_at,
+            updated_at: updated.updated_at
+          }
+        : rental
+    )
+
+    selectedRentalIds.value = selectedRentalIds.value.filter((id) => id !== overrideTarget.value.id)
+    success(`Locker ${overrideTarget.value.locker_code} liberado operacionalmente.`)
+    closeOverrideModal()
+  } catch (error) {
+    overrideError.value = getApiErrorMessage(error, 'Nao foi possivel concluir a liberacao operacional.')
+  } finally {
+    isOverriding.value = false
+  }
+}
+
+/**
+ * @param {string} status
+ */
 function canDelete(status) {
   return ['finished', 'cancelled'].includes(status)
 }
 
-/** @param {string} size */
+/**
+ * @param {string} status
+ */
+function canOverride(status) {
+  return ['active', 'storing', 'pending_retrieval_payment'].includes(status)
+}
+
+/**
+ * @param {string} size
+ */
 function sizeLabel(size) {
   return { P: 'Pequeno', M: 'Medio', G: 'Grande' }[size] || size
 }
 
-/** @param {number} cents */
+/**
+ * @param {number} cents
+ */
 function formatCents(cents) {
   if (!cents && cents !== 0) return '—'
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100)
 }
 
-/** @param {string|Date} date */
+/**
+ * @param {string|Date} date
+ */
 function formatDate(date) {
   if (!date) return '—'
   return new Intl.DateTimeFormat('pt-BR', {
@@ -553,7 +702,9 @@ function formatDate(date) {
   }).format(new Date(date))
 }
 
-/** @param {string} status */
+/**
+ * @param {string} status
+ */
 function statusText(status) {
   return {
     active: 'Pendente',
@@ -564,13 +715,15 @@ function statusText(status) {
   }[status] || status
 }
 
-/** @param {string} status */
+/**
+ * @param {string} status
+ */
 function statusPill(status) {
   const base = 'items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] border '
   return {
     active: base + 'bg-blue-50 text-blue-700 border-blue-200',
     storing: base + 'bg-amber-50 text-amber-700 border-amber-200',
-    pending_retrieval_payment: base + 'bg-purple-50 text-purple-700 border-purple-200',
+    pending_retrieval_payment: base + 'bg-brand-50 text-brand-700 border-brand-200',
     finished: base + 'bg-emerald-50 text-emerald-700 border-emerald-200',
     cancelled: base + 'bg-slate-100 text-slate-500 border-slate-200'
   }[status] || base + 'bg-slate-100 text-slate-500 border-slate-200'

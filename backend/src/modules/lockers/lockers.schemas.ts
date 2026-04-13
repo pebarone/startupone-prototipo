@@ -1,10 +1,13 @@
+import type { RentalStatus } from "../rentals/rentals.schemas";
 import { organizationParamsSchema } from "../organizations/organizations.schemas";
 
 export const lockerSizes = ["P", "M", "G"] as const;
 export const lockerStatuses = ["free", "occupied", "maintenance"] as const;
+export const publicLockerContextModes = ["rent", "retrieve", "maintenance"] as const;
 
 export type LockerSize = (typeof lockerSizes)[number];
 export type LockerStatus = (typeof lockerStatuses)[number];
+export type PublicLockerContextMode = (typeof publicLockerContextModes)[number];
 
 export type Locker = {
   id: string;
@@ -51,6 +54,29 @@ export type LockerParams = {
 export type OrganizationLockerParams = {
   organizationId: string;
   id: string;
+};
+
+export type PublicLockerContextActiveRental = {
+  id: string | null;
+  status: Extract<RentalStatus, "active" | "storing" | "pending_retrieval_payment">;
+  started_at: Date;
+  unlocked_at: Date | null;
+  retrieved_at: Date | null;
+  initial_fee_cents: number;
+  hourly_rate_cents: number;
+  extra_charge_cents: number;
+  total_cents: number;
+  can_authenticate: boolean;
+};
+
+export type PublicLockerContext = {
+  mode: PublicLockerContextMode;
+  locker: Locker;
+  location_name: string | null;
+  location_address: string | null;
+  initial_fee_cents: number;
+  hourly_rate_cents: number;
+  active_rental: PublicLockerContextActiveRental | null;
 };
 
 const uuidSchema = { type: "string", format: "uuid" };
@@ -115,7 +141,48 @@ const listLockersResponseSchema = {
   }
 } as const;
 
-// organization_id is optional for public endpoint (used in /use flow without org selection)
+const publicLockerContextActiveRentalSchema = {
+  type: "object",
+  required: [
+    "id",
+    "status",
+    "started_at",
+    "unlocked_at",
+    "retrieved_at",
+    "initial_fee_cents",
+    "hourly_rate_cents",
+    "extra_charge_cents",
+    "total_cents",
+    "can_authenticate"
+  ],
+  properties: {
+    id: { anyOf: [uuidSchema, { type: "null" }] },
+    status: { type: "string", enum: ["active", "storing", "pending_retrieval_payment"] },
+    started_at: timestampSchema,
+    unlocked_at: { anyOf: [timestampSchema, { type: "null" }] },
+    retrieved_at: { anyOf: [timestampSchema, { type: "null" }] },
+    initial_fee_cents: { type: "integer", minimum: 0 },
+    hourly_rate_cents: { type: "integer", minimum: 0 },
+    extra_charge_cents: { type: "integer", minimum: 0 },
+    total_cents: { type: "integer", minimum: 0 },
+    can_authenticate: { type: "boolean" }
+  }
+} as const;
+
+export const publicLockerContextSchema = {
+  type: "object",
+  required: ["mode", "locker", "location_name", "location_address", "initial_fee_cents", "hourly_rate_cents", "active_rental"],
+  properties: {
+    mode: { type: "string", enum: publicLockerContextModes },
+    locker: lockerSchema,
+    location_name: { anyOf: [{ type: "string" }, { type: "null" }] },
+    location_address: { anyOf: [{ type: "string" }, { type: "null" }] },
+    initial_fee_cents: { type: "integer", minimum: 0 },
+    hourly_rate_cents: { type: "integer", minimum: 0 },
+    active_rental: { anyOf: [publicLockerContextActiveRentalSchema, { type: "null" }] }
+  }
+} as const;
+
 export const listPublicLockersSchema = {
   querystring: {
     type: "object",
@@ -132,6 +199,13 @@ export const listPublicLockersSchema = {
   },
   response: {
     200: listLockersResponseSchema
+  }
+} as const;
+
+export const getPublicLockerContextSchema = {
+  params: idParamsSchema,
+  response: {
+    200: publicLockerContextSchema
   }
 } as const;
 

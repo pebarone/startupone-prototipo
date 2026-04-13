@@ -2,28 +2,35 @@ import type { FastifyInstance } from "fastify";
 import { requireOrganizationAdminOrAdmin } from "../../security/admin-auth";
 import {
   bulkDeleteRentalsController,
+  completeRegistrationController,
   confirmRetrievalController,
+  createAuthenticationOptionsController,
+  createRegistrationOptionsController,
   createRentalController,
   deleteRentalController,
   getRentalController,
   listOrgRentalsController,
-  registerBiometricController,
+  overrideReleaseController,
   retrieveLockerController
 } from "./rentals.controller";
 import {
+  authenticationOptionsSchema,
   bulkDeleteRentalsSchema,
+  completeRegistrationSchema,
   confirmRetrievalSchema,
   createRentalSchema,
   deleteOrganizationRentalSchema,
   getRentalSchema,
   listOrganizationAuditSchema,
-  registerBiometricSchema,
+  overrideReleaseSchema,
+  registrationOptionsSchema,
   retrieveLockerSchema,
   type BulkDeleteRentalsBody,
+  type CompleteRegistrationBody,
   type CreateRentalBody,
   type DeleteOrganizationRentalParams,
   type OrganizationAuditParams,
-  type RegisterBiometricBody,
+  type OverrideReleaseBody,
   type RentalParams,
   type RetrieveLockerBody
 } from "./rentals.schemas";
@@ -33,10 +40,22 @@ export async function rentalsRoutes(app: FastifyInstance) {
 
   app.get<{ Params: RentalParams }>("/rentals/:id", { schema: getRentalSchema }, getRentalController);
 
-  app.post<{ Params: RentalParams; Body: RegisterBiometricBody }>(
-    "/rentals/:id/biometric",
-    { schema: registerBiometricSchema },
-    registerBiometricController
+  app.post<{ Params: RentalParams }>(
+    "/rentals/:id/webauthn/registration-options",
+    { schema: registrationOptionsSchema },
+    createRegistrationOptionsController
+  );
+
+  app.post<{ Params: RentalParams; Body: CompleteRegistrationBody }>(
+    "/rentals/:id/webauthn/registrations",
+    { schema: completeRegistrationSchema },
+    completeRegistrationController
+  );
+
+  app.post<{ Params: RentalParams }>(
+    "/rentals/:id/webauthn/authentication-options",
+    { schema: authenticationOptionsSchema },
+    createAuthenticationOptionsController
   );
 
   app.post<{ Params: RentalParams; Body: RetrieveLockerBody }>(
@@ -67,5 +86,11 @@ export async function rentalsRoutes(app: FastifyInstance) {
     "/org/:organizationId/rentals/bulk-delete",
     { schema: bulkDeleteRentalsSchema, preHandler: requireOrganizationAdminOrAdmin },
     bulkDeleteRentalsController
+  );
+
+  app.post<{ Params: DeleteOrganizationRentalParams; Body: OverrideReleaseBody }>(
+    "/organizations/:organizationId/rentals/:id/override-release",
+    { schema: overrideReleaseSchema, preHandler: requireOrganizationAdminOrAdmin },
+    overrideReleaseController
   );
 }

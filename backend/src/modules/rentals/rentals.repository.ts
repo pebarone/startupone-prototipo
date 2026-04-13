@@ -17,6 +17,66 @@ export type LocationPricing = {
   hourly_rate_large: number;
 };
 
+export type ActiveRentalForRegistration = {
+  id: string;
+  organization_id: string;
+  locker_id: string;
+  status: string;
+};
+
+export type ActiveStoringRental = {
+  id: string;
+  organization_id: string;
+  locker_id: string;
+  hourly_rate_cents: number;
+  initial_fee_cents: number;
+  unlocked_at: Date;
+};
+
+export type RentalWebAuthnCredential = {
+  id: string;
+  rental_id: string;
+  organization_id: string;
+  locker_id: string;
+  credential_id: string;
+  public_key: Buffer;
+  counter: number;
+  transports: string[];
+  device_type: "singleDevice" | "multiDevice";
+  backed_up: boolean;
+  last_authenticated_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type WebAuthnChallengePurpose = "registration" | "authentication";
+
+export type RentalWebAuthnChallenge = {
+  id: string;
+  rental_id: string;
+  purpose: WebAuthnChallengePurpose;
+  challenge: string;
+  expires_at: Date;
+  used_at: Date | null;
+  ip_address: string | null;
+  user_agent: string | null;
+};
+
+export type RentalHistoryRow = Rental & {
+  locker_code: string;
+  locker_size: string;
+  location_id: string | null;
+  location_name: string | null;
+};
+
+export type RentalHistoryDeleteCandidate = {
+  id: string;
+  organization_id: string;
+  locker_id: string;
+  locker_code: string;
+  status: string;
+};
+
 export async function findLockerForRentalUpdate(lockerId: string, db: Queryable): Promise<LockerForRental | null> {
   const locker = await db.query<LockerForRental>(
     "SELECT id, organization_id, location_id, size, status FROM lockers WHERE id = $1 FOR UPDATE",
@@ -46,7 +106,7 @@ export async function insertActiveRental(
     INSERT INTO rentals (organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents, total_cents)
     VALUES ($1, $2, $3, 'active', $4, $5, $4)
     ON CONFLICT DO NOTHING
-    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents, biometric_token,
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,
     [organizationId, lockerId, accessCode, initialFeeCents, hourlyRateCents]
@@ -68,7 +128,7 @@ export async function findRentalById(id: string, db: Queryable = pool): Promise<
     `
     SELECT
       r.id, r.organization_id, r.locker_id, r.access_code, r.status,
-      r.initial_fee_cents, r.hourly_rate_cents, r.biometric_token,
+      r.initial_fee_cents, r.hourly_rate_cents,
       r.started_at, r.unlocked_at, r.retrieved_at, r.finished_at,
       r.extra_charge_cents, r.total_cents, r.created_at, r.updated_at,
       CASE
@@ -98,34 +158,190 @@ export async function findRentalById(id: string, db: Queryable = pool): Promise<
   return result.rows[0] ?? null;
 }
 
-export async function registerBiometricOnRental(
+export async function findActiveRentalByIdForUpdate(
   rentalId: string,
-  biometricToken: string,
   db: Queryable
-): Promise<Rental | null> {
-  const result = await db.query<Rental>(
+): Promise<ActiveRentalForRegistration | null> {
+  const result = await db.query<ActiveRentalForRegistration>(
     `
-    UPDATE rentals
-    SET biometric_token = $2, status = 'storing', unlocked_at = now(), updated_at = now()
+    SELECT id, organization_id, locker_id, status
+    FROM rentals
     WHERE id = $1 AND status = 'active'
-    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents, biometric_token,
-              started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
+    FOR UPDATE
     `,
-    [rentalId, biometricToken]
+    [rentalId]
   );
 
   return result.rows[0] ?? null;
 }
 
-export type ActiveStoringRental = {
-  id: string;
-  organization_id: string;
-  locker_id: string;
-  biometric_token: string;
-  hourly_rate_cents: number;
-  initial_fee_cents: number;
-  unlocked_at: Date;
-};
+export async function clearPendingWebAuthnChallenges(
+  rentalId: string,
+  purpose: WebAuthnChallengePurpose,
+  db: Queryable
+): Promise<void> {
+  await db.query(
+    `
+    DELETE FROM webauthn_challenges
+    WHERE rental_id = $1
+      AND purpose = $2
+      AND used_at IS NULL
+    `,
+    [rentalId, purpose]
+  );
+}
+
+export async function insertWebAuthnChallenge(
+  input: {
+    rental_id: string;
+    purpose: WebAuthnChallengePurpose;
+    challenge: string;
+    expires_at: Date;
+    ip_address?: string;
+    user_agent?: string;
+  },
+  db: Queryable
+): Promise<RentalWebAuthnChallenge> {
+  const result = await db.query<RentalWebAuthnChallenge>(
+    `
+    INSERT INTO webauthn_challenges (rental_id, purpose, challenge, expires_at, ip_address, user_agent)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING id, rental_id, purpose, challenge, expires_at, used_at, ip_address, user_agent
+    `,
+    [input.rental_id, input.purpose, input.challenge, input.expires_at, input.ip_address ?? null, input.user_agent ?? null]
+  );
+
+  return result.rows[0];
+}
+
+export async function findOpenWebAuthnChallengeForUpdate(
+  rentalId: string,
+  purpose: WebAuthnChallengePurpose,
+  db: Queryable
+): Promise<RentalWebAuthnChallenge | null> {
+  const result = await db.query<RentalWebAuthnChallenge>(
+    `
+    SELECT id, rental_id, purpose, challenge, expires_at, used_at, ip_address, user_agent
+    FROM webauthn_challenges
+    WHERE rental_id = $1
+      AND purpose = $2
+      AND used_at IS NULL
+    ORDER BY created_at DESC
+    LIMIT 1
+    FOR UPDATE
+    `,
+    [rentalId, purpose]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function markWebAuthnChallengeUsed(challengeId: string, db: Queryable): Promise<void> {
+  await db.query(
+    `
+    UPDATE webauthn_challenges
+    SET used_at = now(), updated_at = now()
+    WHERE id = $1
+    `,
+    [challengeId]
+  );
+}
+
+export async function upsertRentalWebAuthnCredential(
+  input: {
+    rental_id: string;
+    organization_id: string;
+    locker_id: string;
+    credential_id: string;
+    public_key: Buffer;
+    counter: number;
+    transports: string[];
+    device_type: "singleDevice" | "multiDevice";
+    backed_up: boolean;
+  },
+  db: Queryable
+): Promise<RentalWebAuthnCredential> {
+  const result = await db.query<RentalWebAuthnCredential>(
+    `
+    INSERT INTO rental_webauthn_credentials (
+      rental_id, organization_id, locker_id, credential_id, public_key, counter, transports, device_type, backed_up
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9)
+    ON CONFLICT (rental_id) DO UPDATE
+    SET
+      credential_id = EXCLUDED.credential_id,
+      public_key = EXCLUDED.public_key,
+      counter = EXCLUDED.counter,
+      transports = EXCLUDED.transports,
+      device_type = EXCLUDED.device_type,
+      backed_up = EXCLUDED.backed_up,
+      updated_at = now()
+    RETURNING id, rental_id, organization_id, locker_id, credential_id, public_key, counter, transports, device_type,
+              backed_up, last_authenticated_at, created_at, updated_at
+    `,
+    [
+      input.rental_id,
+      input.organization_id,
+      input.locker_id,
+      input.credential_id,
+      input.public_key,
+      input.counter,
+      input.transports,
+      input.device_type,
+      input.backed_up
+    ]
+  );
+
+  return result.rows[0];
+}
+
+export async function activateRentalAfterRegistration(rentalId: string, db: Queryable): Promise<Rental | null> {
+  const result = await db.query<Rental>(
+    `
+    UPDATE rentals
+    SET status = 'storing', unlocked_at = now(), updated_at = now()
+    WHERE id = $1 AND status = 'active'
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
+              started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
+    `,
+    [rentalId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function findRentalWebAuthnCredentialByRentalId(
+  rentalId: string,
+  db: Queryable
+): Promise<RentalWebAuthnCredential | null> {
+  const result = await db.query<RentalWebAuthnCredential>(
+    `
+    SELECT id, rental_id, organization_id, locker_id, credential_id, public_key, counter, transports, device_type,
+           backed_up, last_authenticated_at, created_at, updated_at
+    FROM rental_webauthn_credentials
+    WHERE rental_id = $1
+    LIMIT 1
+    `,
+    [rentalId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function updateRentalWebAuthnCounter(
+  rentalId: string,
+  counter: number,
+  db: Queryable
+): Promise<void> {
+  await db.query(
+    `
+    UPDATE rental_webauthn_credentials
+    SET counter = $2, last_authenticated_at = now(), updated_at = now()
+    WHERE rental_id = $1
+    `,
+    [rentalId, counter]
+  );
+}
 
 export async function findStoringRentalByIdForUpdate(
   rentalId: string,
@@ -133,7 +349,7 @@ export async function findStoringRentalByIdForUpdate(
 ): Promise<ActiveStoringRental | null> {
   const result = await db.query<ActiveStoringRental>(
     `
-    SELECT id, organization_id, locker_id, biometric_token, hourly_rate_cents, initial_fee_cents, unlocked_at
+    SELECT id, organization_id, locker_id, hourly_rate_cents, initial_fee_cents, unlocked_at
     FROM rentals
     WHERE id = $1 AND status = 'storing'
     FOR UPDATE
@@ -156,7 +372,7 @@ export async function setRentalRetrievalCharges(
     SET status = 'pending_retrieval_payment', extra_charge_cents = $2, total_cents = $3,
         retrieved_at = now(), updated_at = now()
     WHERE id = $1 AND status = 'storing'
-    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents, biometric_token,
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,
     [rentalId, extraChargeCents, totalCents]
@@ -171,7 +387,7 @@ export async function finishRentalById(rentalId: string, db: Queryable): Promise
     UPDATE rentals
     SET status = 'finished', finished_at = now(), updated_at = now()
     WHERE id = $1 AND status IN ('pending_retrieval_payment', 'storing')
-    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents, biometric_token,
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,
     [rentalId]
@@ -180,12 +396,26 @@ export async function finishRentalById(rentalId: string, db: Queryable): Promise
   return result.rows[0] ?? null;
 }
 
-export type RentalHistoryRow = Rental & {
-  locker_code: string;
-  locker_size: string;
-  location_id: string | null;
-  location_name: string | null;
-};
+export async function cancelLiveRentalById(
+  rentalId: string,
+  organizationId: string,
+  db: Queryable
+): Promise<Rental | null> {
+  const result = await db.query<Rental>(
+    `
+    UPDATE rentals
+    SET status = 'cancelled', finished_at = now(), updated_at = now()
+    WHERE id = $1
+      AND organization_id = $2
+      AND status IN ('active', 'storing', 'pending_retrieval_payment')
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
+              started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
+    `,
+    [rentalId, organizationId]
+  );
+
+  return result.rows[0] ?? null;
+}
 
 export async function listRentalsByOrg(
   organizationId: string,
@@ -194,7 +424,7 @@ export async function listRentalsByOrg(
   offset = 0
 ): Promise<RentalHistoryRow[]> {
   const params: (string | number)[] = [organizationId, limit, offset];
-  let whereClause = 'r.organization_id = $1';
+  let whereClause = "r.organization_id = $1";
 
   if (locationId) {
     params.push(locationId);
@@ -205,7 +435,7 @@ export async function listRentalsByOrg(
     `
     SELECT
       r.id, r.organization_id, r.locker_id, r.access_code, r.status,
-      r.initial_fee_cents, r.hourly_rate_cents, r.biometric_token,
+      r.initial_fee_cents, r.hourly_rate_cents,
       r.started_at, r.unlocked_at, r.retrieved_at, r.finished_at,
       r.extra_charge_cents, r.total_cents, r.created_at, r.updated_at,
       l.code AS locker_code, l.size AS locker_size, l.location_id,
@@ -230,14 +460,6 @@ export async function deleteRentalById(rentalId: string, organizationId: string)
   );
   return (result.rowCount ?? 0) > 0;
 }
-
-export type RentalHistoryDeleteCandidate = {
-  id: string;
-  organization_id: string;
-  locker_id: string;
-  locker_code: string;
-  status: string;
-};
 
 export async function findRentalHistoryDeleteCandidatesForUpdate(
   organizationId: string,
