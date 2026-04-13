@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <PartnerLayout :org-id="orgId" page-title="Localizações">
     <div v-if="isLoading" class="flex min-h-[50vh] items-center justify-center">
       <div class="flex flex-col items-center gap-3">
@@ -145,51 +145,51 @@
       <div class="space-y-5">
         <div class="grid gap-4 lg:grid-cols-2">
           <div>
-            <label for="location-name" class="mb-1.5 block text-sm font-medium text-slate-300">Nome do ponto *</label>
+            <label for="location-name" class="mb-1.5 block text-sm font-medium text-slate-700">Nome do ponto *</label>
             <input
               id="location-name"
               v-model="form.name"
               type="text"
               placeholder="Ex: Estação da Sé"
-              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </div>
 
           <div>
-            <label for="location-address" class="mb-1.5 block text-sm font-medium text-slate-300">Endereço *</label>
+            <label for="location-address" class="mb-1.5 block text-sm font-medium text-slate-700">Endereço *</label>
             <div class="flex gap-2">
               <input
                 id="location-address"
                 v-model="form.address"
                 type="text"
                 placeholder="Rua, numero, bairro, cidade"
-                class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+                class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 @keyup.enter="searchLocation"
               />
               <button
                 type="button"
-                class="inline-flex h-[42px] items-center justify-center rounded-lg border border-slate-600 px-3.5 text-sm font-semibold text-slate-200 transition-colors hover:border-brand-400 hover:text-white"
+                class="inline-flex h-[42px] items-center justify-center rounded-lg border border-slate-300 px-3.5 text-sm font-semibold text-slate-700 transition-colors hover:border-brand-500 hover:text-brand-600"
                 @click="searchLocation"
               >
                 {{ isSearching ? 'Buscando...' : 'Buscar' }}
               </button>
             </div>
-            <p class="mt-1 text-xs text-slate-500">Use o endereço mais completo possível para posicionar o pin.</p>
+            <p class="mt-1 text-xs text-slate-400">Use o endereço mais completo possível para posicionar o pin.</p>
           </div>
         </div>
 
-        <div v-if="searchResults.length" class="rounded-lg border border-slate-700 bg-slate-800/70 p-3">
-          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Resultados</p>
+        <div v-if="searchResults.length" class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Resultados</p>
           <div class="mt-3 space-y-2">
             <button
               v-for="result in searchResults"
               :key="result.id"
               type="button"
-              class="block w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-3 text-left transition-colors hover:border-brand-500 hover:bg-slate-900"
+              class="block w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-left transition-colors hover:border-brand-500 hover:bg-slate-900"
               @click="applySearchResult(result)"
             >
-              <p class="text-sm font-semibold text-white">{{ result.name }}</p>
-              <p class="mt-1 text-xs leading-5 text-slate-400">{{ result.address }}</p>
+              <p class="text-sm font-semibold text-slate-900">{{ result.name }}</p>
+              <p class="mt-1 text-xs leading-5 text-slate-500">{{ result.address }}</p>
             </button>
           </div>
         </div>
@@ -204,22 +204,50 @@
             empty-label="Busque um endereço para visualizar o ponto no mapa."
           />
 
-          <div class="space-y-3 rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+          <div class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Latitude</p>
-              <p class="mt-1 text-sm font-semibold text-white">{{ formattedLatitude }}</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Latitude</p>
+              <p class="mt-1 text-sm font-semibold text-slate-900">{{ formattedLatitude }}</p>
             </div>
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Longitude</p>
-              <p class="mt-1 text-sm font-semibold text-white">{{ formattedLongitude }}</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Longitude</p>
+              <p class="mt-1 text-sm font-semibold text-slate-900">{{ formattedLongitude }}</p>
             </div>
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
-              <p class="mt-1 text-sm text-slate-300">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Status</p>
+              <p class="mt-1 text-sm text-slate-600">
                 {{ hasCoordinates ? 'Posicionado no mapa' : 'Aguardando busca de endereço' }}
               </p>
             </div>
           </div>
+        </div>
+
+                <!-- Pricing fields -->
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-4">Tabela de Pre&#231;os</p>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="mb-1.5 block text-xs font-medium text-slate-400">Taxa de ativa&#231;&#227;o (R$)</label>
+              <input v-model.number="form.initial_fee_reais" type="number" min="0" step="0.5" placeholder="5,00"
+                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-xs font-medium text-slate-400">Locker P &#160;R$/h</label>
+              <input v-model.number="form.hourly_rate_small_reais" type="number" min="0" step="0.5" placeholder="5,00"
+                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-xs font-medium text-slate-400">Locker M &#160;R$/h</label>
+              <input v-model.number="form.hourly_rate_medium_reais" type="number" min="0" step="0.5" placeholder="10,00"
+                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+            <div>
+              <label class="mb-1.5 block text-xs font-medium text-slate-400">Locker G &#160;R$/h</label>
+              <input v-model.number="form.hourly_rate_large_reais" type="number" min="0" step="0.5" placeholder="15,00"
+                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-slate-400">Valores em reais (R$). Cobran&#231;a por hora cheia usada pelo cliente.</p>
         </div>
 
         <div v-if="formError" class="rounded-lg border border-red-800 bg-red-950/60 px-3.5 py-3 text-sm text-red-300">
@@ -246,6 +274,16 @@
         </button>
       </template>
     </BaseModal>
+
+    <ConfirmDialog
+      v-model="showDeleteModal"
+      title="Excluir localizacao?"
+      :description="deleteDescription"
+      confirm-label="Excluir localizacao"
+      :loading="isDeletingLocation"
+      :details="deleteDetails"
+      @confirm="confirmLocationDelete"
+    />
   </PartnerLayout>
 </template>
 
@@ -255,10 +293,12 @@ import { useRoute } from 'vue-router'
 import LockerMap from '@/components/map/LockerMap.vue'
 import PartnerLayout from '@/components/layout/PartnerLayout.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { api } from '@/composables/useApi'
 import { useOrganization } from '@/composables/useOrganization'
 import { useToast } from '@/composables/useToast'
 import { searchAddresses } from '@/services/geocoding'
+import { getApiErrorMessage } from '@/lib/api-errors'
 
 const route = useRoute()
 const orgId = route.params.orgId
@@ -271,16 +311,23 @@ const isLoading = ref(true)
 const showModal = ref(false)
 const isSaving = ref(false)
 const isSearching = ref(false)
+const showDeleteModal = ref(false)
+const isDeletingLocation = ref(false)
 const selectedLocationId = ref('')
 const editingLocationId = ref('')
 const searchResults = ref([])
 const formError = ref('')
+const locationPendingDelete = ref(null)
 
 const form = ref({
   name: '',
   address: '',
   latitude: null,
-  longitude: null
+  longitude: null,
+  initial_fee_reais: 5,
+  hourly_rate_small_reais: 5,
+  hourly_rate_medium_reais: 10,
+  hourly_rate_large_reais: 15
 })
 
 const selectedLocation = computed(() =>
@@ -318,6 +365,26 @@ const formattedLongitude = computed(() =>
   hasCoordinates.value ? Number(form.value.longitude).toFixed(6) : '---'
 )
 
+const deleteDescription = computed(() => {
+  if (!locationPendingDelete.value) {
+    return 'Esta acao remove a localizacao de forma permanente.'
+  }
+
+  return `A localizacao ${locationPendingDelete.value.name} sera removida permanentemente.`
+})
+
+const deleteDetails = computed(() => {
+  if (!locationPendingDelete.value) {
+    return []
+  }
+
+  return [
+    locationPendingDelete.value.address,
+    `${locationPendingDelete.value.free_lockers || 0} locker(s) livres no ponto`,
+    `${locationPendingDelete.value.total_lockers || 0} locker(s) vinculados`
+  ]
+})
+
 onMounted(async () => {
   const org = await fetchOrganization(orgId)
 
@@ -333,7 +400,7 @@ async function fetchLocations() {
 
   try {
     const response = await api.get(`/organizations/${orgId}/locations?limit=200`)
-    locations.value = response.data || []
+    locations.value = Array.isArray(response) ? response : (response?.data || [])
 
     if (!locations.value.length) {
       selectedLocationId.value = ''
@@ -344,7 +411,7 @@ async function fetchLocations() {
       selectedLocationId.value = locations.value[0].id
     }
   } catch (error) {
-    toastError('Falha ao carregar localizações.')
+    toastError('Falha ao carregar localizacoes.')
     console.error(error)
   } finally {
     isLoading.value = false
@@ -364,7 +431,11 @@ function openEditModal(location) {
     name: location.name,
     address: location.address,
     latitude: Number(location.latitude),
-    longitude: Number(location.longitude)
+    longitude: Number(location.longitude),
+    initial_fee_reais: (location.initial_fee_cents ?? 500) / 100,
+    hourly_rate_small_reais: (location.hourly_rate_small ?? 500) / 100,
+    hourly_rate_medium_reais: (location.hourly_rate_medium ?? 1000) / 100,
+    hourly_rate_large_reais: (location.hourly_rate_large ?? 1500) / 100
   }
   formError.value = ''
   searchResults.value = []
@@ -380,7 +451,11 @@ function resetForm() {
     name: '',
     address: '',
     latitude: null,
-    longitude: null
+    longitude: null,
+    initial_fee_reais: 5,
+    hourly_rate_small_reais: 5,
+    hourly_rate_medium_reais: 10,
+    hourly_rate_large_reais: 15
   }
   formError.value = ''
   searchResults.value = []
@@ -443,7 +518,11 @@ async function saveLocation() {
     name: form.value.name.trim(),
     address: form.value.address.trim(),
     latitude: Number(form.value.latitude),
-    longitude: Number(form.value.longitude)
+    longitude: Number(form.value.longitude),
+    initial_fee_cents: Math.round((form.value.initial_fee_reais || 5) * 100),
+    hourly_rate_small: Math.round((form.value.hourly_rate_small_reais || 5) * 100),
+    hourly_rate_medium: Math.round((form.value.hourly_rate_medium_reais || 10) * 100),
+    hourly_rate_large: Math.round((form.value.hourly_rate_large_reais || 15) * 100)
   }
 
   try {
@@ -467,7 +546,7 @@ async function saveLocation() {
       selectedLocationId.value = savedLocationId
     }
   } catch (error) {
-    formError.value = error?.response?.data?.detail || error?.message || 'Não foi possível salvar a localização.'
+    formError.value = getApiErrorMessage(error, 'Nao foi possivel salvar a localizacao.')
   } finally {
     isSaving.value = false
   }
@@ -477,23 +556,32 @@ async function saveLocation() {
  * @param {any} location
  */
 async function removeLocation(location) {
-  const confirmed = window.confirm(`Excluir a localização "${location.name}"?`)
+  locationPendingDelete.value = location
+  showDeleteModal.value = true
+}
 
-  if (!confirmed) {
+async function confirmLocationDelete() {
+  if (!locationPendingDelete.value) {
     return
   }
 
-  try {
-    await api.delete(`/organizations/${orgId}/locations/${location.id}`)
-    success('Localização removida.')
+  isDeletingLocation.value = true
 
-    if (selectedLocationId.value === location.id) {
+  try {
+    await api.delete(`/organizations/${orgId}/locations/${locationPendingDelete.value.id}`)
+    success('Localizacao removida.')
+
+    if (selectedLocationId.value === locationPendingDelete.value.id) {
       selectedLocationId.value = ''
     }
 
+    showDeleteModal.value = false
+    locationPendingDelete.value = null
     await fetchLocations()
   } catch (error) {
-    toastError(error?.response?.data?.detail || 'Não foi possível excluir a localização.')
+    toastError(getApiErrorMessage(error, 'Nao foi possivel excluir a localizacao.'))
+  } finally {
+    isDeletingLocation.value = false
   }
 }
 </script>

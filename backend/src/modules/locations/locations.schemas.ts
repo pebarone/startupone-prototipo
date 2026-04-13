@@ -8,6 +8,10 @@ export type LockerLocation = {
   address: string;
   latitude: number;
   longitude: number;
+  initial_fee_cents: number;
+  hourly_rate_small: number;
+  hourly_rate_medium: number;
+  hourly_rate_large: number;
   created_at: Date;
   updated_at: Date;
 };
@@ -43,6 +47,10 @@ export type CreateLocationBody = {
   address: string;
   latitude: number;
   longitude: number;
+  initial_fee_cents?: number;
+  hourly_rate_small?: number;
+  hourly_rate_medium?: number;
+  hourly_rate_large?: number;
 };
 
 export type UpdateLocationBody = {
@@ -50,6 +58,10 @@ export type UpdateLocationBody = {
   address?: string;
   latitude?: number;
   longitude?: number;
+  initial_fee_cents?: number;
+  hourly_rate_small?: number;
+  hourly_rate_medium?: number;
+  hourly_rate_large?: number;
 };
 
 export type LocationParams = {
@@ -67,7 +79,7 @@ const coordinateNumberSchema = { type: "number" };
 
 export const lockerLocationSchema = {
   type: "object",
-  required: ["id", "organization_id", "name", "address", "latitude", "longitude", "created_at", "updated_at"],
+  required: ["id", "organization_id", "name", "address", "latitude", "longitude", "initial_fee_cents", "hourly_rate_small", "hourly_rate_medium", "hourly_rate_large", "created_at", "updated_at"],
   properties: {
     id: uuidSchema,
     organization_id: uuidSchema,
@@ -75,6 +87,10 @@ export const lockerLocationSchema = {
     address: { type: "string" },
     latitude: coordinateNumberSchema,
     longitude: coordinateNumberSchema,
+    initial_fee_cents: { type: "integer", minimum: 0 },
+    hourly_rate_small: { type: "integer", minimum: 0 },
+    hourly_rate_medium: { type: "integer", minimum: 0 },
+    hourly_rate_large: { type: "integer", minimum: 0 },
     created_at: timestampSchema,
     updated_at: timestampSchema
   }
@@ -177,7 +193,11 @@ export const createLocationSchema = {
       name: { type: "string", minLength: 2, maxLength: 120 },
       address: { type: "string", minLength: 5, maxLength: 255 },
       latitude: { type: "number", minimum: -90, maximum: 90 },
-      longitude: { type: "number", minimum: -180, maximum: 180 }
+      longitude: { type: "number", minimum: -180, maximum: 180 },
+      initial_fee_cents: { type: "integer", minimum: 0 },
+      hourly_rate_small: { type: "integer", minimum: 0 },
+      hourly_rate_medium: { type: "integer", minimum: 0 },
+      hourly_rate_large: { type: "integer", minimum: 0 }
     },
     additionalProperties: false
   },
@@ -203,7 +223,11 @@ export const updateLocationSchema = {
       name: { type: "string", minLength: 2, maxLength: 120 },
       address: { type: "string", minLength: 5, maxLength: 255 },
       latitude: { type: "number", minimum: -90, maximum: 90 },
-      longitude: { type: "number", minimum: -180, maximum: 180 }
+      longitude: { type: "number", minimum: -180, maximum: 180 },
+      initial_fee_cents: { type: "integer", minimum: 0 },
+      hourly_rate_small: { type: "integer", minimum: 0 },
+      hourly_rate_medium: { type: "integer", minimum: 0 },
+      hourly_rate_large: { type: "integer", minimum: 0 }
     },
     additionalProperties: false
   },

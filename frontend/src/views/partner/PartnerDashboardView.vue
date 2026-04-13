@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <PartnerLayout :org-id="orgId" page-title="Dashboard">
 
     <div v-if="isLoading" class="flex items-center justify-center min-h-[50vh]">
@@ -52,11 +52,13 @@
         <MetricCard label="Aluguéis Ativos" :value="m.active_rentals ?? 0" delta="em andamento" icon-color="#7c3aed" :icon-path="icons.activity" />
       </div>
 
-      <!-- Secondary KPIs — 3 cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <!-- Secondary KPIs — 5 cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <SmallKpi label="Total de Aluguéis" :value="m.total_rentals ?? 0" />
+        <SmallKpi label="Em Uso Agora" :value="(m.storing_rentals ?? 0)" color="text-brand-600" />
         <SmallKpi label="Aluguéis Finalizados" :value="m.finished_rentals ?? 0" color="text-emerald-600" />
-        <SmallKpi label="Acessos Rejeitados" :value="m.failed_unlocks ?? 0" color="text-red-500" />
+        <SmallKpi label="Receita Total" :value="formatCentsDisplay(m.total_revenue_cents ?? 0)" color="text-brand-700" />
+        <SmallKpi label="Tempo Médio" :value="formatAvgMinutes(m.avg_usage_minutes ?? 0)" color="text-slate-700" />
       </div>
 
       <!-- Middle row: occupancy + success rate -->
@@ -347,6 +349,21 @@ const icons = {
   activity: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
 }
 
+
+/** @param {number} cents */
+function formatCentsDisplay(cents) {
+  if (!cents && cents !== 0) return 'R$ 0'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100)
+}
+
+/** @param {number} minutes */
+function formatAvgMinutes(minutes) {
+  if (!minutes || minutes < 1) return 'u2014'
+  const h = Math.floor(minutes / 60)
+  const m = Math.round(minutes % 60)
+  if (h === 0) return $ + '{m}min'
+  return m === 0 ? $ + '{h}h' : $ + '{h}h ' + $ + '{m}min'
+}
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   await initializeDashboard()

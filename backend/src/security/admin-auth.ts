@@ -157,7 +157,8 @@ function readOrganizationIdParam(request: FastifyRequest): string | undefined {
     return undefined;
   }
 
-  const value = (request.params as Record<string, unknown>).organizationId;
+  const params = request.params as Record<string, unknown>;
+  const value = params.organizationId ?? params.orgId;
   return typeof value === "string" ? value : undefined;
 }
 

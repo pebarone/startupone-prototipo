@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.103.0",
     "axios": "^1.15.0",
     "clsx": "^2.1.0",
+    "driver.js": "^1.4.0",
     "gsap": "^3.12.5",
     "leaflet": "^1.9.4",
     "lucide-vue-next": "^0.300.0",

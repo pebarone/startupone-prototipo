@@ -196,19 +196,19 @@
     >
       <div class="space-y-5">
         <div>
-          <label for="locker-code" class="mb-1.5 block text-sm font-medium text-slate-300">Código *</label>
+          <label for="locker-code" class="mb-1.5 block text-sm font-medium text-slate-700">Código *</label>
           <input
             id="locker-code"
             v-model="lockerForm.code"
             type="text"
             placeholder="Ex: LCK-007"
-            class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm font-mono uppercase text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-mono uppercase text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             @input="lockerForm.code = lockerForm.code.toUpperCase()"
           />
         </div>
 
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-slate-300">Tamanho *</label>
+          <label class="mb-1.5 block text-sm font-medium text-slate-700">Tamanho *</label>
           <div class="grid grid-cols-3 gap-2">
             <button
               v-for="size in sizes"
@@ -225,11 +225,11 @@
         </div>
 
         <div>
-          <label for="locker-location" class="mb-1.5 block text-sm font-medium text-slate-300">Localização</label>
+          <label for="locker-location" class="mb-1.5 block text-sm font-medium text-slate-700">Localização</label>
           <select
             id="locker-location"
             v-model="lockerForm.location_id"
-            class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           >
             <option value="">Sem localização</option>
             <option v-for="location in locations" :key="location.id" :value="location.id">
@@ -276,32 +276,32 @@
       <div class="space-y-5">
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="bulk-prefix" class="mb-1.5 block text-sm font-medium text-slate-300">Prefixo *</label>
+            <label for="bulk-prefix" class="mb-1.5 block text-sm font-medium text-slate-700">Prefixo *</label>
             <input
               id="bulk-prefix"
               v-model="bulkForm.prefix"
               type="text"
               placeholder="Ex: LCK"
-              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm font-mono uppercase text-white placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-mono uppercase text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               @input="bulkForm.prefix = bulkForm.prefix.toUpperCase().replace(/[^A-Z0-9]/g, '')"
             />
           </div>
 
           <div>
-            <label for="bulk-start" class="mb-1.5 block text-sm font-medium text-slate-300">Número inicial</label>
+            <label for="bulk-start" class="mb-1.5 block text-sm font-medium text-slate-700">Número inicial</label>
             <input
               id="bulk-start"
               v-model.number="bulkForm.startAt"
               type="number"
               min="1"
               max="999"
-              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm font-mono text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-mono text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </div>
         </div>
 
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-slate-300">Quantidade *</label>
+          <label class="mb-1.5 block text-sm font-medium text-slate-700">Quantidade *</label>
           <div class="flex items-center gap-3">
             <input v-model.number="bulkForm.count" type="range" min="1" max="50" class="flex-1 accent-brand-500" />
             <span class="w-16 text-center text-xl font-black text-white">{{ bulkForm.count }}</span>
@@ -310,7 +310,7 @@
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-slate-300">Tamanho *</label>
+            <label class="mb-1.5 block text-sm font-medium text-slate-700">Tamanho *</label>
             <div class="grid grid-cols-3 gap-2">
               <button
                 v-for="size in sizes"
@@ -326,11 +326,11 @@
           </div>
 
           <div>
-            <label for="bulk-location" class="mb-1.5 block text-sm font-medium text-slate-300">Localização</label>
+            <label for="bulk-location" class="mb-1.5 block text-sm font-medium text-slate-700">Localização</label>
             <select
               id="bulk-location"
               v-model="bulkForm.location_id"
-              class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
               <option value="">Sem localização</option>
               <option v-for="location in locations" :key="location.id" :value="location.id">
@@ -340,7 +340,7 @@
           </div>
         </div>
 
-        <div v-if="bulkPreview.length" class="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+        <div v-if="bulkPreview.length" class="rounded-lg border border-slate-200 bg-slate-50 p-4">
           <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Pré-visualização</p>
           <div class="mt-3 flex flex-wrap gap-2">
             <span
@@ -356,9 +356,9 @@
           </div>
         </div>
 
-        <div v-if="bulkProgress.total > 0" class="rounded-lg border border-slate-700 bg-slate-800/70 p-4">
+        <div v-if="bulkProgress.total > 0" class="rounded-lg border border-slate-200 bg-slate-50 p-4">
           <div class="mb-2 flex items-center justify-between text-sm">
-            <span class="font-medium text-slate-300">Criando lockers...</span>
+            <span class="font-medium text-slate-700">Criando lockers...</span>
             <span class="font-bold text-brand-400">{{ bulkProgress.done }}/{{ bulkProgress.total }}</span>
           </div>
           <div class="h-1.5 overflow-hidden rounded-full bg-slate-700">
@@ -396,6 +396,16 @@
         </button>
       </template>
     </BaseModal>
+
+    <ConfirmDialog
+      v-model="showDeleteModal"
+      title="Excluir locker?"
+      :description="deleteDescription"
+      confirm-label="Excluir locker"
+      :loading="!!deletingId"
+      :details="deleteDetails"
+      @confirm="confirmLockerDelete"
+    />
   </PartnerLayout>
 </template>
 
@@ -403,10 +413,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import PartnerLayout from '@/components/layout/PartnerLayout.vue'
 import { api } from '@/composables/useApi'
 import { useOrganization } from '@/composables/useOrganization'
 import { useToast } from '@/composables/useToast'
+import { getApiErrorMessage } from '@/lib/api-errors'
 
 const route = useRoute()
 const orgId = route.params.orgId
@@ -420,6 +432,8 @@ const locations = ref([])
 const isLoading = ref(true)
 const updatingId = ref('')
 const deletingId = ref('')
+const showDeleteModal = ref(false)
+const lockerPendingDelete = ref(null)
 const activeFilter = ref('all')
 const activeLocationFilter = ref('all')
 
@@ -499,6 +513,26 @@ const bulkPreview = computed(() => {
   )
 })
 
+const deleteDescription = computed(() => {
+  if (!lockerPendingDelete.value) {
+    return 'Esta acao remove o locker de forma permanente.'
+  }
+
+  return `O locker ${lockerPendingDelete.value.code} sera removido de forma permanente.`
+})
+
+const deleteDetails = computed(() => {
+  if (!lockerPendingDelete.value) {
+    return []
+  }
+
+  return [
+    `Locker ${lockerPendingDelete.value.code}`,
+    `Status atual: ${statusLabel(lockerPendingDelete.value.status)}`,
+    `Localizacao: ${locationLabel(lockerPendingDelete.value.location_id)}`
+  ]
+})
+
 onMounted(async () => {
   isLoading.value = true
 
@@ -511,7 +545,7 @@ onMounted(async () => {
 
     await Promise.all([fetchLocations(), fetchLockers()])
   } catch (error) {
-    toastError('Não foi possível carregar os dados de lockers.')
+    toastError('Nao foi possivel carregar os dados de lockers.')
     console.error(error)
   } finally {
     isLoading.value = false
@@ -520,12 +554,12 @@ onMounted(async () => {
 
 async function fetchLockers() {
   const response = await api.get(`/organizations/${orgId}/lockers?limit=${LOCKERS_FETCH_LIMIT}`)
-  lockers.value = Array.isArray(response?.data) ? response.data : []
+  lockers.value = Array.isArray(response) ? response : (response?.data || [])
 }
 
 async function fetchLocations() {
   const response = await api.get(`/organizations/${orgId}/locations?limit=200`)
-  locations.value = Array.isArray(response?.data) ? response.data : []
+  locations.value = Array.isArray(response) ? response : (response?.data || [])
 }
 
 function openCreateModal() {
@@ -611,7 +645,7 @@ async function saveLocker() {
     showLockerModal.value = false
     resetLockerForm()
   } catch (error) {
-    lockerError.value = error?.response?.data?.detail || error?.message || 'Não foi possível salvar o locker.'
+    lockerError.value = getApiErrorMessage(error, 'Nao foi possivel salvar o locker.')
   } finally {
     isSavingLocker.value = false
   }
@@ -644,7 +678,7 @@ async function createBulk() {
       createdLockers.push(createdLocker)
     } catch (error) {
       bulkProgress.value.errors.push(
-        `${code}: ${error?.response?.data?.detail || 'erro ao criar'}`
+        `${code}: ${getApiErrorMessage(error, 'erro ao criar')}`
       )
     } finally {
       bulkProgress.value.done += 1
@@ -685,7 +719,7 @@ async function patchStatus(lockerId, status) {
 
     success('Status atualizado.')
   } catch (error) {
-    toastError('Falha ao atualizar o locker.')
+    toastError(getApiErrorMessage(error, 'Falha ao atualizar o locker.'))
     console.error(error)
   } finally {
     updatingId.value = ''
@@ -696,21 +730,25 @@ async function patchStatus(lockerId, status) {
  * @param {any} locker
  */
 async function removeLocker(locker) {
-  const confirmed = window.confirm(`Deseja excluir o locker ${locker.code}? Essa ação não pode ser desfeita.`)
+  lockerPendingDelete.value = locker
+  showDeleteModal.value = true
+}
 
-  if (!confirmed) {
+async function confirmLockerDelete() {
+  if (!lockerPendingDelete.value) {
     return
   }
 
-  deletingId.value = locker.id
+  deletingId.value = lockerPendingDelete.value.id
 
   try {
-    await api.delete(`/organizations/${orgId}/lockers/${locker.id}`)
-    lockers.value = lockers.value.filter((item) => item.id !== locker.id)
-    success(`Locker ${locker.code} excluído.`)
+    await api.delete(`/organizations/${orgId}/lockers/${lockerPendingDelete.value.id}`)
+    lockers.value = lockers.value.filter((item) => item.id !== lockerPendingDelete.value.id)
+    success(`Locker ${lockerPendingDelete.value.code} excluido.`)
+    showDeleteModal.value = false
+    lockerPendingDelete.value = null
   } catch (error) {
-    const detail = error?.response?.data?.detail || 'Não foi possível excluir o locker.'
-    toastError(detail)
+    toastError(getApiErrorMessage(error, 'Nao foi possivel excluir o locker.'))
   } finally {
     deletingId.value = ''
   }

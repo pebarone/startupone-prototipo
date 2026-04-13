@@ -4,10 +4,13 @@ export type DashboardMetrics = {
   occupied_lockers: number;
   maintenance_lockers: number;
   active_rentals: number;
+  storing_rentals: number;
   finished_rentals: number;
   total_rentals: number;
   successful_unlocks: number;
   failed_unlocks: number;
+  total_revenue_cents: number;
+  avg_usage_minutes: number;
 };
 
 export type DashboardLockerPreview = {
@@ -34,10 +37,13 @@ export const dashboardMetricsSchema = {
     "occupied_lockers",
     "maintenance_lockers",
     "active_rentals",
+    "storing_rentals",
     "finished_rentals",
     "total_rentals",
     "successful_unlocks",
-    "failed_unlocks"
+    "failed_unlocks",
+    "total_revenue_cents",
+    "avg_usage_minutes"
   ],
   properties: {
     total_lockers: { type: "integer", minimum: 0 },
@@ -45,10 +51,13 @@ export const dashboardMetricsSchema = {
     occupied_lockers: { type: "integer", minimum: 0 },
     maintenance_lockers: { type: "integer", minimum: 0 },
     active_rentals: { type: "integer", minimum: 0 },
+    storing_rentals: { type: "integer", minimum: 0 },
     finished_rentals: { type: "integer", minimum: 0 },
     total_rentals: { type: "integer", minimum: 0 },
     successful_unlocks: { type: "integer", minimum: 0 },
-    failed_unlocks: { type: "integer", minimum: 0 }
+    failed_unlocks: { type: "integer", minimum: 0 },
+    total_revenue_cents: { type: "integer", minimum: 0 },
+    avg_usage_minutes: { type: "number", minimum: 0 }
   }
 } as const;
 

@@ -42,6 +42,10 @@ export async function listLocationsByOrganization(
       locations.address,
       locations.latitude,
       locations.longitude,
+      locations.initial_fee_cents,
+      locations.hourly_rate_small,
+      locations.hourly_rate_medium,
+      locations.hourly_rate_large,
       locations.created_at,
       locations.updated_at,
       count(lockers.id)::int AS total_lockers,
@@ -114,6 +118,10 @@ export async function listPublicLocationsWithStats(
       locations.address,
       locations.latitude,
       locations.longitude,
+      locations.initial_fee_cents,
+      locations.hourly_rate_small,
+      locations.hourly_rate_medium,
+      locations.hourly_rate_large,
       locations.created_at,
       locations.updated_at,
       count(lockers.id)::int AS total_lockers,
@@ -169,6 +177,10 @@ export async function findLocationById(
       locations.address,
       locations.latitude,
       locations.longitude,
+      locations.initial_fee_cents,
+      locations.hourly_rate_small,
+      locations.hourly_rate_medium,
+      locations.hourly_rate_large,
       locations.created_at,
       locations.updated_at,
       count(lockers.id)::int AS total_lockers,
@@ -192,11 +204,21 @@ export async function insertLocation(
 ): Promise<LockerLocation> {
   const result = await db.query<LockerLocation>(
     `
-    INSERT INTO locker_locations (organization_id, name, address, latitude, longitude)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, organization_id, name, address, latitude, longitude, created_at, updated_at
+    INSERT INTO locker_locations (organization_id, name, address, latitude, longitude, initial_fee_cents, hourly_rate_small, hourly_rate_medium, hourly_rate_large)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING id, organization_id, name, address, latitude, longitude, initial_fee_cents, hourly_rate_small, hourly_rate_medium, hourly_rate_large, created_at, updated_at
     `,
-    [organizationId, input.name, input.address, input.latitude, input.longitude]
+    [
+      organizationId,
+      input.name,
+      input.address,
+      input.latitude,
+      input.longitude,
+      input.initial_fee_cents ?? 500,
+      input.hourly_rate_small ?? 500,
+      input.hourly_rate_medium ?? 1000,
+      input.hourly_rate_large ?? 1500
+    ]
   );
 
   return result.rows[0];
@@ -231,6 +253,26 @@ export async function updateLocationById(
     assignments.push(`longitude = $${values.length}`);
   }
 
+  if (input.initial_fee_cents !== undefined) {
+    values.push(input.initial_fee_cents);
+    assignments.push(`initial_fee_cents = $${values.length}`);
+  }
+
+  if (input.hourly_rate_small !== undefined) {
+    values.push(input.hourly_rate_small);
+    assignments.push(`hourly_rate_small = $${values.length}`);
+  }
+
+  if (input.hourly_rate_medium !== undefined) {
+    values.push(input.hourly_rate_medium);
+    assignments.push(`hourly_rate_medium = $${values.length}`);
+  }
+
+  if (input.hourly_rate_large !== undefined) {
+    values.push(input.hourly_rate_large);
+    assignments.push(`hourly_rate_large = $${values.length}`);
+  }
+
   if (assignments.length === 0) {
     return null;
   }
@@ -243,7 +285,7 @@ export async function updateLocationById(
     SET ${assignments.join(", ")}, updated_at = now()
     WHERE organization_id = $${values.length - 1}
       AND id = $${values.length}
-    RETURNING id, organization_id, name, address, latitude, longitude, created_at, updated_at
+    RETURNING id, organization_id, name, address, latitude, longitude, initial_fee_cents, hourly_rate_small, hourly_rate_medium, hourly_rate_large, created_at, updated_at
     `,
     values
   );

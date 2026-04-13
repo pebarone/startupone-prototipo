@@ -14,8 +14,13 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     rental_stats AS (
       SELECT
         count(*) FILTER (WHERE status = 'active')::int AS active_rentals,
+        count(*) FILTER (WHERE status = 'storing')::int AS storing_rentals,
         count(*) FILTER (WHERE status = 'finished')::int AS finished_rentals,
-        count(*)::int AS total_rentals
+        count(*)::int AS total_rentals,
+        COALESCE(SUM(total_cents) FILTER (WHERE status = 'finished'), 0)::int AS total_revenue_cents,
+        COALESCE(AVG(
+          EXTRACT(EPOCH FROM (retrieved_at - unlocked_at)) / 60
+        ) FILTER (WHERE status = 'finished' AND retrieved_at IS NOT NULL AND unlocked_at IS NOT NULL), 0) AS avg_usage_minutes
       FROM rentals
     ),
     unlock_stats AS (
@@ -30,8 +35,11 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       locker_stats.occupied_lockers,
       locker_stats.maintenance_lockers,
       rental_stats.active_rentals,
+      rental_stats.storing_rentals,
       rental_stats.finished_rentals,
       rental_stats.total_rentals,
+      rental_stats.total_revenue_cents,
+      rental_stats.avg_usage_minutes,
       unlock_stats.successful_unlocks,
       unlock_stats.failed_unlocks
     FROM locker_stats
@@ -60,8 +68,13 @@ export async function getOrganizationDashboard(
     rental_stats AS (
       SELECT
         count(*) FILTER (WHERE status = 'active')::int AS active_rentals,
+        count(*) FILTER (WHERE status = 'storing')::int AS storing_rentals,
         count(*) FILTER (WHERE status = 'finished')::int AS finished_rentals,
-        count(*)::int AS total_rentals
+        count(*)::int AS total_rentals,
+        COALESCE(SUM(total_cents) FILTER (WHERE status = 'finished'), 0)::int AS total_revenue_cents,
+        COALESCE(AVG(
+          EXTRACT(EPOCH FROM (retrieved_at - unlocked_at)) / 60
+        ) FILTER (WHERE status = 'finished' AND retrieved_at IS NOT NULL AND unlocked_at IS NOT NULL), 0) AS avg_usage_minutes
       FROM rentals
       WHERE organization_id = $1
     ),
@@ -92,8 +105,11 @@ export async function getOrganizationDashboard(
       locker_stats.occupied_lockers,
       locker_stats.maintenance_lockers,
       rental_stats.active_rentals,
+      rental_stats.storing_rentals,
       rental_stats.finished_rentals,
       rental_stats.total_rentals,
+      rental_stats.total_revenue_cents,
+      rental_stats.avg_usage_minutes,
       unlock_stats.successful_unlocks,
       unlock_stats.failed_unlocks,
       locker_preview.lockers_preview

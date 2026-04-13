@@ -27,7 +27,7 @@
       </h2>
       
       <p class="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-        Não importa se você precisa de 1 hora ou 1 semana. Nossa plataforma protege aquilo que importa com seguros reais e acesso via smartphone.
+        Pague só pelo tempo que usar. Acesso biométrico, cobrança por hora e seguro incluso — tudo sem sair do lugar.
       </p>
 
       <div class="flex flex-col sm:flex-row gap-6 justify-center">

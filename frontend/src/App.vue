@@ -25,6 +25,7 @@
 
     <!-- Footer: hidden on partner/auth/account pages -->
     <FooterSection v-if="!isFooterlessRoute" />
+    <BaseToast />
   </div>
 </template>
 
@@ -34,6 +35,7 @@ import { useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import NavBar from '@/components/layout/NavBar.vue'
 import FooterSection from '@/components/layout/FooterSection.vue'
+import BaseToast from '@/components/ui/BaseToast.vue'
 
 const route = useRoute()
 const { initializeAuth, isInitializing } = useAuth()

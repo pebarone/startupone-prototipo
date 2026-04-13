@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <PartnerLayout :org-id="orgId" page-title="Membros">
     <div v-if="isLoading" class="flex items-center justify-center py-24">
       <BaseSpinner size="xl" color="brand" />
@@ -139,7 +139,7 @@
     <!-- Edit Modal -->
     <BaseModal v-model="showEditModal" title="Editar Membro" max-width="sm">
       <div v-if="editMember" class="space-y-4">
-        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/60">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-100">
           <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">
             {{ memberInitial(editMember) }}
           </div>
@@ -152,7 +152,7 @@
           <label class="block text-sm font-medium text-slate-300 mb-2">Papel</label>
           <select
             v-model="editForm.role"
-            class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-brand-500 text-sm"
+            class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-sm"
           >
             <option value="admin">Administrador</option>
             <option value="viewer">Visualizador</option>
@@ -162,7 +162,7 @@
           <label class="block text-sm font-medium text-slate-300 mb-2">Status</label>
           <select
             v-model="editForm.status"
-            class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-brand-500 text-sm"
+            class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-sm"
           >
             <option value="active">Ativo</option>
             <option value="disabled">Desabilitado</option>

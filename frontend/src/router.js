@@ -6,12 +6,14 @@ import LoginView from './views/LoginView.vue'
 import AccountView from './views/AccountView.vue'
 import AuthCallbackView from './views/AuthCallbackView.vue'
 import UseView from './views/UseView.vue'
+import RetrieveView from './views/RetrieveView.vue'
 
 // Partner views (lazy loaded)
 const PartnerDashboardView = () => import('./views/partner/PartnerDashboardView.vue')
 const PartnerLockersView = () => import('./views/partner/PartnerLockersView.vue')
 const PartnerLocationsView = () => import('./views/partner/PartnerLocationsView.vue')
 const PartnerMembersView = () => import('./views/partner/PartnerMembersView.vue')
+const PartnerAuditView = () => import('./views/partner/PartnerAuditView.vue')
 
 const routes = [
   // --- Public routes ---
@@ -24,6 +26,11 @@ const routes = [
     path: '/use',
     name: 'use',
     component: UseView
+  },
+  {
+    path: '/retrieve/:rentalId',
+    name: 'retrieve',
+    component: RetrieveView
   },
   {
     path: '/login',
@@ -79,6 +86,12 @@ const routes = [
     path: '/partner/:orgId/members',
     name: 'partner-members',
     component: PartnerMembersView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/partner/:orgId/audit',
+    name: 'partner-audit',
+    component: PartnerAuditView,
     meta: { requiresAuth: true }
   },
 

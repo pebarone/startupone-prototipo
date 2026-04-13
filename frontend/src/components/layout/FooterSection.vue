@@ -21,20 +21,20 @@
       <div>
         <h6 class="font-bold text-slate-900 mb-4">Plataforma</h6>
         <ul class="space-y-3">
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Como funciona</a></li>
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Seguros (Tech Insurance)</a></li>
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Tabela de Preços</a></li>
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Encontrar Lockers</a></li>
+          <li><a href="/#como-funciona" class="hover:text-brand-600 transition-colors">Como funciona</a></li>
+          <li><a href="/#solucao" class="hover:text-brand-600 transition-colors">Seguros (Tech Insurance)</a></li>
+          <li><a href="/#solucao" class="hover:text-brand-600 transition-colors">Cobrança por Hora</a></li>
+          <li><a href="/use" class="hover:text-brand-600 transition-colors">Encontrar Lockers</a></li>
         </ul>
       </div>
 
       <div>
         <h6 class="font-bold text-slate-900 mb-4">Parceiros</h6>
         <ul class="space-y-3">
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Seja um Parceiro</a></li>
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Hardware Lockers</a></li>
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Dashboard Login</a></li>
-          <li><a href="#" class="hover:text-brand-600 transition-colors">Central de Ajuda</a></li>
+          <li><a href="/#parceiros" class="hover:text-brand-600 transition-colors">Seja um Parceiro</a></li>
+          <li><a href="/#parceiros" class="hover:text-brand-600 transition-colors">Hardware Lockers</a></li>
+          <li><a href="/login" class="hover:text-brand-600 transition-colors">Dashboard Login</a></li>
+          <li><a href="/#como-funciona" class="hover:text-brand-600 transition-colors">Central de Ajuda</a></li>
         </ul>
       </div>
     </div>

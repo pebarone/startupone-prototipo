@@ -1,35 +1,50 @@
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 w-80" aria-live="polite">
+    <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 w-80" aria-live="polite" aria-label="Notificações">
       <TransitionGroup name="toast" tag="div" class="flex flex-col gap-2">
         <div
-          v-for="toast in toasts"
-          :key="toast.id"
-          :class="[
-            'flex items-start gap-3 p-4 rounded-xl border shadow-xl shadow-black/30 backdrop-blur-sm cursor-pointer',
-            variantClass(toast.type)
-          ]"
-          @click="dismiss(toast.id)"
+          v-for="t in toasts"
+          :key="t.id"
+          :class="['group flex items-start gap-3 rounded-xl border px-4 py-3.5 shadow-lg cursor-pointer select-none', variantClass(t.type)]"
+          role="alert"
+          @click="dismiss(t.id)"
         >
-          <div class="flex-shrink-0 mt-0.5">
+          <!-- Icon -->
+          <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
             <!-- Success -->
-            <svg v-if="toast.type === 'success'" class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <svg v-if="t.type === 'success'" class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <!-- Error -->
-            <svg v-else-if="toast.type === 'error'" class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <svg v-else-if="t.type === 'error'" class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <!-- Warning -->
-            <svg v-else-if="toast.type === 'warning'" class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            <svg v-else-if="t.type === 'warning'" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <!-- Info -->
-            <svg v-else class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <svg v-else class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
-          <p class="text-sm text-slate-200 leading-relaxed flex-1">{{ toast.message }}</p>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <p class="text-[13px] font-semibold leading-snug" :class="labelClass(t.type)">{{ typeLabel(t.type) }}</p>
+            <p class="mt-0.5 text-xs leading-relaxed text-slate-500">{{ t.message }}</p>
+          </div>
+
+          <!-- Dismiss X -->
+          <button
+            class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-slate-500"
+            :aria-label="'Fechar notificação'"
+            @click.stop="dismiss(t.id)"
+          >
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
       </TransitionGroup>
     </div>
@@ -44,27 +59,48 @@ const { toasts, dismiss } = useToast()
 /** @param {string} type */
 function variantClass(type) {
   return {
-    success: 'bg-slate-900/95 border-emerald-800/60',
-    error: 'bg-slate-900/95 border-red-800/60',
-    warning: 'bg-slate-900/95 border-amber-800/60',
-    info: 'bg-slate-900/95 border-blue-800/60'
-  }[type] || 'bg-slate-900/95 border-slate-700/60'
+    success: 'bg-white border-emerald-200 shadow-emerald-100/60',
+    error:   'bg-white border-red-200 shadow-red-100/60',
+    warning: 'bg-white border-amber-200 shadow-amber-100/60',
+    info:    'bg-white border-blue-200 shadow-blue-100/60'
+  }[type] || 'bg-white border-slate-200 shadow-slate-100/40'
+}
+
+/** @param {string} type */
+function labelClass(type) {
+  return {
+    success: 'text-emerald-700',
+    error:   'text-red-700',
+    warning: 'text-amber-700',
+    info:    'text-blue-700'
+  }[type] || 'text-slate-700'
+}
+
+/** @param {string} type */
+function typeLabel(type) {
+  return { success: 'Sucesso', error: 'Erro', warning: 'Atenção', info: 'Informação' }[type] || 'Info'
 }
 </script>
 
 <style scoped>
+/* Emil: enter fast (ease-out), exit instant. Never ease-in on UI elements. */
 .toast-enter-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1), transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .toast-leave-active {
-  transition: all 0.2s ease-in;
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
 }
 .toast-enter-from {
   opacity: 0;
-  transform: translateX(24px) scale(0.96);
+  /* Start near final position, not from nothing */
+  transform: translateX(12px) scale(0.97);
 }
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(24px) scale(0.96);
+  transform: translateX(16px) scale(0.96);
+}
+/* Stagger: each consecutive toast enters slightly after */
+.toast-move {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 </style>

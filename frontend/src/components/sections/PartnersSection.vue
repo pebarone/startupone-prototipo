@@ -23,7 +23,7 @@
              </div>
              <div>
                <h4 class="text-xl font-bold text-white">Monetização Passiva</h4>
-               <p class="text-slate-400 mt-1">Nenhum custo fixo alto. Seus clientes locam, você ganha. Controle via dashboard em tempo real.</p>
+               <p class="text-slate-400 mt-1">Nenhum custo fixo alto. Seus clientes locam por hora, você ganha. Controle via dashboard em tempo real.</p>
              </div>
            </div>
 
@@ -43,7 +43,17 @@
              </div>
              <div>
                <h4 class="text-xl font-bold text-white">Nenhum Hardware Complexo</h4>
-               <p class="text-slate-400 mt-1">O próprio usuário libera usando a câmera do celular. Zero manutenção, apenas adesivos e travas na porta.</p>
+               <p class="text-slate-400 mt-1">O usuário usa a biometria do celular para abrir. Zero manutenção, apenas adesivos e travas na porta.</p>
+             </div>
+           </div>
+
+           <div class="flex gap-4 partner-feature">
+             <div class="w-12 h-12 shrink-0 rounded-xl bg-slate-800 border border-slate-700 text-brand-400 flex items-center justify-center shadow-lg icon-box">
+               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+             </div>
+             <div>
+               <h4 class="text-xl font-bold text-white">Defina o Preço</h4>
+               <p class="text-slate-400 mt-1">Configure taxa inicial e valor por hora (P/M/G) do seu ponto direto no dashboard. Você controla a receita.</p>
              </div>
            </div>
          </div>
@@ -118,8 +128,8 @@ onMounted(() => {
   )
 
   // Pulsing dashboard elements
-  gsap.fromTo('.glow-bar', 
-    { opacity: 0.5 }, 
+  gsap.fromTo('.glow-bar',
+    { opacity: 0.5 },
     { opacity: 1, duration: 1.5, yoyo: true, repeat: -1, stagger: 0.3, ease: 'sine.inOut' }
   )
 

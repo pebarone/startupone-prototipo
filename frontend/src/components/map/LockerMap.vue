@@ -104,6 +104,16 @@ watch(
   }
 )
 
+// Fly to new center when geolocation resolves
+watch(
+  () => props.center,
+  (c) => {
+    if (!map || !c) return
+    map.flyTo([c.lat, c.lng], c.zoom ?? 12, { duration: 1.2, easeLinearity: 0.3 })
+  },
+  { deep: true }
+)
+
 function initializeMap() {
   if (!mapElement.value || map) {
     return
@@ -122,8 +132,10 @@ function initializeMap() {
     props.center.zoom ?? DEFAULT_CENTER.zoom
   )
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
   }).addTo(map)
 
   markersLayer = L.layerGroup().addTo(map)
@@ -343,6 +355,7 @@ function escapeHtml(value) {
   height: 100%;
   width: 100%;
   font-family: inherit;
+  z-index: 0;
 }
 
 :deep(.leaflet-control-zoom a) {
