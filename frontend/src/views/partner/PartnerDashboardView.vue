@@ -358,11 +358,22 @@ function formatCentsDisplay(cents) {
 
 /** @param {number} minutes */
 function formatAvgMinutes(minutes) {
-  if (!minutes || minutes < 1) return 'u2014'
-  const h = Math.floor(minutes / 60)
-  const m = Math.round(minutes % 60)
-  if (h === 0) return $ + '{m}min'
-  return m === 0 ? $ + '{h}h' : $ + '{h}h ' + $ + '{m}min'
+  const totalMinutes = Number(minutes)
+  if (!Number.isFinite(totalMinutes) || totalMinutes < 1) return '—'
+
+  const roundedMinutes = Math.round(totalMinutes)
+  if (roundedMinutes < 60) return `${roundedMinutes}min`
+
+  const totalHours = Math.floor(roundedMinutes / 60)
+  const remainingMinutes = roundedMinutes % 60
+  if (totalHours < 24) {
+    return remainingMinutes === 0 ? `${totalHours}h` : `${totalHours}h ${remainingMinutes}min`
+  }
+
+  const days = Math.floor(totalHours / 24)
+  const remainingHours = totalHours % 24
+  if (remainingHours === 0) return `${days}d`
+  return `${days}d ${remainingHours}h`
 }
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
