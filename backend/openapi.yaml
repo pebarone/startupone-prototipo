@@ -636,7 +636,7 @@ paths:
               $ref: "#/components/schemas/WebAuthnRegistrationRequest"
       responses:
         "200":
-          description: Credential registered and rental moved to storing
+          description: Credential registered and rental kept ready for locker opening
           content:
             application/json:
               schema:
@@ -647,6 +647,26 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/start-storing:
+    post:
+      tags: [Rentals]
+      operationId: startRentalStoring
+      summary: Start the storing timer after the user closes the locker
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Rental moved to storing and timer started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
   /api/rentals/{id}/webauthn/authentication-options:
@@ -663,6 +683,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebAuthnOptions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/retrievals/webauthn/authentication-options:
+    post:
+      tags: [Rentals]
+      operationId: createGenericRetrievalAuthenticationOptions
+      summary: Create WebAuthn authentication options for generic retrieval entry
+      responses:
+        "200":
+          description: Authentication options generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnOptions"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/retrievals/webauthn/retrieve:
+    post:
+      tags: [Rentals]
+      operationId: retrieveRentalByCredential
+      summary: Authenticate with WebAuthn, resolve the linked rental, and calculate retrieval charges
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebAuthnAuthenticationRequest"
+      responses:
+        "200":
+          description: Rental resolved and retrieval prepared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrievalLookupResult"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -1489,6 +1549,14 @@ components:
         extra_charge_cents: { type: integer, minimum: 0 }
         total_cents: { type: integer, minimum: 0 }
         payment_required: { type: boolean }
+    RetrievalLookupResult:
+      type: object
+      required: [rental, retrieval]
+      properties:
+        rental:
+          $ref: "#/components/schemas/RentalWithLocker"
+        retrieval:
+          $ref: "#/components/schemas/RetrievalResult"
     OverrideReleaseRequest:
       type: object
       required: [reason]

@@ -25,9 +25,24 @@ RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=1 minute
 SUPABASE_URL=https://ftckqciojfecxlegjszy.supabase.co
 SUPABASE_PUBLISHABLE_KEY=
+WEBAUTHN_RP_ID=localhost
+WEBAUTHN_RP_NAME=FastLock
+WEBAUTHN_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3333
 ```
 
 O backend usa acesso direto ao Postgres para dados e Supabase Auth para validar Bearer tokens.
+
+### WebAuthn em celular
+
+Para testar WebAuthn no PC em `localhost`, HTTP costuma funcionar porque `localhost` e tratado como contexto seguro. No celular Android acessando o app por IP da rede local, por exemplo `http://192.168.x.x:3333`, isso **nao** vale: o navegador exige `HTTPS`.
+
+Para o fluxo de biometria funcionar no celular:
+
+- sirva o frontend por `HTTPS`
+- configure `WEBAUTHN_RP_ID` com o host real usado no celular
+- configure `WEBAUTHN_ALLOWED_ORIGINS` com a origem exata do frontend, por exemplo `https://fastlock-dev.seu-dominio.com`
+
+Se `RP_ID`, origem e host nao coincidirem, o navegador pode falhar antes mesmo de exibir o prompt biometrico.
 
 ## Modelo de usuarios e organizacoes
 

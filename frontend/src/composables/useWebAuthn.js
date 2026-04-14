@@ -1,10 +1,51 @@
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser'
 
 /**
+ * @returns {{ supported: boolean, hasPublicKeyCredential: boolean, secureContext: boolean, origin: string }}
+ */
+export function getWebAuthnSupportState() {
+  if (typeof window === 'undefined') {
+    return {
+      supported: false,
+      hasPublicKeyCredential: false,
+      secureContext: false,
+      origin: ''
+    }
+  }
+
+  const hasPublicKeyCredential = typeof window.PublicKeyCredential !== 'undefined'
+  const secureContext = window.isSecureContext === true
+
+  return {
+    supported: hasPublicKeyCredential && secureContext,
+    hasPublicKeyCredential,
+    secureContext,
+    origin: window.location.origin
+  }
+}
+
+/**
  * @returns {boolean}
  */
 export function isWebAuthnSupported() {
-  return typeof window !== 'undefined' && typeof window.PublicKeyCredential !== 'undefined'
+  return getWebAuthnSupportState().supported
+}
+
+/**
+ * @returns {string}
+ */
+export function getWebAuthnSupportHint() {
+  const state = getWebAuthnSupportState()
+
+  if (!state.hasPublicKeyCredential) {
+    return 'Este navegador nao oferece a API WebAuthn. Use Chrome, Edge ou outro navegador atualizado.'
+  }
+
+  if (!state.secureContext) {
+    return `WebAuthn exige HTTPS ou localhost. Origem atual: ${state.origin || 'desconhecida'}.`
+  }
+
+  return ''
 }
 
 /**
@@ -33,9 +74,10 @@ export async function authenticatePasskey(optionsJSON) {
 export function getWebAuthnErrorMessage(error, fallback = 'Falha ao validar a biometria deste aparelho.') {
   const message = String(error?.message || '').trim()
   const name = String(error?.name || '').trim()
+  const supportHint = getWebAuthnSupportHint()
 
   if (!isWebAuthnSupported()) {
-    return 'Este navegador nao suporta WebAuthn. Use um navegador atualizado no celular.'
+    return supportHint || 'Este navegador nao suporta WebAuthn. Use um navegador atualizado no celular.'
   }
 
   if (name === 'NotAllowedError') {
@@ -51,7 +93,7 @@ export function getWebAuthnErrorMessage(error, fallback = 'Falha ao validar a bi
   }
 
   if (name === 'SecurityError') {
-    return 'WebAuthn exige acesso seguro por HTTPS ou localhost.'
+    return supportHint || 'WebAuthn exige acesso seguro por HTTPS ou localhost.'
   }
 
   if (message) {
@@ -63,6 +105,6 @@ export function getWebAuthnErrorMessage(error, fallback = 'Falha ao validar a bi
 
 function assertWebAuthnSupported() {
   if (!isWebAuthnSupported()) {
-    throw new Error('WebAuthn nao esta disponivel neste navegador.')
+    throw new Error(getWebAuthnSupportHint() || 'WebAuthn nao esta disponivel neste navegador.')
   }
 }

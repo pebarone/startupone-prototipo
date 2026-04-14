@@ -44,13 +44,13 @@ export async function registerFrontend(app: FastifyInstance) {
 
   const assetsRoot = path.join(frontendDistRoot, "assets");
   const indexPath = path.join(frontendDistRoot, "index.html");
-  const indexHtml = await readFile(indexPath, "utf8");
   const appConfigScript = `window.__APP_CONFIG__ = ${JSON.stringify({
     apiBaseUrl: "/api",
     supabaseUrl: env.SUPABASE_URL,
     supabasePublishableKey: env.SUPABASE_PUBLISHABLE_KEY,
     supabaseOAuthProvider: process.env.SUPABASE_OAUTH_PROVIDER?.trim() || "google"
   })};`;
+  const readIndexHtml = async () => readFile(indexPath, "utf8");
 
   await app.register(fastifyStatic, {
     root: assetsRoot,
@@ -68,15 +68,15 @@ export async function registerFrontend(app: FastifyInstance) {
 
   app.get("/", async (_request, reply) => {
     reply.header("Cache-Control", "no-cache");
-    return reply.type("text/html; charset=utf-8").send(indexHtml);
+    return reply.type("text/html; charset=utf-8").send(await readIndexHtml());
   });
 
-  app.setNotFoundHandler((request, reply) => {
+  app.setNotFoundHandler(async (request, reply) => {
     const pathname = request.url.split("?")[0] || "/";
 
     if (request.method === "GET" && shouldServeSpa(pathname)) {
       reply.header("Cache-Control", "no-cache");
-      return reply.type("text/html; charset=utf-8").send(indexHtml);
+      return reply.type("text/html; charset=utf-8").send(await readIndexHtml());
     }
 
     return reply.code(404).send({

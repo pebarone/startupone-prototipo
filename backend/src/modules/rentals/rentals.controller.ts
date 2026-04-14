@@ -5,6 +5,7 @@ import {
   completeRegistrationService,
   confirmRetrievalPaymentService,
   createAuthenticationOptionsService,
+  createRetrievalAuthenticationOptionsService,
   createRegistrationOptionsService,
   createRentalService,
   deleteRentalHistoryBatchService,
@@ -12,6 +13,8 @@ import {
   getRentalByIdService,
   listRentalsByOrg,
   overrideReleaseService,
+  retrieveByCredentialService,
+  startStoringService,
   retrieveLockerService
 } from "./rentals.service";
 import type {
@@ -22,7 +25,9 @@ import type {
   OrganizationAuditParams,
   OverrideReleaseBody,
   RentalParams,
-  RetrieveLockerBody
+  RetrievalLookupResult,
+  RetrieveLockerBody,
+  StartStoringBody
 } from "./rentals.schemas";
 
 export async function createRentalController(
@@ -65,12 +70,42 @@ export async function createAuthenticationOptionsController(
   return reply.code(200).send(options);
 }
 
+export async function createRetrievalAuthenticationOptionsController(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const options = await createRetrievalAuthenticationOptionsService(getRequestContext(request, "anonymous"));
+  return reply.code(200).send(options);
+}
+
+export async function startStoringController(
+  request: FastifyRequest<{ Params: RentalParams; Body: StartStoringBody }>,
+  reply: FastifyReply
+) {
+  const rental = await startStoringService(
+    request.params.id,
+    getRequestContext(request, "anonymous")
+  );
+  return reply.code(200).send(rental);
+}
+
 export async function retrieveLockerController(
   request: FastifyRequest<{ Params: RentalParams; Body: RetrieveLockerBody }>,
   reply: FastifyReply
 ) {
   const result = await retrieveLockerService(
     request.params.id,
+    request.body.credential as AuthenticationResponseJSON,
+    getRequestContext(request, "anonymous")
+  );
+  return reply.code(200).send(result);
+}
+
+export async function retrieveByCredentialController(
+  request: FastifyRequest<{ Body: RetrieveLockerBody }>,
+  reply: FastifyReply
+) {
+  const result: RetrievalLookupResult = await retrieveByCredentialService(
     request.body.credential as AuthenticationResponseJSON,
     getRequestContext(request, "anonymous")
   );

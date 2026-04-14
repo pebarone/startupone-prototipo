@@ -98,7 +98,7 @@
               </div>
 
               <div v-if="!webauthnSupported" class="mt-5 rounded-xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                Este navegador nao suporta WebAuthn. Abra o QR em um navegador atualizado no celular.
+                {{ webauthnSupportHint || 'Este navegador nao suporta WebAuthn. Abra o QR em um navegador atualizado no celular.' }}
               </div>
             </div>
 
@@ -163,6 +163,9 @@
               <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Proximo passo</p>
               <p class="mt-3 text-sm leading-6 text-slate-300">
                 Gere uma nova challenge e confirme a biometria local para vincular a chave publica deste aluguel ao aparelho.
+              </p>
+              <p v-if="!webauthnSupported" class="mt-3 text-xs leading-5 text-amber-200">
+                {{ webauthnSupportHint }}
               </p>
               <button
                 type="button"
@@ -240,7 +243,7 @@
           </button>
 
           <p v-if="!webauthnSupported" class="mt-4 text-sm text-amber-200">
-            Este navegador nao suporta WebAuthn. Abra o QR em um navegador atualizado no celular cadastrado.
+            {{ webauthnSupportHint || 'Este navegador nao suporta WebAuthn. Abra o QR em um navegador atualizado no celular cadastrado.' }}
           </p>
         </section>
 
@@ -328,7 +331,13 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { api } from '@/composables/useApi'
-import { authenticatePasskey, getWebAuthnErrorMessage, isWebAuthnSupported, registerPasskey } from '@/composables/useWebAuthn'
+import {
+  authenticatePasskey,
+  getWebAuthnErrorMessage,
+  getWebAuthnSupportHint,
+  getWebAuthnSupportState,
+  registerPasskey
+} from '@/composables/useWebAuthn'
 import { getApiErrorMessage } from '@/lib/api-errors'
 
 const route = useRoute()
@@ -345,7 +354,9 @@ const actionLoading = ref(false)
 const loadError = ref('')
 const actionError = ref('')
 const elapsedSeconds = ref(0)
-const webauthnSupported = isWebAuthnSupported()
+const webauthnState = getWebAuthnSupportState()
+const webauthnSupported = webauthnState.supported
+const webauthnSupportHint = getWebAuthnSupportHint()
 const pendingRegistrationRentalId = ref(loadPersistedPendingRentalId())
 
 let timerInterval = null
@@ -436,10 +447,12 @@ onUnmounted(() => {
   stopTimer()
 })
 
-async function refreshContext() {
+async function refreshContext({ preserveActionError = false } = {}) {
   isLoading.value = true
   loadError.value = ''
-  actionError.value = ''
+  if (!preserveActionError) {
+    actionError.value = ''
+  }
 
   try {
     const data = await api.get(`/lockers/${lockerId.value}/public-context`)
@@ -581,8 +594,8 @@ async function refreshAfterActionFailure(error, fallback) {
     ? getWebAuthnErrorMessage(error, fallback)
     : getApiErrorMessage(error, fallback)
 
+  await refreshContext({ preserveActionError: true })
   actionError.value = message
-  await refreshContext()
 }
 
 async function completePendingRegistration(rentalId) {

@@ -62,6 +62,39 @@ export type RentalWebAuthnChallenge = {
   user_agent: string | null;
 };
 
+export type WebAuthnLookupChallenge = {
+  id: string;
+  challenge: string;
+  expires_at: Date;
+  used_at: Date | null;
+  ip_address: string | null;
+  user_agent: string | null;
+};
+
+export type RetrievableWebAuthnCredentialSummary = {
+  id: string;
+  transports: string[];
+};
+
+export type RetrievableWebAuthnCredential = {
+  rental_id: string;
+  organization_id: string;
+  locker_id: string;
+  credential_id: string;
+  public_key: Buffer;
+  counter: number;
+  transports: string[];
+  device_type: "singleDevice" | "multiDevice";
+  backed_up: boolean;
+  rental_status: "storing" | "pending_retrieval_payment";
+  initial_fee_cents: number;
+  hourly_rate_cents: number;
+  unlocked_at: Date;
+  retrieved_at: Date | null;
+  extra_charge_cents: number;
+  total_cents: number;
+};
+
 export type RentalHistoryRow = Rental & {
   locker_code: string;
   locker_size: string;
@@ -158,6 +191,35 @@ export async function findRentalById(id: string, db: Queryable = pool): Promise<
   return result.rows[0] ?? null;
 }
 
+export async function findRentalRecordById(id: string, db: Queryable): Promise<Rental | null> {
+  const result = await db.query<Rental>(
+    `
+    SELECT
+      id,
+      organization_id,
+      locker_id,
+      access_code,
+      status,
+      initial_fee_cents,
+      hourly_rate_cents,
+      started_at,
+      unlocked_at,
+      retrieved_at,
+      finished_at,
+      extra_charge_cents,
+      total_cents,
+      created_at,
+      updated_at
+    FROM rentals
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [id]
+  );
+
+  return result.rows[0] ?? null;
+}
+
 export async function findActiveRentalByIdForUpdate(
   rentalId: string,
   db: Queryable
@@ -247,6 +309,57 @@ export async function markWebAuthnChallengeUsed(challengeId: string, db: Queryab
   );
 }
 
+export async function insertWebAuthnLookupChallenge(
+  input: {
+    challenge: string;
+    expires_at: Date;
+    ip_address?: string;
+    user_agent?: string;
+  },
+  db: Queryable
+): Promise<WebAuthnLookupChallenge> {
+  const result = await db.query<WebAuthnLookupChallenge>(
+    `
+    INSERT INTO webauthn_lookup_challenges (challenge, expires_at, ip_address, user_agent)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, challenge, expires_at, used_at, ip_address, user_agent
+    `,
+    [input.challenge, input.expires_at, input.ip_address ?? null, input.user_agent ?? null]
+  );
+
+  return result.rows[0];
+}
+
+export async function findOpenWebAuthnLookupChallengeByChallengeForUpdate(
+  challenge: string,
+  db: Queryable
+): Promise<WebAuthnLookupChallenge | null> {
+  const result = await db.query<WebAuthnLookupChallenge>(
+    `
+    SELECT id, challenge, expires_at, used_at, ip_address, user_agent
+    FROM webauthn_lookup_challenges
+    WHERE challenge = $1
+      AND used_at IS NULL
+    LIMIT 1
+    FOR UPDATE
+    `,
+    [challenge]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function markWebAuthnLookupChallengeUsed(challengeId: string, db: Queryable): Promise<void> {
+  await db.query(
+    `
+    UPDATE webauthn_lookup_challenges
+    SET used_at = now(), updated_at = now()
+    WHERE id = $1
+    `,
+    [challengeId]
+  );
+}
+
 export async function upsertRentalWebAuthnCredential(
   input: {
     rental_id: string;
@@ -310,6 +423,22 @@ export async function activateRentalAfterRegistration(rentalId: string, db: Quer
   return result.rows[0] ?? null;
 }
 
+export async function startRentalStoringById(rentalId: string, db: Queryable): Promise<Rental | null> {
+  const result = await db.query<Rental>(
+    `
+    UPDATE rentals
+    SET status = 'storing', unlocked_at = COALESCE(unlocked_at, now()), updated_at = now()
+    WHERE id = $1
+      AND status = 'active'
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
+              started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
+    `,
+    [rentalId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
 export async function findRentalWebAuthnCredentialByRentalId(
   rentalId: string,
   db: Queryable
@@ -323,6 +452,58 @@ export async function findRentalWebAuthnCredentialByRentalId(
     LIMIT 1
     `,
     [rentalId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function listRetrievableWebAuthnCredentials(
+  db: Queryable
+): Promise<RetrievableWebAuthnCredentialSummary[]> {
+  const result = await db.query<RetrievableWebAuthnCredentialSummary>(
+    `
+    SELECT c.credential_id AS id, c.transports
+    FROM rental_webauthn_credentials c
+    INNER JOIN rentals r ON r.id = c.rental_id
+    WHERE r.status IN ('storing', 'pending_retrieval_payment')
+    ORDER BY c.updated_at DESC
+    `
+  );
+
+  return result.rows;
+}
+
+export async function findRetrievableCredentialByCredentialIdForUpdate(
+  credentialId: string,
+  db: Queryable
+): Promise<RetrievableWebAuthnCredential | null> {
+  const result = await db.query<RetrievableWebAuthnCredential>(
+    `
+    SELECT
+      c.rental_id,
+      c.organization_id,
+      c.locker_id,
+      c.credential_id,
+      c.public_key,
+      c.counter,
+      c.transports,
+      c.device_type,
+      c.backed_up,
+      r.status AS rental_status,
+      r.initial_fee_cents,
+      r.hourly_rate_cents,
+      r.unlocked_at,
+      r.retrieved_at,
+      r.extra_charge_cents,
+      r.total_cents
+    FROM rental_webauthn_credentials c
+    INNER JOIN rentals r ON r.id = c.rental_id
+    WHERE c.credential_id = $1
+      AND r.status IN ('storing', 'pending_retrieval_payment')
+    LIMIT 1
+    FOR UPDATE
+    `,
+    [credentialId]
   );
 
   return result.rows[0] ?? null;

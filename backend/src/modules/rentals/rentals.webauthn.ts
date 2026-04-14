@@ -55,23 +55,34 @@ export async function buildRegistrationOptions(
   return options;
 }
 
-export async function buildAuthenticationOptions(credential: {
+export async function buildAuthenticationOptions(credentials: {
   id: string;
   transports?: string[];
-}) {
+}[]) {
   const options = await generateAuthenticationOptions({
     rpID: env.WEBAUTHN_RP_ID,
     timeout: CEREMONY_TIMEOUT_MS,
     userVerification: "required",
-    allowCredentials: [
-      {
-        id: credential.id,
-        transports: normalizeTransports(credential.transports)
-      }
-    ]
+    allowCredentials: credentials.length
+      ? credentials.map((credential) => ({
+          id: credential.id,
+          transports: normalizeTransports(credential.transports)
+        }))
+      : undefined
   });
 
   return options;
+}
+
+export function extractAuthenticationChallenge(credential: AuthenticationResponseJSON): string | null {
+  try {
+    const clientDataJson = Buffer.from(credential.response.clientDataJSON, "base64url").toString("utf8");
+    const parsed = JSON.parse(clientDataJson) as { challenge?: string };
+
+    return typeof parsed.challenge === "string" && parsed.challenge.trim() ? parsed.challenge : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function verifyRentalRegistration(

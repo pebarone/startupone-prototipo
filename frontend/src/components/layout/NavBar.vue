@@ -29,6 +29,7 @@
       <!-- Desktop CTAs -->
       <div class="hidden md:flex items-center gap-3 flex-shrink-0">
         <a href="/use" class="text-sm font-semibold text-slate-700 hover:text-brand-600 transition-colors">Usar um Locker</a>
+        <a href="/retrieve" class="text-sm font-semibold text-slate-700 hover:text-brand-600 transition-colors">Retirar itens</a>
 
         <!-- Not logged in -->
         <template v-if="!isLoggedIn">
@@ -101,6 +102,7 @@
           <div class="border-t border-slate-100" />
         </template>
         <a href="/use" class="block text-sm font-medium text-slate-700 py-2">Usar um Locker</a>
+        <a href="/retrieve" class="block text-sm font-medium text-slate-700 py-2">Retirar itens</a>
         <a v-if="!isLoggedIn" href="/login" class="block w-full text-center py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold">Entrar / Seja Parceiro</a>
         <template v-else>
           <a href="/account" class="block text-sm font-medium text-slate-700 py-2">Minha Conta</a>

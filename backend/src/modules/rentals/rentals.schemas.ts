@@ -65,6 +65,8 @@ export type RetrieveLockerBody = {
   credential: WebAuthnAuthenticationCredential;
 };
 
+export type StartStoringBody = Record<string, never>;
+
 export type RetrievalResult = {
   rental_id: string;
   locker_id: string;
@@ -72,6 +74,11 @@ export type RetrievalResult = {
   extra_charge_cents: number;
   total_cents: number;
   payment_required: boolean;
+};
+
+export type RetrievalLookupResult = {
+  rental: RentalWithLocker;
+  retrieval: RetrievalResult;
 };
 
 export type RentalParams = {
@@ -161,6 +168,19 @@ const webauthnOptionsSchema = {
     timeout: { type: "integer", minimum: 1 }
   },
   additionalProperties: true
+} as const;
+
+const retrievalResultSchema = {
+  type: "object",
+  required: ["rental_id", "locker_id", "minutes_used", "extra_charge_cents", "total_cents", "payment_required"],
+  properties: {
+    rental_id: uuidSchema,
+    locker_id: uuidSchema,
+    minutes_used: { type: "integer", minimum: 0 },
+    extra_charge_cents: { type: "integer", minimum: 0 },
+    total_cents: { type: "integer", minimum: 0 },
+    payment_required: { type: "boolean" }
+  }
 } as const;
 
 export const rentalSchema = {
@@ -292,6 +312,24 @@ export const authenticationOptionsSchema = {
   }
 } as const;
 
+export const retrievalLookupOptionsSchema = {
+  response: {
+    200: webauthnOptionsSchema
+  }
+} as const;
+
+export const startStoringSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: { id: uuidSchema },
+    additionalProperties: false
+  },
+  response: {
+    200: rentalSchema
+  }
+} as const;
+
 export const retrieveLockerSchema = {
   params: {
     type: "object",
@@ -308,16 +346,26 @@ export const retrieveLockerSchema = {
     additionalProperties: false
   },
   response: {
+    200: retrievalResultSchema
+  }
+} as const;
+
+export const retrieveByCredentialSchema = {
+  body: {
+    type: "object",
+    required: ["credential"],
+    properties: {
+      credential: webauthnAuthenticationCredentialSchema
+    },
+    additionalProperties: false
+  },
+  response: {
     200: {
       type: "object",
-      required: ["rental_id", "locker_id", "minutes_used", "extra_charge_cents", "total_cents", "payment_required"],
+      required: ["rental", "retrieval"],
       properties: {
-        rental_id: uuidSchema,
-        locker_id: uuidSchema,
-        minutes_used: { type: "integer", minimum: 0 },
-        extra_charge_cents: { type: "integer", minimum: 0 },
-        total_cents: { type: "integer", minimum: 0 },
-        payment_required: { type: "boolean" }
+        rental: rentalWithLockerSchema,
+        retrieval: retrievalResultSchema
       }
     }
   }

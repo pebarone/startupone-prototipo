@@ -5,12 +5,15 @@ import {
   completeRegistrationController,
   confirmRetrievalController,
   createAuthenticationOptionsController,
+  createRetrievalAuthenticationOptionsController,
   createRegistrationOptionsController,
   createRentalController,
   deleteRentalController,
   getRentalController,
   listOrgRentalsController,
   overrideReleaseController,
+  retrieveByCredentialController,
+  startStoringController,
   retrieveLockerController
 } from "./rentals.controller";
 import {
@@ -24,7 +27,10 @@ import {
   listOrganizationAuditSchema,
   overrideReleaseSchema,
   registrationOptionsSchema,
+  retrievalLookupOptionsSchema,
+  retrieveByCredentialSchema,
   retrieveLockerSchema,
+  startStoringSchema,
   type BulkDeleteRentalsBody,
   type CompleteRegistrationBody,
   type CreateRentalBody,
@@ -32,7 +38,8 @@ import {
   type OrganizationAuditParams,
   type OverrideReleaseBody,
   type RentalParams,
-  type RetrieveLockerBody
+  type RetrieveLockerBody,
+  type StartStoringBody
 } from "./rentals.schemas";
 
 export async function rentalsRoutes(app: FastifyInstance) {
@@ -52,10 +59,28 @@ export async function rentalsRoutes(app: FastifyInstance) {
     completeRegistrationController
   );
 
+  app.post<{ Params: RentalParams; Body: StartStoringBody }>(
+    "/rentals/:id/start-storing",
+    { schema: startStoringSchema },
+    startStoringController
+  );
+
   app.post<{ Params: RentalParams }>(
     "/rentals/:id/webauthn/authentication-options",
     { schema: authenticationOptionsSchema },
     createAuthenticationOptionsController
+  );
+
+  app.post(
+    "/retrievals/webauthn/authentication-options",
+    { schema: retrievalLookupOptionsSchema },
+    createRetrievalAuthenticationOptionsController
+  );
+
+  app.post<{ Body: RetrieveLockerBody }>(
+    "/retrievals/webauthn/retrieve",
+    { schema: retrieveByCredentialSchema },
+    retrieveByCredentialController
   );
 
   app.post<{ Params: RentalParams; Body: RetrieveLockerBody }>(

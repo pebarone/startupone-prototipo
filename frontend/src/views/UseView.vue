@@ -1,167 +1,261 @@
 <template>
   <div class="min-h-screen bg-slate-50 pb-16 pt-24">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-      <div class="mb-8 text-center">
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Escolha um locker</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Mapa publico de lockers</h1>
-        <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-          Encontre um ponto disponivel ou escaneie o QR fixo do locker para abrir diretamente o fluxo WebAuthn no celular.
-        </p>
-      </div>
-
-      <div v-if="isLoading" class="flex min-h-[420px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-col items-center gap-4">
-          <BaseSpinner size="xl" color="brand" />
-          <p class="text-sm text-slate-500">Carregando localizacoes...</p>
+    <div :class="currentStep === 'choose' ? 'mx-auto max-w-6xl px-4 sm:px-6 lg:px-8' : 'mx-auto max-w-3xl px-4 sm:px-6'">
+      <div class="mb-8 flex flex-wrap items-center justify-center gap-1.5">
+        <div v-for="(step, index) in steps" :key="step.key" class="flex items-center gap-1.5">
+          <div :class="['flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-300', currentStepIndex > index ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30' : currentStepIndex === index ? 'bg-slate-900 text-white ring-2 ring-brand-500 ring-offset-2 ring-offset-slate-50' : 'bg-slate-200 text-slate-400']">
+            <svg v-if="currentStepIndex > index" class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+            <span v-else>{{ index + 1 }}</span>
+          </div>
+          <span v-if="index < steps.length - 1" class="hidden h-0.5 w-5 transition-colors duration-300 sm:block" :class="currentStepIndex > index ? 'bg-brand-500' : 'bg-slate-200'" />
         </div>
       </div>
 
-      <div v-else-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
-        {{ error }}
+      <div class="mb-6 text-center">
+        <p class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">{{ steps[currentStepIndex]?.label }}</p>
       </div>
 
-      <div v-else class="grid gap-5 lg:grid-cols-[1fr_340px]">
-        <div class="space-y-4">
-          <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                  <span class="h-2.5 w-2.5 rounded-full bg-brand-600" />
-                  Lockers livres
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                  QR fixo = fluxo no celular
-                </span>
-              </div>
+      <section v-if="currentStep === 'choose'" class="step-content">
+        <div class="mb-8 text-center">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Escolha um locker</p>
+          <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Mapa publico de lockers</h1>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">Escolha um locker livre para iniciar a ativacao. O QR fixo do locker pode abrir direto esta mesma jornada.</p>
+        </div>
 
-              <span
-                v-if="geoLabel"
-                :class="[
-                  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
-                  geoStatus === 'granted'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : 'border-slate-200 bg-slate-100 text-slate-500'
-                ]"
-              >
-                <span :class="['h-1.5 w-1.5 rounded-full', geoStatus === 'granted' ? 'bg-emerald-500' : 'bg-slate-400']" />
-                {{ geoLabel }}
-              </span>
-            </div>
-
-            <LockerMap
-              :locations="locations"
-              :selected-location-id="selectedLocationId"
-              :center="mapCenter"
-              :fit-to-locations="false"
-              height="560px"
-              @select-location="selectLocation"
-            />
+        <div v-if="isLoading" class="flex min-h-[420px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-col items-center gap-4">
+            <BaseSpinner size="xl" color="brand" />
+            <p class="text-sm text-slate-500">Carregando localizacoes...</p>
           </div>
         </div>
 
-        <aside class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <template v-if="selectedLocation">
-            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
-            <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
+        <div v-else-if="error" class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700 shadow-sm">
+          {{ error }}
+        </div>
 
-            <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preco base</p>
-              <div class="mt-3 flex items-center justify-between text-sm text-brand-900">
-                <span>Ativacao</span>
-                <strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong>
+        <div v-else class="grid gap-5 lg:grid-cols-[1fr_340px]">
+          <div class="space-y-4">
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"><span class="h-2.5 w-2.5 rounded-full bg-brand-600" />Lockers livres</span>
+                <span v-if="geoLabel" :class="['inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium', geoStatus === 'granted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-500']"><span :class="['h-1.5 w-1.5 rounded-full', geoStatus === 'granted' ? 'bg-emerald-500' : 'bg-slate-400']" />{{ geoLabel }}</span>
               </div>
+              <LockerMap :locations="locations" :selected-location-id="selectedLocationId" :center="mapCenter" :fit-to-locations="false" height="560px" @select-location="selectLocation" />
             </div>
+          </div>
 
-            <div class="mt-5">
-              <div class="mb-2 flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers livres</p>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ availableLockers.length }}</span>
+          <aside class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <template v-if="selectedLocation">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
+              <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
+              <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
+              <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preco base</p><div class="mt-3 flex items-center justify-between text-sm text-brand-900"><span>Ativacao</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div></div>
+              <div class="mt-5">
+                <div class="mb-2 flex items-center justify-between"><p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers livres</p><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ availableLockers.length }}</span></div>
+                <div v-if="availableLockers.length" class="space-y-3">
+                  <button v-for="locker in pagedLockers" :key="locker.id" type="button" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md" @click="selectLocker(locker)">
+                    <div class="flex items-start justify-between gap-3"><div><p class="font-mono text-lg font-black text-slate-900">{{ locker.code }}</p><p class="mt-1 text-sm text-slate-500">{{ sizeLabel(locker.size) }}</p></div><span class="rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700">Alugar</span></div>
+                  </button>
+                  <button v-if="hasMoreLockers" type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600" @click="loadMoreLockers">Ver mais lockers</button>
+                </div>
+                <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Sem lockers livres neste ponto.</div>
               </div>
+            </template>
+          </aside>
+        </div>
+      </section>
 
-              <div v-if="availableLockers.length" class="space-y-3">
-                <button
-                  v-for="locker in availableLockers"
-                  :key="locker.id"
-                  type="button"
-                  class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
-                  @click="openLockerFlow(locker.id)"
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <p class="font-mono text-lg font-black text-slate-900">{{ locker.code }}</p>
-                      <p class="mt-1 text-sm text-slate-500">{{ sizeLabel(locker.size) }}</p>
+      <section v-else-if="currentStep === 'pay'" class="step-content">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-100 px-6 py-6 sm:px-8">
+            <h2 class="text-xl font-black tracking-tight text-slate-900">Pague a taxa de ativacao</h2>
+            <p class="mt-1 text-sm text-slate-500">Locker <span class="font-mono font-black text-slate-900">{{ selectedLocker?.code }}</span> · Tamanho {{ sizeLabel(selectedLocker?.size) }}</p>
+          </div>
+          <div class="px-6 py-6 sm:px-8">
+            <div class="mb-5 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <div class="flex items-center justify-between text-sm"><span class="text-slate-500">Local</span><span class="font-semibold text-slate-900">{{ selectedLocation?.name }}</span></div>
+              <div class="flex items-center justify-between text-sm"><span class="text-slate-500">Taxa por hora</span><span class="font-semibold text-slate-900">{{ formatCents(lockerHourlyRate) }}</span></div>
+              <div class="border-t border-slate-200 pt-3"><div class="flex items-center justify-between"><span class="font-semibold text-slate-700">Taxa de ativacao</span><span class="text-2xl font-black tracking-tight text-slate-900">{{ formatCents(lockerInitialFee) }}</span></div></div>
+            </div>
+            <div class="flex flex-col items-center rounded-xl border-2 border-dashed border-brand-200 bg-brand-50/50 p-6">
+              <p class="mb-3 text-sm font-semibold text-brand-700">Escaneie o QR Code PIX</p>
+              <svg viewBox="0 0 120 120" class="h-36 w-36 rounded-lg bg-white p-2 shadow-sm" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" fill="white" rx="6" /><rect x="8" y="8" width="30" height="30" rx="3" fill="#111827" /><rect x="12" y="12" width="22" height="22" rx="2" fill="white" /><rect x="16" y="16" width="14" height="14" rx="1" fill="#111827" /><rect x="82" y="8" width="30" height="30" rx="3" fill="#111827" /><rect x="86" y="12" width="22" height="22" rx="2" fill="white" /><rect x="90" y="16" width="14" height="14" rx="1" fill="#111827" /><rect x="8" y="82" width="30" height="30" rx="3" fill="#111827" /><rect x="12" y="86" width="22" height="22" rx="2" fill="white" /><rect x="16" y="90" width="14" height="14" rx="1" fill="#111827" /><rect x="46" y="46" width="28" height="28" rx="4" fill="#16a34a" /><rect x="52" y="52" width="16" height="16" rx="2" fill="white" /></svg>
+              <p class="mt-3 text-xs text-slate-500">Chave PIX FastLock · {{ formatCents(lockerInitialFee) }}</p>
+            </div>
+            <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">Ambiente de demonstracao — nenhuma cobranca real sera realizada.</div>
+            <div v-if="error" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+              <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5" @click="goToChoose">Voltar</button>
+              <button type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-900 disabled:opacity-50" :disabled="actionLoading" @click="simulatePayment"><BaseSpinner v-if="actionLoading" size="sm" color="white" /><span>{{ actionLoading ? 'Processando...' : 'Confirmar pagamento PIX' }}</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-else-if="currentStep === 'biometric'" class="step-content">
+        <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-8 py-10 text-center shadow-2xl">
+          <p class="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-white/80">Pagamento confirmado</p>
+          <h2 class="mb-3 text-3xl font-black tracking-tight text-white">Cadastre sua biometria</h2>
+          <p class="mx-auto mb-8 max-w-sm text-sm text-slate-300">Sua digital vincula a chave deste aluguel ao aparelho antes da abertura do locker.</p>
+
+          <div class="mx-auto mb-8 flex h-40 w-40 items-center justify-center">
+            <div class="relative flex h-full w-full items-center justify-center">
+              <div :class="['absolute inset-0 rounded-full border-4 transition-all duration-700', biometricState === 'scanning' ? 'border-brand-400 opacity-30 animate-ping' : 'border-transparent']" />
+              <div :class="['absolute inset-2 rounded-full border-2 transition-all duration-500', biometricState === 'scanning' ? 'border-brand-400/60' : biometricState === 'success' ? 'border-brand-500' : 'border-slate-600']" />
+              <div :class="['flex h-28 w-28 items-center justify-center rounded-full transition-all duration-500', biometricState === 'idle' ? 'bg-slate-700' : biometricState === 'scanning' ? 'bg-brand-900/50' : 'bg-brand-600']">
+                <svg class="h-14 w-14" :class="biometricState === 'success' ? 'text-white' : 'text-slate-300'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 1C8.13 1 5 4.13 5 8v1H4C2.9 9 2 9.9 2 11v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V8c0-3.87-3.13-7-7-7z" /></svg>
+              </div>
+              <div v-if="biometricState === 'scanning'" class="absolute inset-4 overflow-hidden rounded-full"><div class="absolute h-0.5 w-full animate-scan-line bg-brand-400/80" /></div>
+              <div v-if="biometricState === 'success'" class="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"><svg class="h-5 w-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg></div>
+            </div>
+          </div>
+
+          <p class="mb-6 text-sm font-semibold text-white">{{ biometricStateLabel }}</p>
+          <div v-if="!webauthnSupported" class="mx-auto mb-4 max-w-md rounded-lg border border-amber-400/30 bg-amber-900/30 px-4 py-3 text-sm text-amber-200">{{ webauthnSupportHint }}</div>
+          <div v-if="error" class="mx-auto mb-4 max-w-md rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-3 text-sm text-red-300">{{ error }}</div>
+          <button v-if="biometricState !== 'success'" type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-8 text-sm font-semibold transition-all duration-200" :class="biometricState === 'scanning' ? 'cursor-wait bg-white/10 text-white' : 'bg-brand-600 text-white hover:-translate-y-0.5 hover:bg-brand-500'" :disabled="biometricState === 'scanning' || actionLoading || !webauthnSupported" @click="startBiometricRegistration"><BaseSpinner v-if="biometricState === 'scanning'" size="sm" color="white" /><span>{{ biometricState === 'scanning' ? 'Lendo digital...' : 'Escanear digital' }}</span></button>
+          <button v-if="biometricState === 'success'" type="button" class="inline-flex h-12 items-center justify-center rounded-xl bg-brand-500 px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-400" @click="goToOpen">Continuar → Abrir locker</button>
+        </div>
+      </section>
+
+      <section v-else-if="currentStep === 'open'" class="step-content">
+        <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-8 py-12 text-center shadow-[0_24px_60px_rgba(21,128,61,0.28)]">
+          <h2 class="text-4xl font-black tracking-tight text-white">Locker aberto!</h2>
+          <p class="mt-3 text-lg text-brand-100">A chave ja esta vinculada ao seu aparelho.</p>
+          <p class="mx-auto mt-2 max-w-sm text-sm text-brand-200">Guarde seus itens, feche o locker e so entao comece a contagem do tempo.</p>
+          <div class="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white"><span class="h-2 w-2 animate-pulse rounded-full bg-brand-300" />Taxa: {{ formatCents(lockerHourlyRate) }}/hora</div>
+          <div class="mt-8"><button type="button" class="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-sm font-semibold text-brand-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-50 disabled:opacity-50" :disabled="actionLoading" @click="startStoring"><BaseSpinner v-if="actionLoading" size="sm" color="brand" /><span>{{ actionLoading ? 'Fechando locker...' : 'Guardei meus itens → Fechar locker' }}</span></button></div>
+        </div>
+      </section>
+
+      <section v-else-if="currentStep === 'storing'" class="step-content">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="bg-slate-900 px-6 py-5 text-center">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Locker <span class="font-mono text-white">{{ selectedLocker?.code }}</span> em uso</p>
+            <div class="font-mono text-5xl font-black tracking-widest text-white">{{ timerDisplay }}</div>
+            <p class="mt-2 text-sm text-slate-400">tempo decorrido</p>
+          </div>
+          <div class="px-6 py-6">
+            <div class="mb-6 grid grid-cols-2 gap-4">
+              <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center"><p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Taxa inicial paga</p><p class="text-2xl font-black text-slate-900">{{ formatCents(lockerInitialFee) }}</p></div>
+              <div class="rounded-xl border border-brand-200 bg-brand-50 px-4 py-4 text-center"><p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-brand-600">Custo acumulado</p><p class="text-2xl font-black text-brand-700">{{ formatCents(accumulatedCost) }}</p></div>
+            </div>
+            <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><strong>Taxa de {{ formatCents(lockerHourlyRate) }}/hora</strong> — cobranca por hora cheia comecada. Retire seus itens quando quiser.</div>
+            <button type="button" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-900" @click="goToRetrieve">Quero retirar meus itens agora</button>
+            <div v-if="currentRental" class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div class="flex items-center gap-2.5 border-b border-slate-100 bg-slate-50 px-5 py-3.5"><p class="text-sm font-bold text-slate-800">Retirar depois</p><span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Salve este QR</span></div>
+              <div class="flex flex-col gap-0 sm:flex-row">
+                <div class="flex-1 px-5 py-5">
+                  <p class="mb-4 text-sm leading-relaxed text-slate-600">Feche esta pagina e volte quando quiser. Basta abrir o link de retirada ou escanear o QR abaixo. Esta pagina ja sabe qual aluguel deve liberar; a digital so autoriza a retirada.</p>
+                  <div class="mb-3">
+                    <label class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Link de retirada</label>
+                    <div class="flex items-center gap-2">
+                      <input type="text" readonly :value="retrieveLink" class="min-w-0 flex-1 cursor-text select-all rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-600 focus:outline-none" @click="selectInputText" />
+                      <button type="button" class="shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-all" :class="linkCopied ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'" @click="copyRetrieveLink">{{ linkCopied ? 'Copiado' : 'Copiar' }}</button>
                     </div>
-                    <span class="rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700">
-                      Abrir no celular
-                    </span>
                   </div>
-                </button>
-              </div>
-
-              <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
-                Sem lockers livres neste ponto.
+                  <a :href="retrieveLink" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700">Abrir pagina de retirada</a>
+                </div>
+                <div class="shrink-0 border-t border-slate-100 bg-slate-50/60 px-5 py-5 sm:border-l sm:border-t-0">
+                  <p class="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Escanear com celular</p>
+                  <div class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm"><img :src="retrieveQrUrl" alt="QR Code de retirada" width="140" height="140" class="rounded-lg" /></div>
+                  <p class="mt-2 max-w-[140px] text-center text-[10px] leading-relaxed text-slate-400">Locker <span class="font-mono font-black text-slate-700">{{ selectedLocker?.code }}</span></p>
+                </div>
               </div>
             </div>
-          </template>
-
-          <template v-else>
-            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
-              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
-                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h2 class="mt-5 text-lg font-black tracking-tight text-slate-900">Selecione um ponto no mapa</h2>
-              <p class="mt-2 text-sm leading-6 text-slate-500">
-                Ao escolher um locker, o app navega para a rota publica do QR fixo e o desbloqueio passa a usar WebAuthn no celular.
-              </p>
-            </div>
-          </template>
-        </aside>
-      </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import gsap from 'gsap'
 import LockerMap from '@/components/map/LockerMap.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { api } from '@/composables/useApi'
 import { getApiErrorMessage } from '@/lib/api-errors'
+import { getWebAuthnErrorMessage, getWebAuthnSupportHint, getWebAuthnSupportState, registerPasskey } from '@/composables/useWebAuthn'
 
+const route = useRoute()
 const router = useRouter()
-
-/** @type {import('vue').Ref<any[]>} */
 const locations = ref([])
 const selectedLocationId = ref('')
+const selectedLocker = ref(null)
+const currentRental = ref(null)
+const currentStep = ref('choose')
 const isLoading = ref(true)
+const actionLoading = ref(false)
 const error = ref('')
 const geoStatus = ref('pending')
 const geoLabel = ref('')
 const mapCenter = ref({ lat: -23.55052, lng: -46.633308, zoom: 12 })
+const lockerPage = ref(1)
+const biometricState = ref('idle')
+const elapsedSeconds = ref(0)
+const linkCopied = ref(false)
+const webauthnState = getWebAuthnSupportState()
+const webauthnSupported = webauthnState.supported
+const webauthnSupportHint = getWebAuthnSupportHint()
+const baseUrl = typeof window === 'undefined' ? '' : window.location.origin
+let timerInterval = null
 
-const selectedLocation = computed(() =>
-  locations.value.find((item) => item.id === selectedLocationId.value) || null
-)
-
+const steps = [{ key: 'choose', label: 'Localizar' }, { key: 'pay', label: 'Pagamento inicial' }, { key: 'biometric', label: 'Biometria' }, { key: 'open', label: 'Locker aberto' }, { key: 'storing', label: 'Armazenando' }]
+const currentStepIndex = computed(() => Math.max(0, steps.findIndex((step) => step.key === currentStep.value)))
+const selectedLocation = computed(() => locations.value.find((item) => item.id === selectedLocationId.value) || null)
 const availableLockers = computed(() => selectedLocation.value?.available_lockers || [])
+const pagedLockers = computed(() => availableLockers.value.slice(0, lockerPage.value * 8))
+const hasMoreLockers = computed(() => availableLockers.value.length > lockerPage.value * 8)
+const lockerInitialFee = computed(() => selectedLocation.value?.initial_fee_cents ?? 500)
+const lockerHourlyRate = computed(() => !selectedLocation.value || !selectedLocker.value ? 500 : selectedLocker.value.size === 'P' ? selectedLocation.value.hourly_rate_small ?? 500 : selectedLocker.value.size === 'M' ? selectedLocation.value.hourly_rate_medium ?? 1000 : selectedLocation.value.hourly_rate_large ?? 1500)
+const biometricStateLabel = computed(() => biometricState.value === 'scanning' ? 'Registrando a chave biometrica deste aparelho...' : biometricState.value === 'success' ? 'Chave biometrica registrada com sucesso!' : 'Pressione para cadastrar sua digital')
+const timerDisplay = computed(() => {
+  const total = Math.max(0, elapsedSeconds.value)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const seconds = total % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+})
+const accumulatedCost = computed(() => (Math.ceil(Math.max(0, elapsedSeconds.value) / 3600) || 1) * lockerHourlyRate.value)
+const retrieveLink = computed(() => currentRental.value ? `${baseUrl}/retrieve` : '')
+const retrieveQrUrl = computed(() => currentRental.value ? `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&format=svg&data=${encodeURIComponent(retrieveLink.value)}` : '')
+
+watch(selectedLocationId, () => {
+  lockerPage.value = 1
+})
+
+watch(
+  () => route.params.lockerId,
+  async (lockerId, previousLockerId) => {
+    if (isLoading.value || !lockerId || lockerId === previousLockerId) {
+      return
+    }
+
+    await autoSelectLocker(String(lockerId))
+  }
+)
 
 onMounted(async () => {
   resolveUserLocation()
   await fetchLocations()
+  if (route.params.lockerId) {
+    await autoSelectLocker(String(route.params.lockerId))
+  }
+})
+
+onUnmounted(() => {
+  stopTimer()
 })
 
 async function fetchLocations() {
   isLoading.value = true
   error.value = ''
-
   try {
     const response = await api.get('/locations?limit=200')
     locations.value = response.data || []
-
     if (locations.value.length && !selectedLocationId.value) {
       selectedLocationId.value = locations.value[0].id
     }
@@ -172,62 +266,202 @@ async function fetchLocations() {
   }
 }
 
-function resolveUserLocation() {
-  if (!navigator.geolocation) {
-    geoStatus.value = 'unavailable'
-    geoLabel.value = 'Localizacao indisponivel'
-    return
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      geoStatus.value = 'granted'
-      geoLabel.value = 'Mapa centrado em voce'
-      mapCenter.value = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        zoom: 13
-      }
-    },
-    () => {
-      geoStatus.value = 'fallback'
-      geoLabel.value = 'Usando centro padrao'
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 8000,
-      maximumAge: 60000
+async function autoSelectLocker(lockerId) {
+  try {
+    const context = await api.get(`/lockers/${lockerId}/public-context`)
+    if (context.mode !== 'rent' || context.locker?.status !== 'free') {
+      error.value = 'Este locker nao esta disponivel para uma nova ativacao. Use a pagina de retirada do aluguel em andamento.'
+      return
     }
-  )
+    selectedLocationId.value = context.locker.location_id || ''
+    selectedLocker.value = (locations.value.find((item) => item.id === context.locker.location_id)?.available_lockers || []).find((item) => item.id === lockerId) || context.locker
+    currentStep.value = 'pay'
+    animateStep()
+  } catch (requestError) {
+    error.value = getApiErrorMessage(requestError, 'Nao foi possivel abrir este locker pelo QR.')
+  }
 }
 
-/**
- * @param {any} location
- */
+function resolveUserLocation() {
+  if (!navigator.geolocation) {
+    geoStatus.value = 'fallback'
+    geoLabel.value = 'Usando centro padrao'
+    return
+  }
+  navigator.geolocation.getCurrentPosition((position) => {
+    geoStatus.value = 'granted'
+    geoLabel.value = 'Mapa centrado em voce'
+    mapCenter.value = { lat: position.coords.latitude, lng: position.coords.longitude, zoom: 13 }
+  }, () => {
+    geoStatus.value = 'fallback'
+    geoLabel.value = 'Usando centro padrao'
+  }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 })
+}
+
 function selectLocation(location) {
   selectedLocationId.value = location.id
 }
 
-/**
- * @param {string} lockerId
- */
-function openLockerFlow(lockerId) {
-  router.push({ name: 'locker-flow', params: { lockerId } })
+function selectLocker(locker) {
+  selectedLocker.value = locker
+  currentRental.value = null
+  biometricState.value = 'idle'
+  linkCopied.value = false
+  elapsedSeconds.value = 0
+  stopTimer()
+  currentStep.value = 'pay'
+  error.value = ''
+  animateStep()
 }
 
-/**
- * @param {string} size
- * @returns {string}
- */
+function loadMoreLockers() {
+  lockerPage.value += 1
+}
+
+async function simulatePayment() {
+  if (!selectedLocker.value?.id) {
+    error.value = 'Selecione um locker antes de continuar.'
+    return
+  }
+  actionLoading.value = true
+  error.value = ''
+  try {
+    currentRental.value = await api.post('/rentals', { locker_id: selectedLocker.value.id })
+    biometricState.value = 'idle'
+    linkCopied.value = false
+    elapsedSeconds.value = 0
+    stopTimer()
+    currentStep.value = 'biometric'
+    animateStep()
+  } catch (requestError) {
+    error.value = getApiErrorMessage(requestError, 'Nao foi possivel criar o aluguel.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function startBiometricRegistration() {
+  if (!currentRental.value?.id) {
+    error.value = 'Crie o aluguel antes de cadastrar a biometria.'
+    return
+  }
+  biometricState.value = 'scanning'
+  actionLoading.value = true
+  error.value = ''
+  try {
+    const options = await api.post(`/rentals/${currentRental.value.id}/webauthn/registration-options`)
+    const credential = await registerPasskey(options)
+    currentRental.value = await api.post(`/rentals/${currentRental.value.id}/webauthn/registrations`, { credential })
+    biometricState.value = 'success'
+  } catch (requestError) {
+    biometricState.value = 'idle'
+    error.value = isProbablyWebAuthnError(requestError) ? getWebAuthnErrorMessage(requestError, 'Falha ao cadastrar a biometria deste aparelho.') : getApiErrorMessage(requestError, 'Falha ao cadastrar a biometria deste aparelho.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+function goToOpen() {
+  currentStep.value = 'open'
+  error.value = ''
+  animateStep()
+}
+
+async function startStoring() {
+  if (!currentRental.value?.id) {
+    error.value = 'O aluguel nao esta pronto para iniciar a armazenagem.'
+    return
+  }
+  actionLoading.value = true
+  error.value = ''
+  try {
+    currentRental.value = await api.post(`/rentals/${currentRental.value.id}/start-storing`, {})
+    currentStep.value = 'storing'
+    syncTimer()
+    animateStep()
+  } catch (requestError) {
+    error.value = getApiErrorMessage(requestError, 'Nao foi possivel iniciar a contagem do locker.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+function syncTimer() {
+  stopTimer()
+  if (!currentRental.value?.unlocked_at) {
+    elapsedSeconds.value = 0
+    return
+  }
+  const startedAt = new Date(currentRental.value.unlocked_at).getTime()
+  const tick = () => {
+    elapsedSeconds.value = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+  }
+  tick()
+  timerInterval = window.setInterval(tick, 1000)
+}
+
+function stopTimer() {
+  if (!timerInterval) return
+  window.clearInterval(timerInterval)
+  timerInterval = null
+}
+
+function goToRetrieve() {
+  router.push({ name: 'retrieve-entry' })
+}
+
+function copyRetrieveLink() {
+  if (!retrieveLink.value) return
+  navigator.clipboard.writeText(retrieveLink.value)
+  linkCopied.value = true
+  window.setTimeout(() => { linkCopied.value = false }, 2500)
+}
+
+function selectInputText(event) {
+  event?.target?.select?.()
+}
+
+function goToChoose() {
+  currentStep.value = 'choose'
+  selectedLocker.value = null
+  currentRental.value = null
+  biometricState.value = 'idle'
+  elapsedSeconds.value = 0
+  linkCopied.value = false
+  error.value = ''
+  stopTimer()
+  if (route.params.lockerId) {
+    router.replace({ name: 'use' })
+  }
+  animateStep()
+}
+
+function animateStep() {
+  window.setTimeout(() => {
+    gsap.from('.step-content', { opacity: 0, y: 16, duration: 0.45, ease: 'power2.out' })
+  }, 30)
+}
+
 function sizeLabel(size) {
   return { P: 'Pequeno', M: 'Medio', G: 'Grande' }[size] || size
 }
 
-/**
- * @param {number} cents
- * @returns {string}
- */
 function formatCents(cents) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((Number(cents) || 0) / 100)
 }
+
+function isProbablyWebAuthnError(error) {
+  return !!error?.name && !error?.response
+}
 </script>
+
+<style scoped>
+@keyframes scan-line {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+.animate-scan-line {
+  animation: scan-line 1.2s ease-in-out infinite alternate;
+}
+</style>

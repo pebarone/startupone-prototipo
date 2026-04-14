@@ -27,6 +27,24 @@ function readString(name: string, fallback: string): string {
   return process.env[name]?.trim() || fallback;
 }
 
+function normalizeWebAuthnRpId(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "localhost";
+  }
+
+  try {
+    const withProtocol = trimmed.includes("://") ? trimmed : `https://${trimmed}`;
+    return new URL(withProtocol).hostname;
+  } catch {
+    return trimmed
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/.*$/, "")
+      .replace(/:\d+$/, "");
+  }
+}
+
 export const env = Object.freeze({
   PORT: readNumber("PORT", DEFAULT_PORT),
   HOST: readString("HOST", "0.0.0.0"),
@@ -39,7 +57,7 @@ export const env = Object.freeze({
   RATE_LIMIT_WINDOW: readString("RATE_LIMIT_WINDOW", "1 minute"),
   SUPABASE_URL: readString("SUPABASE_URL", ""),
   SUPABASE_PUBLISHABLE_KEY: readString("SUPABASE_PUBLISHABLE_KEY", ""),
-  WEBAUTHN_RP_ID: readString("WEBAUTHN_RP_ID", "localhost"),
+  WEBAUTHN_RP_ID: normalizeWebAuthnRpId(readString("WEBAUTHN_RP_ID", "localhost")),
   WEBAUTHN_RP_NAME: readString("WEBAUTHN_RP_NAME", "FastLock"),
   WEBAUTHN_ALLOWED_ORIGINS: readString("WEBAUTHN_ALLOWED_ORIGINS", "")
 });
