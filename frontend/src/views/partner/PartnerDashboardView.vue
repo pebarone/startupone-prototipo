@@ -24,7 +24,7 @@
     <div v-else>
 
       <!-- Page header -->
-      <div class="flex items-start justify-between mb-8">
+      <div class="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 class="text-2xl font-black text-slate-900 tracking-tight">
             Bom dia, {{ firstName }}
@@ -35,7 +35,7 @@
           id="btn-refresh"
           @click="fetchAll(true)"
           :disabled="isRefreshing"
-          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:border-slate-300 hover:text-slate-900 transition-all duration-150 active:scale-[0.97] shadow-sm"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand-500 sm:w-auto"
         >
           <svg :class="['w-4 h-4', isRefreshing && 'animate-spin']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -45,7 +45,7 @@
       </div>
 
       <!-- KPI row — 4 cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Total de Lockers" :value="m.total_lockers ?? 0" delta="+0%" icon-color="#0ea5e9" :icon-path="icons.grid" />
         <MetricCard label="Lockers Livres" :value="m.free_lockers ?? 0" :delta="`${freeRate}% livre`" icon-color="#16a34a" :icon-path="icons.unlock" accent />
         <MetricCard label="Lockers Ocupados" :value="m.occupied_lockers ?? 0" :delta="`${occupiedRate}% ocupação`" icon-color="#d97706" :icon-path="icons.lock" />
@@ -53,7 +53,7 @@
       </div>
 
       <!-- Secondary KPIs — 5 cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <SmallKpi label="Total de Aluguéis" :value="m.total_rentals ?? 0" />
         <SmallKpi label="Em Uso Agora" :value="(m.storing_rentals ?? 0)" color="text-brand-600" />
         <SmallKpi label="Aluguéis Finalizados" :value="m.finished_rentals ?? 0" color="text-emerald-600" />
@@ -62,7 +62,7 @@
       </div>
 
       <!-- Middle row: occupancy + success rate -->
-      <div class="grid lg:grid-cols-2 gap-4 mb-6">
+      <div class="mb-6 grid gap-4 lg:grid-cols-2">
 
         <!-- Occupancy bars -->
         <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
@@ -80,9 +80,9 @@
         <!-- Unlock success ring -->
         <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col">
           <p class="text-sm font-bold text-slate-800 mb-5">Taxa de Abertura com Sucesso</p>
-          <div class="flex-1 flex items-center justify-center gap-8">
+          <div class="flex flex-1 flex-col items-center justify-center gap-6 sm:flex-row sm:gap-8">
             <!-- Ring -->
-            <div class="relative w-28 h-28 flex-shrink-0">
+            <div class="relative h-24 w-24 flex-shrink-0 sm:h-28 sm:w-28">
               <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
                 <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" stroke-width="12"/>
                 <circle
@@ -101,7 +101,7 @@
               </div>
             </div>
             <!-- Legend -->
-            <div class="space-y-3">
+            <div class="grid w-full grid-cols-2 gap-3 sm:block sm:w-auto sm:space-y-3">
               <div class="flex items-center gap-2.5">
                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
                 <div>
@@ -123,10 +123,10 @@
 
       <!-- Lockers list preview -->
       <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-50">
+        <div class="flex flex-col gap-3 border-b border-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p class="text-sm font-bold text-slate-800">Status dos Lockers</p>
-          <router-link :to="`/partner/${orgId}/lockers`" class="text-sm font-medium text-brand-600 hover:text-brand-500 transition-colors">
-            Ver todos →
+          <router-link :to="`/partner/${orgId}/lockers`" class="inline-flex h-9 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 px-3.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100">
+            Ver todos
           </router-link>
         </div>
 
@@ -148,7 +148,7 @@
           <div
             v-for="locker in lockers.slice(0, 8)"
             :key="locker.id"
-            class="flex items-center gap-4 px-6 py-3.5 hover:bg-slate-50/60 transition-colors"
+            class="flex flex-wrap items-start gap-3 px-4 py-4 transition-colors hover:bg-slate-50/60 sm:flex-nowrap sm:items-center sm:gap-4 sm:px-6"
           >
             <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
               <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,7 +160,7 @@
               <p class="text-xs text-slate-400">Tamanho {{ locker.size }}</p>
             </div>
             <span
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border"
+              class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold"
               :style="statusStyle(locker.status)"
             >
               <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :style="{ background: statusDotColor(locker.status) }" />
@@ -407,7 +407,7 @@ const MetricCard = defineComponent({
   },
   setup(p) {
     return () => h('div', {
-      class: `bg-white rounded-2xl border ${p.accent ? 'border-brand-100 ring-1 ring-brand-100' : 'border-slate-100'} p-5 shadow-sm flex flex-col gap-3`
+      class: `bg-white rounded-2xl border ${p.accent ? 'border-brand-100 ring-1 ring-brand-100' : 'border-slate-100'} p-4 sm:p-5 shadow-sm flex flex-col gap-3`
     }, [
       h('div', { class: 'flex items-center justify-between' }, [
         h('p', { class: 'text-xs font-semibold text-slate-500 leading-none' }, p.label),
@@ -420,7 +420,7 @@ const MetricCard = defineComponent({
           ])
         ])
       ]),
-      h('p', { class: 'text-4xl font-black text-slate-900 tabular-nums leading-none' }, String(p.value ?? '—')),
+      h('p', { class: 'text-3xl sm:text-4xl font-black text-slate-900 tabular-nums leading-none' }, String(p.value ?? '—')),
       p.delta
         ? h('p', {
             class: `text-xs font-medium leading-none ${p.accent ? 'text-brand-600' : 'text-slate-400'}`
@@ -436,7 +436,7 @@ const SmallKpi = defineComponent({
   setup(p) {
     return () => h('div', { class: 'bg-white rounded-2xl border border-slate-100 p-4 shadow-sm' }, [
       h('p', { class: 'text-xs font-semibold text-slate-400 mb-2' }, p.label),
-      h('p', { class: `text-3xl font-black tabular-nums ${p.color}` }, String(p.value ?? '—'))
+      h('p', { class: `text-2xl sm:text-3xl font-black tabular-nums ${p.color}` }, String(p.value ?? '—'))
     ])
   }
 })

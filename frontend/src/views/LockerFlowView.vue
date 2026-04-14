@@ -31,7 +31,7 @@
                   {{ sizeLabel(lockerContext.locker.size) }}
                   <span v-if="lockerContext.location_name">· {{ lockerContext.location_name }}</span>
                 </p>
-                <p v-if="lockerContext.location_address" class="mt-1 text-xs text-slate-400">{{ lockerContext.location_address }}</p>
+                <p v-if="lockerContext.location_address" class="mt-1 text-xs text-slate-400">{{ summarizeAddress(lockerContext.location_address) }}</p>
               </div>
 
               <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
@@ -331,6 +331,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { api } from '@/composables/useApi'
+import { summarizeAddress } from '@/lib/address'
 import {
   authenticatePasskey,
   getWebAuthnErrorMessage,

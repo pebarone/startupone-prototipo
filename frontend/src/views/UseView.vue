@@ -33,22 +33,47 @@
           {{ error }}
         </div>
 
-        <div v-else class="grid gap-5 lg:grid-cols-[1fr_340px]">
+        <div v-else class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div class="space-y-4">
-            <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+            <div class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+              <div class="mb-3 flex flex-wrap items-center gap-2 px-1">
                 <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"><span class="h-2.5 w-2.5 rounded-full bg-brand-600" />Lockers livres</span>
                 <span v-if="geoLabel" :class="['inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium', geoStatus === 'granted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-500']"><span :class="['h-1.5 w-1.5 rounded-full', geoStatus === 'granted' ? 'bg-emerald-500' : 'bg-slate-400']" />{{ geoLabel }}</span>
+                <button type="button" class="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700" @click="resolveUserLocation">Atualizar GPS</button>
               </div>
-              <LockerMap :locations="locations" :selected-location-id="selectedLocationId" :center="mapCenter" :fit-to-locations="false" height="560px" @select-location="selectLocation" />
+              <div class="relative overflow-hidden rounded-2xl">
+                <div class="pointer-events-none absolute inset-x-3 bottom-3 z-[500] flex justify-center">
+                  <Transition name="map-hint">
+                    <button v-if="showNearestHint" type="button" class="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/80 bg-white/88 px-3.5 py-2.5 text-left shadow-[0_14px_32px_rgba(15,23,42,0.12)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)]" @click="jumpToNearest">
+                      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100">
+                        <svg class="h-4.5 w-4.5 text-red-500 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" :style="{ transform: `rotate(${nearestLocation.bearing}deg)` }">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l5 12-5-2-5 2 5-12Z" />
+                        </svg>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Mais perto de voce</p>
+                        <p class="truncate text-sm font-semibold text-slate-900">{{ nearestLocation.name }}</p>
+                        <p class="text-xs text-slate-500">{{ nearestDistanceLabel }}</p>
+                      </div>
+                      <span class="hidden text-xs font-semibold text-brand-700 sm:block">Ir agora</span>
+                    </button>
+                  </Transition>
+                </div>
+                <LockerMap :locations="locations" :selected-location-id="selectedLocationId" :center="mapCenter" :user-location="userLocation" :fit-to-locations="false" :height="mapHeight" @select-location="selectLocation" />
+              </div>
             </div>
           </div>
 
-          <aside class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <template v-if="selectedLocation">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
-              <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
-              <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
+                  <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
+                  <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
+                </div>
+                <span v-if="selectedLocationDistanceLabel" class="inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">A {{ selectedLocationDistanceLabel }} de voce</span>
+              </div>
               <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preco base</p><div class="mt-3 flex items-center justify-between text-sm text-brand-900"><span>Ativacao</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div></div>
               <div class="mt-5">
                 <div class="mb-2 flex items-center justify-between"><p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers livres</p><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ availableLockers.length }}</span></div>
@@ -61,6 +86,7 @@
                 <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Sem lockers livres neste ponto.</div>
               </div>
             </template>
+            <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nenhum ponto disponivel agora.</div>
           </aside>
         </div>
       </section>
@@ -86,7 +112,7 @@
             <div v-if="error" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
             <div class="mt-6 grid gap-3 sm:grid-cols-2">
               <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5" @click="goToChoose">Voltar</button>
-              <button type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-900 disabled:opacity-50" :disabled="actionLoading" @click="simulatePayment"><BaseSpinner v-if="actionLoading" size="sm" color="white" /><span>{{ actionLoading ? 'Processando...' : 'Confirmar pagamento PIX' }}</span></button>
+              <button type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-500 disabled:opacity-50" :disabled="actionLoading" @click="simulatePayment"><BaseSpinner v-if="actionLoading" size="sm" color="white" /><span>{{ actionLoading ? 'Processando...' : 'Confirmar pagamento PIX' }}</span></button>
             </div>
           </div>
         </div>
@@ -136,12 +162,12 @@
             <p class="mt-2 text-sm text-slate-400">tempo decorrido</p>
           </div>
           <div class="px-6 py-6">
-            <div class="mb-6 grid grid-cols-2 gap-4">
+            <div class="mb-6 grid gap-4 sm:grid-cols-2">
               <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center"><p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Taxa inicial paga</p><p class="text-2xl font-black text-slate-900">{{ formatCents(lockerInitialFee) }}</p></div>
               <div class="rounded-xl border border-brand-200 bg-brand-50 px-4 py-4 text-center"><p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-brand-600">Custo acumulado</p><p class="text-2xl font-black text-brand-700">{{ formatCents(accumulatedCost) }}</p></div>
             </div>
             <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><strong>Taxa de {{ formatCents(lockerHourlyRate) }}/hora</strong> — cobranca por hora cheia comecada. Retire seus itens quando quiser.</div>
-            <button type="button" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-900" @click="goToRetrieve">Quero retirar meus itens agora</button>
+            <button type="button" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-500" @click="goToRetrieve">Quero retirar meus itens agora</button>
             <div v-if="currentRental" class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               <div class="flex items-center gap-2.5 border-b border-slate-100 bg-slate-50 px-5 py-3.5"><p class="text-sm font-bold text-slate-800">Retirar depois</p><span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Salve este QR</span></div>
               <div class="flex flex-col gap-0 sm:flex-row">
@@ -178,6 +204,8 @@ import LockerMap from '@/components/map/LockerMap.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { api } from '@/composables/useApi'
 import { getApiErrorMessage } from '@/lib/api-errors'
+import { summarizeAddress } from '@/lib/address'
+import { findNearestLocation, formatDistance, haversineDistanceMeters } from '@/lib/geo'
 import { getWebAuthnErrorMessage, getWebAuthnSupportHint, getWebAuthnSupportState, registerPasskey } from '@/composables/useWebAuthn'
 
 const route = useRoute()
@@ -191,16 +219,21 @@ const isLoading = ref(true)
 const actionLoading = ref(false)
 const error = ref('')
 const geoStatus = ref('pending')
-const geoLabel = ref('')
+const geoLabel = ref('Buscando sua localizacao')
 const mapCenter = ref({ lat: -23.55052, lng: -46.633308, zoom: 12 })
+const userLocation = ref(null)
 const lockerPage = ref(1)
 const biometricState = ref('idle')
 const elapsedSeconds = ref(0)
 const linkCopied = ref(false)
+const hasManualLocationSelection = ref(false)
+const nearestHintDismissed = ref(false)
 const webauthnState = getWebAuthnSupportState()
 const webauthnSupported = webauthnState.supported
 const webauthnSupportHint = getWebAuthnSupportHint()
 const baseUrl = typeof window === 'undefined' ? '' : window.location.origin
+const mapHeight = 'clamp(360px, 62vh, 560px)'
+const NEAREST_HINT_HIDE_DISTANCE_METERS = 180
 let timerInterval = null
 
 const steps = [{ key: 'choose', label: 'Localizar' }, { key: 'pay', label: 'Pagamento inicial' }, { key: 'biometric', label: 'Biometria' }, { key: 'open', label: 'Locker aberto' }, { key: 'storing', label: 'Armazenando' }]
@@ -212,6 +245,19 @@ const hasMoreLockers = computed(() => availableLockers.value.length > lockerPage
 const lockerInitialFee = computed(() => selectedLocation.value?.initial_fee_cents ?? 500)
 const lockerHourlyRate = computed(() => !selectedLocation.value || !selectedLocker.value ? 500 : selectedLocker.value.size === 'P' ? selectedLocation.value.hourly_rate_small ?? 500 : selectedLocker.value.size === 'M' ? selectedLocation.value.hourly_rate_medium ?? 1000 : selectedLocation.value.hourly_rate_large ?? 1500)
 const biometricStateLabel = computed(() => biometricState.value === 'scanning' ? 'Registrando a chave biometrica deste aparelho...' : biometricState.value === 'success' ? 'Chave biometrica registrada com sucesso!' : 'Pressione para cadastrar sua digital')
+const locationCandidates = computed(() => {
+  const withAvailability = locations.value.filter((location) => Number(location.free_lockers ?? 0) > 0)
+  return withAvailability.length ? withAvailability : locations.value
+})
+const nearestLocation = computed(() => findNearestLocation(userLocation.value, locationCandidates.value))
+const nearestDistanceLabel = computed(() => nearestLocation.value ? formatDistance(nearestLocation.value.distance_meters) : '')
+const showNearestHint = computed(() => {
+  if (currentStep.value !== 'choose' || !nearestLocation.value || nearestHintDismissed.value) {
+    return false
+  }
+
+  return nearestLocation.value.distance_meters > NEAREST_HINT_HIDE_DISTANCE_METERS
+})
 const timerDisplay = computed(() => {
   const total = Math.max(0, elapsedSeconds.value)
   const hours = Math.floor(total / 3600)
@@ -220,6 +266,16 @@ const timerDisplay = computed(() => {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 })
 const accumulatedCost = computed(() => (Math.ceil(Math.max(0, elapsedSeconds.value) / 3600) || 1) * lockerHourlyRate.value)
+const selectedLocationDistanceLabel = computed(() => {
+  if (!userLocation.value || !selectedLocation.value) {
+    return ''
+  }
+
+  return formatDistance(haversineDistanceMeters(userLocation.value, {
+    lat: Number(selectedLocation.value.latitude),
+    lng: Number(selectedLocation.value.longitude)
+  }))
+})
 const retrieveLink = computed(() => currentRental.value ? `${baseUrl}/retrieve` : '')
 const retrieveQrUrl = computed(() => currentRental.value ? `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&format=svg&data=${encodeURIComponent(retrieveLink.value)}` : '')
 
@@ -235,6 +291,23 @@ watch(
     }
 
     await autoSelectLocker(String(lockerId))
+  }
+)
+
+watch(
+  [locations, nearestLocation],
+  () => {
+    syncPreferredLocation()
+  },
+  { deep: true }
+)
+
+watch(
+  () => nearestLocation.value?.id,
+  (nextNearestId, previousNearestId) => {
+    if (nextNearestId && nextNearestId !== previousNearestId) {
+      nearestHintDismissed.value = false
+    }
   }
 )
 
@@ -255,14 +328,23 @@ async function fetchLocations() {
   error.value = ''
   try {
     const response = await api.get('/locations?limit=200')
-    locations.value = response.data || []
-    if (locations.value.length && !selectedLocationId.value) {
-      selectedLocationId.value = locations.value[0].id
-    }
+    locations.value = (response.data || []).map(mapLocationRecord)
+    syncPreferredLocation()
   } catch (requestError) {
     error.value = getApiErrorMessage(requestError, 'Falha ao carregar o mapa de lockers.')
   } finally {
     isLoading.value = false
+  }
+}
+
+/**
+ * @param {any} location
+ * @returns {any}
+ */
+function mapLocationRecord(location) {
+  return {
+    ...location,
+    address: summarizeAddress(location?.address || '')
   }
 }
 
@@ -285,21 +367,59 @@ async function autoSelectLocker(lockerId) {
 function resolveUserLocation() {
   if (!navigator.geolocation) {
     geoStatus.value = 'fallback'
-    geoLabel.value = 'Usando centro padrao'
+    geoLabel.value = 'GPS indisponivel neste navegador'
     return
   }
+  geoStatus.value = 'pending'
+  geoLabel.value = 'Atualizando pelo GPS'
   navigator.geolocation.getCurrentPosition((position) => {
+    userLocation.value = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    }
     geoStatus.value = 'granted'
     geoLabel.value = 'Mapa centrado em voce'
-    mapCenter.value = { lat: position.coords.latitude, lng: position.coords.longitude, zoom: 13 }
+    mapCenter.value = { lat: position.coords.latitude, lng: position.coords.longitude, zoom: 14 }
+    syncPreferredLocation()
   }, () => {
     geoStatus.value = 'fallback'
     geoLabel.value = 'Usando centro padrao'
   }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 })
 }
 
+function syncPreferredLocation() {
+  if (!locations.value.length) {
+    selectedLocationId.value = ''
+    return
+  }
+
+  if (route.params.lockerId || hasManualLocationSelection.value || currentStep.value !== 'choose') {
+    if (!selectedLocationId.value) {
+      selectedLocationId.value = locations.value[0].id
+    }
+    return
+  }
+
+  const preferredLocationId = nearestLocation.value?.id || locations.value[0].id
+
+  if (preferredLocationId) {
+    selectedLocationId.value = preferredLocationId
+  }
+}
+
 function selectLocation(location) {
+  hasManualLocationSelection.value = true
   selectedLocationId.value = location.id
+}
+
+function jumpToNearest() {
+  if (!nearestLocation.value) {
+    return
+  }
+
+  nearestHintDismissed.value = true
+  hasManualLocationSelection.value = true
+  selectedLocationId.value = nearestLocation.value.id
 }
 
 function selectLocker(locker) {
@@ -430,6 +550,7 @@ function goToChoose() {
   linkCopied.value = false
   error.value = ''
   stopTimer()
+  syncPreferredLocation()
   if (route.params.lockerId) {
     router.replace({ name: 'use' })
   }
@@ -463,5 +584,16 @@ function isProbablyWebAuthnError(error) {
 
 .animate-scan-line {
   animation: scan-line 1.2s ease-in-out infinite alternate;
+}
+
+.map-hint-enter-active,
+.map-hint-leave-active {
+  transition: opacity 180ms cubic-bezier(0.23, 1, 0.32, 1), transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.map-hint-enter-from,
+.map-hint-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
 }
 </style>

@@ -1,12 +1,14 @@
 <template>
-  <div class="min-h-screen flex" style="background: #f8faf9;">
+  <div class="min-h-screen flex overflow-x-hidden" style="background: #f8faf9;">
 
     <!-- ─── Sidebar ─── -->
     <aside
       :class="[
-        'fixed inset-y-0 left-0 z-40 flex flex-col transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]',
-        sidebarOpen ? 'w-60' : 'w-[68px]',
-        'bg-white border-r border-slate-100 shadow-sm'
+        'fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-slate-100 transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]',
+        isMobile ? 'w-[88vw] max-w-[320px] shadow-xl' : 'shadow-sm',
+        isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0',
+        !isMobile && sidebarOpen ? 'w-60' : '',
+        !isMobile && !sidebarOpen ? 'w-[68px]' : ''
       ]"
     >
       <!-- Logo row -->
@@ -121,16 +123,18 @@
     </aside>
 
     <!-- ─── Main content area ─── -->
-    <div :class="['flex-1 flex flex-col transition-[margin] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]', sidebarOpen ? 'ml-60' : 'ml-[68px]']">
+    <div :class="['flex-1 flex min-w-0 flex-col transition-[margin] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]', isMobile ? 'ml-0' : sidebarOpen ? 'ml-60' : 'ml-[68px]']">
 
       <!-- Top header bar -->
-      <header class="h-[60px] bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-30">
-        <div class="flex items-center gap-2 text-sm">
-          <span class="text-slate-400 font-medium">{{ currentOrganization?.name }}</span>
-          <svg class="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-          <span class="text-slate-800 font-semibold">{{ pageTitle }}</span>
+      <header class="sticky top-0 z-30 flex min-h-[60px] items-center justify-between border-b border-slate-100 bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 text-sm">
+            <span class="hidden truncate font-medium text-slate-400 sm:block">{{ currentOrganization?.name }}</span>
+            <svg class="hidden h-3.5 w-3.5 text-slate-300 sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="truncate font-semibold text-slate-800">{{ pageTitle }}</span>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -152,7 +156,7 @@
       </header>
 
       <!-- Page slot -->
-      <main class="flex-1 p-6 lg:p-8 max-w-screen-xl mx-auto w-full">
+      <main class="mx-auto w-full max-w-screen-xl flex-1 p-4 sm:p-6 lg:p-8">
         <slot />
       </main>
     </div>

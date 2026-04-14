@@ -43,7 +43,7 @@
         <button
           v-if="canAdmin"
           type="button"
-          class="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-900 active:scale-[0.98]"
+          class="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white shadow-sm shadow-brand-600/20 transition-[background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-md active:scale-[0.98]"
           @click="openCreateModal"
         >
           Criar primeira localização
@@ -185,7 +185,7 @@
               v-for="result in searchResults"
               :key="result.id"
               type="button"
-              class="block w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-left transition-colors hover:border-brand-500 hover:bg-slate-900"
+              class="block w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
               @click="applySearchResult(result)"
             >
               <p class="text-sm font-semibold text-slate-900">{{ result.name }}</p>
@@ -297,6 +297,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { api } from '@/composables/useApi'
 import { useOrganization } from '@/composables/useOrganization'
 import { useToast } from '@/composables/useToast'
+import { summarizeAddress } from '@/lib/address'
 import { searchAddresses } from '@/services/geocoding'
 import { getApiErrorMessage } from '@/lib/api-errors'
 
@@ -347,7 +348,7 @@ const previewLocations = computed(() => {
     {
       id: 'draft-location',
       name: form.value.name.trim() || 'Nova localização',
-      address: form.value.address.trim() || 'Endereço em definição',
+      address: summarizeAddress(form.value.address.trim() || 'Endereco em definicao'),
       latitude: Number(form.value.latitude),
       longitude: Number(form.value.longitude),
       total_lockers: 0,
@@ -379,7 +380,7 @@ const deleteDetails = computed(() => {
   }
 
   return [
-    locationPendingDelete.value.address,
+    summarizeAddress(locationPendingDelete.value.address),
     `${locationPendingDelete.value.free_lockers || 0} locker(s) livres no ponto`,
     `${locationPendingDelete.value.total_lockers || 0} locker(s) vinculados`
   ]
@@ -400,7 +401,7 @@ async function fetchLocations() {
 
   try {
     const response = await api.get(`/organizations/${orgId}/locations?limit=200`)
-    locations.value = Array.isArray(response) ? response : (response?.data || [])
+    locations.value = (Array.isArray(response) ? response : (response?.data || [])).map(mapLocationRecord)
 
     if (!locations.value.length) {
       selectedLocationId.value = ''
@@ -418,6 +419,17 @@ async function fetchLocations() {
   }
 }
 
+/**
+ * @param {any} location
+ * @returns {any}
+ */
+function mapLocationRecord(location) {
+  return {
+    ...location,
+    address: summarizeAddress(location?.address || '')
+  }
+}
+
 function openCreateModal() {
   editingLocationId.value = ''
   showModal.value = true
@@ -429,7 +441,7 @@ function openEditModal(location) {
   editingLocationId.value = location.id
   form.value = {
     name: location.name,
-    address: location.address,
+    address: summarizeAddress(location.address),
     latitude: Number(location.latitude),
     longitude: Number(location.longitude),
     initial_fee_reais: (location.initial_fee_cents ?? 500) / 100,
@@ -516,7 +528,7 @@ async function saveLocation() {
 
   const payload = {
     name: form.value.name.trim(),
-    address: form.value.address.trim(),
+    address: summarizeAddress(form.value.address.trim()),
     latitude: Number(form.value.latitude),
     longitude: Number(form.value.longitude),
     initial_fee_cents: Math.round((form.value.initial_fee_reais || 5) * 100),

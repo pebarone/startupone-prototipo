@@ -2,6 +2,8 @@
  * @fileoverview Nominatim helpers for address search.
  */
 
+import { formatNominatimAddress, formatNominatimName } from '@/lib/address'
+
 /**
  * @typedef {Object} GeocodingResult
  * @property {string} id
@@ -40,7 +42,7 @@ export async function searchAddresses(query) {
   })
 
   if (!response.ok) {
-    throw new Error('Não foi possível buscar o endereço agora.')
+    throw new Error('Nao foi possivel buscar o endereco agora.')
   }
 
   /** @type {Array<any>} */
@@ -48,8 +50,8 @@ export async function searchAddresses(query) {
 
   return payload.map((item) => ({
     id: String(item.place_id),
-    name: String(item.display_name || '').split(',')[0]?.trim() || 'Localização',
-    address: String(item.display_name || '').trim(),
+    name: formatNominatimName(item.address, item.display_name),
+    address: formatNominatimAddress(item.address, item.display_name),
     latitude: Number(item.lat),
     longitude: Number(item.lon)
   }))
