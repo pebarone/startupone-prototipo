@@ -8,6 +8,7 @@ import AuthCallbackView from './views/AuthCallbackView.vue'
 import UseView from './views/UseView.vue'
 import RetrieveEntryView from './views/RetrieveEntryView.vue'
 import RetrieveView from './views/RetrieveView.vue'
+import HelpView from './views/HelpView.vue'
 
 // Partner views (lazy loaded)
 const PartnerDashboardView = () => import('./views/partner/PartnerDashboardView.vue')
@@ -22,6 +23,11 @@ const routes = [
     path: '/',
     name: 'home',
     component: HomeView
+  },
+  {
+    path: '/ajuda',
+    name: 'help',
+    component: HelpView
   },
   {
     path: '/use',
