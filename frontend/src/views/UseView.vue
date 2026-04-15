@@ -72,9 +72,9 @@
                   <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
                   <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
                 </div>
-                <span v-if="selectedLocationDistanceLabel" class="inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">A {{ selectedLocationDistanceLabel }} de voce</span>
+                <span v-if="selectedLocationDistanceLabel" class="inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">A {{ selectedLocationDistanceLabel }} de você</span>
               </div>
-              <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preco base</p><div class="mt-3 flex items-center justify-between text-sm text-brand-900"><span>Ativacao</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div></div>
+              <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preço base</p><div class="mt-3 flex items-center justify-between text-sm text-brand-900"><span>Ativação</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div></div>
               <div class="mt-5">
                 <div class="mb-2 flex items-center justify-between"><p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers livres</p><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ availableLockers.length }}</span></div>
                 <div v-if="availableLockers.length" class="space-y-3">
@@ -166,13 +166,13 @@
               <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center"><p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Taxa inicial paga</p><p class="text-2xl font-black text-slate-900">{{ formatCents(lockerInitialFee) }}</p></div>
               <div class="rounded-xl border border-brand-200 bg-brand-50 px-4 py-4 text-center"><p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-brand-600">Custo acumulado</p><p class="text-2xl font-black text-brand-700">{{ formatCents(accumulatedCost) }}</p></div>
             </div>
-            <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><strong>Taxa de {{ formatCents(lockerHourlyRate) }}/hora</strong> — cobranca por hora cheia comecada. Retire seus itens quando quiser.</div>
+            <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><strong>Taxa de {{ formatCents(lockerHourlyRate) }}/hora</strong> — cobrança por hora cheia começada. Retire seus itens quando quiser.</div>
             <button type="button" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-base font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-500" @click="goToRetrieve">Quero retirar meus itens agora</button>
             <div v-if="currentRental" class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               <div class="flex items-center gap-2.5 border-b border-slate-100 bg-slate-50 px-5 py-3.5"><p class="text-sm font-bold text-slate-800">Retirar depois</p><span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">Salve este QR</span></div>
               <div class="flex flex-col gap-0 sm:flex-row">
                 <div class="flex-1 px-5 py-5">
-                  <p class="mb-4 text-sm leading-relaxed text-slate-600">Feche esta pagina e volte quando quiser. Basta abrir o link de retirada ou escanear o QR abaixo. Esta pagina ja sabe qual aluguel deve liberar; a digital so autoriza a retirada.</p>
+                  <p class="mb-4 text-sm leading-relaxed text-slate-600">Feche esta página e volte quando quiser. Basta abrir o link de retirada ou escanear o QR abaixo. Esta página já sabe qual aluguel deve liberar; a digital só autoriza a retirada.</p>
                   <div class="mb-3">
                     <label class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Link de retirada</label>
                     <div class="flex items-center gap-2">
@@ -180,7 +180,7 @@
                       <button type="button" class="shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-all" :class="linkCopied ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'" @click="copyRetrieveLink">{{ linkCopied ? 'Copiado' : 'Copiar' }}</button>
                     </div>
                   </div>
-                  <a :href="retrieveLink" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700">Abrir pagina de retirada</a>
+                  <a :href="retrieveLink" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700">Abrir página de retirada</a>
                 </div>
                 <div class="shrink-0 border-t border-slate-100 bg-slate-50/60 px-5 py-5 sm:border-l sm:border-t-0">
                   <p class="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Escanear com celular</p>
@@ -489,18 +489,32 @@ function goToOpen() {
 
 async function startStoring() {
   if (!currentRental.value?.id) {
-    error.value = 'O aluguel nao esta pronto para iniciar a armazenagem.'
+    error.value = 'O aluguel não está pronto para iniciar a armazenagem.'
     return
   }
   actionLoading.value = true
   error.value = ''
   try {
     currentRental.value = await api.post(`/rentals/${currentRental.value.id}/start-storing`, {})
+    
+    // Save to local storage for the RetrieveEntryView list
+    try {
+      const activeRentals = JSON.parse(window.localStorage.getItem('fastlock.active_rentals') || '[]')
+      activeRentals.push({
+        id: currentRental.value.id,
+        lockerCode: selectedLocker.value.code,
+        size: sizeLabel(selectedLocker.value.size),
+        locationName: selectedLocation.value.name,
+        startedAt: new Date(resolveUnlockedAt(currentRental.value.unlocked_at) || Date.now()).toISOString()
+      })
+      window.localStorage.setItem('fastlock.active_rentals', JSON.stringify(activeRentals))
+    } catch (err) {}
+
     currentStep.value = 'storing'
     syncTimer()
     animateStep()
   } catch (requestError) {
-    error.value = getApiErrorMessage(requestError, 'Nao foi possivel iniciar a contagem do locker.')
+    error.value = getApiErrorMessage(requestError, 'Não foi possível iniciar a contagem do locker.')
   } finally {
     actionLoading.value = false
   }
@@ -508,16 +522,32 @@ async function startStoring() {
 
 function syncTimer() {
   stopTimer()
-  if (!currentRental.value?.unlocked_at) {
+  const startedAt = resolveUnlockedAt(currentRental.value?.unlocked_at)
+
+  if (!startedAt) {
     elapsedSeconds.value = 0
     return
   }
-  const startedAt = new Date(currentRental.value.unlocked_at).getTime()
+
   const tick = () => {
     elapsedSeconds.value = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
   }
   tick()
   timerInterval = window.setInterval(tick, 1000)
+}
+
+function resolveUnlockedAt(unlockedAt) {
+  if (!unlockedAt) {
+    return null
+  }
+
+  const parsed = new Date(unlockedAt).getTime()
+
+  if (!Number.isFinite(parsed)) {
+    return null
+  }
+
+  return Math.min(parsed, Date.now())
 }
 
 function stopTimer() {

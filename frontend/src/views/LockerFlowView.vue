@@ -574,6 +574,13 @@ async function confirmPayment() {
     const finished = await api.post(`/rentals/${activeRental.value.id}/confirm-retrieval`)
     currentRental.value = finished
     clearPersistedPendingRentalId()
+    
+    try {
+      let activeRentals = JSON.parse(window.localStorage.getItem('fastlock.active_rentals') || '[]')
+      activeRentals = activeRentals.filter(r => r.id !== activeRental.value.id)
+      window.localStorage.setItem('fastlock.active_rentals', JSON.stringify(activeRentals))
+    } catch (e) {}
+
     lockerContext.value = {
       ...lockerContext.value,
       mode: 'rent',

@@ -387,7 +387,7 @@ export async function retrieveByCredentialService(
         1,
         Math.ceil((Date.now() - storedCredential.unlocked_at.getTime()) / 60000)
       );
-      const hoursUsed = Math.ceil(minutesUsed / 60);
+      const hoursUsed = Math.floor(minutesUsed / 60);
       const extraChargeCents = hoursUsed * storedCredential.hourly_rate_cents;
       const totalCents = storedCredential.initial_fee_cents + extraChargeCents;
       const paymentRequired = extraChargeCents > 0;
@@ -537,7 +537,7 @@ export async function retrieveLockerService(
     const unlockedAt = new Date(rental.unlocked_at);
     const now = new Date();
     const minutesUsed = Math.max(1, Math.ceil((now.getTime() - unlockedAt.getTime()) / 60000));
-    const hoursUsed = Math.ceil(minutesUsed / 60);
+    const hoursUsed = Math.floor(minutesUsed / 60);
     const extraChargeCents = hoursUsed * rental.hourly_rate_cents;
     const totalCents = rental.initial_fee_cents + extraChargeCents;
     const paymentRequired = extraChargeCents > 0;

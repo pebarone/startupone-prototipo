@@ -338,6 +338,12 @@ async function confirmPayment() {
   try {
     rental.value = await api.post(`/rentals/${rental.value.id}/confirm-retrieval`)
     currentStep.value = 'done'
+
+    try {
+      let activeRentals = JSON.parse(window.localStorage.getItem('fastlock.active_rentals') || '[]')
+      activeRentals = activeRentals.filter(r => r.id !== rental.value.id)
+      window.localStorage.setItem('fastlock.active_rentals', JSON.stringify(activeRentals))
+    } catch (e) {}
   } catch (requestError) {
     actionError.value = getApiErrorMessage(requestError, 'Nao foi possivel finalizar a retirada.')
   } finally {
@@ -353,7 +359,10 @@ function syncTimer(currentRental) {
     return
   }
 
-  const startedAt = new Date(currentRental.unlocked_at).getTime()
+  let startedAt = new Date(currentRental.unlocked_at).getTime()
+  if (startedAt > Date.now()) {
+    startedAt = Date.now()
+  }
   const baseElapsed = Number.isFinite(currentRental.elapsed_seconds)
     ? Number(currentRental.elapsed_seconds)
     : Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
