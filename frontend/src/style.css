@@ -8,6 +8,35 @@
   }
 }
 
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+}
+
+:root {
+  --locker-free-bg: theme('colors.emerald.50');
+  --locker-free-border: theme('colors.emerald.200');
+  --locker-free-text: theme('colors.emerald.700');
+  --locker-free-dot: theme('colors.emerald.500');
+
+  --locker-occupied-bg: theme('colors.red.50');
+  --locker-occupied-border: theme('colors.red.200');
+  --locker-occupied-text: theme('colors.red.700');
+  --locker-occupied-dot: theme('colors.red.500');
+
+  --locker-maintenance-bg: theme('colors.amber.50');
+  --locker-maintenance-border: theme('colors.amber.200');
+  --locker-maintenance-text: theme('colors.amber.700');
+  --locker-maintenance-dot: theme('colors.amber.500');
+}
+
 .glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);

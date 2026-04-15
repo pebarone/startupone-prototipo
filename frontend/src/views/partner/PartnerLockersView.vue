@@ -117,37 +117,34 @@
         Nenhum locker encontrado com os filtros selecionados.
       </div>
 
-      <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <article
+      <div v-else class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div
           v-for="locker in filteredLockers"
           :key="locker.id"
-          class="group rounded-lg border bg-white p-5 shadow-sm transition-[border-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
-          :class="statusBorder(locker.status)"
+          class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md"
         >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Tamanho {{ locker.size }}</p>
-              <p class="mt-2 font-mono text-2xl font-black tracking-tight text-slate-900">{{ locker.code }}</p>
-            </div>
-            <span class="mt-1 inline-flex h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: statusColor(locker.status) }" />
+          <!-- Visual Grid Item -->
+          <div class="mb-4">
+             <LockerItem :locker="locker" :interactive="false" />
           </div>
 
-          <div class="mt-4 flex items-center justify-between">
-            <span class="text-sm font-semibold" :style="{ color: statusColor(locker.status) }">
-              {{ statusLabel(locker.status) }}
-            </span>
-            <span
-              class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
-              :class="locker.location_id ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-amber-200 bg-amber-50 text-amber-700'"
+          <!-- Location Info -->
+          <div class="mb-4 flex items-center justify-between">
+             <span class="text-xs font-semibold text-slate-500">Local:</span>
+             <span
+              class="inline-flex max-w-[120px] truncate rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+              :class="locker.location_id ? 'border-brand-200 bg-brand-50 text-brand-700' : 'border-slate-200 bg-slate-50 text-slate-500'"
+              :title="locationLabel(locker.location_id)"
             >
               {{ locationLabel(locker.location_id) }}
             </span>
           </div>
 
-          <div v-if="canAdmin" class="mt-5 grid gap-2 sm:grid-cols-2">
+          <!-- Actions -->
+          <div v-if="canAdmin" class="mt-auto grid gap-2 sm:grid-cols-2">
             <button
               type="button"
-              class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-[border-color,color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 active:scale-[0.98]"
+              class="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 active:scale-[0.98]"
               :disabled="deletingId === locker.id"
               @click="openEditModal(locker)"
             >
@@ -157,7 +154,7 @@
             <button
               v-if="locker.status !== 'free'"
               type="button"
-              class="inline-flex h-10 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 active:scale-[0.98]"
+              class="inline-flex h-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-100 active:scale-[0.98]"
               :disabled="updatingId === locker.id || deletingId === locker.id"
               @click="patchStatus(locker.id, 'free')"
             >
@@ -167,7 +164,7 @@
             <button
               v-if="locker.status !== 'maintenance'"
               type="button"
-              class="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-600 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-100 active:scale-[0.98]"
+              class="inline-flex h-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-100 active:scale-[0.98]"
               :disabled="updatingId === locker.id || deletingId === locker.id"
               @click="patchStatus(locker.id, 'maintenance')"
             >
@@ -176,14 +173,14 @@
 
             <button
               type="button"
-              class="inline-flex h-10 items-center justify-center rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-50 active:scale-[0.98]"
+              class="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-100 active:scale-[0.98]"
               :disabled="deletingId === locker.id || updatingId === locker.id"
               @click="removeLocker(locker)"
             >
               {{ deletingId === locker.id ? 'Excluindo...' : 'Excluir' }}
             </button>
           </div>
-        </article>
+        </div>
       </div>
     </template>
 

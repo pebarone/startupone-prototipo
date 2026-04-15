@@ -27,7 +27,19 @@
             </div>
           </div>
 
-          <div v-if="rental.status === 'storing'" class="mt-4 rounded-xl bg-slate-900 px-5 py-4 text-center">
+          <div v-if="rental.locker" class="mt-6 border-t border-slate-100 pt-6">
+             <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-4">Contexto visual</p>
+             <div class="max-w-[160px] mx-auto">
+                <LockerGrid 
+                  :lockers="[rental.locker]" 
+                  :selected-locker-id="rental.locker.id"
+                  :interactive="false"
+                  :global-animation-state="rental.status === 'finished' ? 'open' : 'idle'"
+                />
+             </div>
+          </div>
+
+          <div v-if="rental.status === 'storing'" class="mt-6 rounded-xl bg-slate-900 px-5 py-4 text-center">
             <p class="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Tempo decorrido</p>
             <div class="font-mono text-4xl font-black tracking-widest text-white">{{ timerDisplay }}</div>
             <p class="mt-2 text-xs text-slate-400">
@@ -199,6 +211,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import LockerGrid from '@/components/lockers/LockerGrid.vue'
 import { api } from '@/composables/useApi'
 import { authenticatePasskey, getWebAuthnErrorMessage, getWebAuthnSupportHint, getWebAuthnSupportState } from '@/composables/useWebAuthn'
 import { getApiErrorMessage } from '@/lib/api-errors'

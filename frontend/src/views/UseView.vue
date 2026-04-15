@@ -75,15 +75,26 @@
                 <span v-if="selectedLocationDistanceLabel" class="inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">A {{ selectedLocationDistanceLabel }} de você</span>
               </div>
               <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preço base</p><div class="mt-3 flex items-center justify-between text-sm text-brand-900"><span>Ativação</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div></div>
-              <div class="mt-5">
-                <div class="mb-2 flex items-center justify-between"><p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers livres</p><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ availableLockers.length }}</span></div>
-                <div v-if="availableLockers.length" class="space-y-3">
-                  <button v-for="locker in pagedLockers" :key="locker.id" type="button" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md" @click="selectLocker(locker)">
-                    <div class="flex items-start justify-between gap-3"><div><p class="font-mono text-lg font-black text-slate-900">{{ locker.code }}</p><p class="mt-1 text-sm text-slate-500">{{ sizeLabel(locker.size) }}</p></div><span class="rounded-full bg-brand-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700">Alugar</span></div>
-                  </button>
-                  <button v-if="hasMoreLockers" type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600" @click="loadMoreLockers">Ver mais lockers</button>
+              
+              <div class="mt-8">
+                <div class="mb-4 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers no local</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Clique em um locker livre para alugar</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{{ availableLockers.length }} livres</span>
+                  </div>
                 </div>
-                <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Sem lockers livres neste ponto.</div>
+
+                <LockerGrid 
+                  :lockers="lockers"
+                  :selected-locker-id="selectedLocker?.id"
+                  :loading="isLockersLoading"
+                  :polling="isPolling"
+                  :global-animation-state="globalAnimationState"
+                  @select="selectLocker"
+                />
               </div>
             </template>
             <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nenhum ponto disponivel agora.</div>
@@ -201,6 +212,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import gsap from 'gsap'
 import LockerMap from '@/components/map/LockerMap.vue'
+import LockerGrid from '@/components/lockers/LockerGrid.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { api } from '@/composables/useApi'
 import { getApiErrorMessage } from '@/lib/api-errors'
@@ -211,23 +223,26 @@ import { getWebAuthnErrorMessage, getWebAuthnSupportHint, getWebAuthnSupportStat
 const route = useRoute()
 const router = useRouter()
 const locations = ref([])
+const lockers = ref([])
 const selectedLocationId = ref('')
 const selectedLocker = ref(null)
 const currentRental = ref(null)
 const currentStep = ref('choose')
 const isLoading = ref(true)
+const isLockersLoading = ref(false)
+const isPolling = ref(false)
 const actionLoading = ref(false)
 const error = ref('')
 const geoStatus = ref('pending')
 const geoLabel = ref('Buscando sua localizacao')
 const mapCenter = ref({ lat: -23.55052, lng: -46.633308, zoom: 12 })
 const userLocation = ref(null)
-const lockerPage = ref(1)
 const biometricState = ref('idle')
 const elapsedSeconds = ref(0)
 const linkCopied = ref(false)
 const hasManualLocationSelection = ref(false)
 const nearestHintDismissed = ref(false)
+const globalAnimationState = ref('idle')
 const webauthnState = getWebAuthnSupportState()
 const webauthnSupported = webauthnState.supported
 const webauthnSupportHint = getWebAuthnSupportHint()
@@ -235,13 +250,12 @@ const baseUrl = typeof window === 'undefined' ? '' : window.location.origin
 const mapHeight = 'clamp(360px, 62vh, 560px)'
 const NEAREST_HINT_HIDE_DISTANCE_METERS = 180
 let timerInterval = null
+let pollingInterval = null
 
 const steps = [{ key: 'choose', label: 'Localizar' }, { key: 'pay', label: 'Pagamento inicial' }, { key: 'biometric', label: 'Biometria' }, { key: 'open', label: 'Locker aberto' }, { key: 'storing', label: 'Armazenando' }]
 const currentStepIndex = computed(() => Math.max(0, steps.findIndex((step) => step.key === currentStep.value)))
 const selectedLocation = computed(() => locations.value.find((item) => item.id === selectedLocationId.value) || null)
-const availableLockers = computed(() => selectedLocation.value?.available_lockers || [])
-const pagedLockers = computed(() => availableLockers.value.slice(0, lockerPage.value * 8))
-const hasMoreLockers = computed(() => availableLockers.value.length > lockerPage.value * 8)
+const availableLockers = computed(() => lockers.value.filter(l => l.status === 'free'))
 const lockerInitialFee = computed(() => selectedLocation.value?.initial_fee_cents ?? 500)
 const lockerHourlyRate = computed(() => !selectedLocation.value || !selectedLocker.value ? 500 : selectedLocker.value.size === 'P' ? selectedLocation.value.hourly_rate_small ?? 500 : selectedLocker.value.size === 'M' ? selectedLocation.value.hourly_rate_medium ?? 1000 : selectedLocation.value.hourly_rate_large ?? 1500)
 const biometricStateLabel = computed(() => biometricState.value === 'scanning' ? 'Registrando a chave biometrica deste aparelho...' : biometricState.value === 'success' ? 'Chave biometrica registrada com sucesso!' : 'Pressione para cadastrar sua digital')
@@ -279,8 +293,14 @@ const selectedLocationDistanceLabel = computed(() => {
 const retrieveLink = computed(() => currentRental.value ? `${baseUrl}/retrieve` : '')
 const retrieveQrUrl = computed(() => currentRental.value ? `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&format=svg&data=${encodeURIComponent(retrieveLink.value)}` : '')
 
-watch(selectedLocationId, () => {
-  lockerPage.value = 1
+watch(selectedLocationId, (newId) => {
+  if (newId) {
+    fetchLockers(newId)
+    startPolling(newId)
+  } else {
+    lockers.value = []
+    stopPolling()
+  }
 })
 
 watch(
@@ -311,6 +331,21 @@ watch(
   }
 )
 
+watch(currentStep, (newStep) => {
+  if (newStep === 'choose' && selectedLocationId.value) {
+    startPolling(selectedLocationId.value)
+  } else if (newStep !== 'choose') {
+    stopPolling()
+  }
+  
+  if (newStep === 'open') {
+    globalAnimationState.value = 'open'
+  } else if (newStep === 'storing') {
+    globalAnimationState.value = 'closing'
+    setTimeout(() => { globalAnimationState.value = 'idle' }, 800)
+  }
+})
+
 onMounted(async () => {
   resolveUserLocation()
   await fetchLocations()
@@ -321,6 +356,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopTimer()
+  stopPolling()
 })
 
 async function fetchLocations() {
@@ -334,6 +370,37 @@ async function fetchLocations() {
     error.value = getApiErrorMessage(requestError, 'Falha ao carregar o mapa de lockers.')
   } finally {
     isLoading.value = false
+  }
+}
+
+async function fetchLockers(locationId, quiet = false) {
+  if (!locationId) return
+  if (!quiet) isLockersLoading.value = true
+  isPolling.value = true
+  try {
+    const response = await api.get(`/lockers?location_id=${locationId}&limit=100`)
+    lockers.value = response.data || []
+  } catch (requestError) {
+    if (!quiet) error.value = getApiErrorMessage(requestError, 'Falha ao carregar os lockers deste local.')
+  } finally {
+    isLockersLoading.value = false
+    isPolling.value = false
+  }
+}
+
+function startPolling(locationId) {
+  stopPolling()
+  pollingInterval = window.setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      fetchLockers(locationId, true)
+    }
+  }, 12000)
+}
+
+function stopPolling() {
+  if (pollingInterval) {
+    window.clearInterval(pollingInterval)
+    pollingInterval = null
   }
 }
 
@@ -356,7 +423,7 @@ async function autoSelectLocker(lockerId) {
       return
     }
     selectedLocationId.value = context.locker.location_id || ''
-    selectedLocker.value = (locations.value.find((item) => item.id === context.locker.location_id)?.available_lockers || []).find((item) => item.id === lockerId) || context.locker
+    selectedLocker.value = context.locker
     currentStep.value = 'pay'
     animateStep()
   } catch (requestError) {
@@ -429,13 +496,15 @@ function selectLocker(locker) {
   linkCopied.value = false
   elapsedSeconds.value = 0
   stopTimer()
-  currentStep.value = 'pay'
-  error.value = ''
-  animateStep()
-}
-
-function loadMoreLockers() {
-  lockerPage.value += 1
+  
+  // Preview animation
+  globalAnimationState.value = 'preview'
+  
+  setTimeout(() => {
+    currentStep.value = 'pay'
+    error.value = ''
+    animateStep()
+  }, 400)
 }
 
 async function simulatePayment() {
@@ -579,6 +648,7 @@ function goToChoose() {
   elapsedSeconds.value = 0
   linkCopied.value = false
   error.value = ''
+  globalAnimationState.value = 'idle'
   stopTimer()
   syncPreferredLocation()
   if (route.params.lockerId) {
