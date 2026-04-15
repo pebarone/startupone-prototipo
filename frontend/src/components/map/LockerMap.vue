@@ -85,6 +85,7 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('focus', handleWindowFocus)
   window.removeEventListener('resize', handleWindowResize)
+  cleanupGlobalInteractionState()
 
   if (map) {
     map.remove()
@@ -198,14 +199,11 @@ function scheduleMapRefresh(restoreInteraction = true) {
 }
 
 function restoreInteractionState() {
+  cleanupGlobalInteractionState()
+
   if (!map || !props.interactive) {
     return
   }
-
-  const container = map.getContainer()
-
-  container.classList.remove('leaflet-drag-target', 'leaflet-grab', 'leaflet-touch-drag', 'leaflet-touch-zoom')
-  document.body.classList.remove('leaflet-dragging', 'leaflet-touching')
 
   map.dragging.disable()
   map.dragging.enable()
@@ -226,6 +224,11 @@ function restoreInteractionState() {
     map.tap.disable()
     map.tap.enable()
   }
+}
+
+function cleanupGlobalInteractionState() {
+  mapElement.value?.classList?.remove('leaflet-drag-target', 'leaflet-grab', 'leaflet-touch-drag', 'leaflet-touch-zoom')
+  document.body.classList.remove('leaflet-dragging', 'leaflet-touching')
 }
 
 function renderMarkers() {

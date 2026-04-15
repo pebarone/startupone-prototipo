@@ -7,6 +7,7 @@
         'fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-slate-100 transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]',
         isMobile ? 'w-[88vw] max-w-[320px] shadow-xl' : 'shadow-sm',
         isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0',
+        isMobile && !sidebarOpen ? 'pointer-events-none' : 'pointer-events-auto',
         !isMobile && sidebarOpen ? 'w-60' : '',
         !isMobile && !sidebarOpen ? 'w-[68px]' : ''
       ]"
@@ -80,6 +81,7 @@
       <div class="p-3">
         <div
           v-if="user"
+          ref="userMenuRef"
           class="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group relative"
           :class="sidebarOpen ? '' : 'justify-center'"
           @click="userMenuOpen = !userMenuOpen"
@@ -171,8 +173,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useOrganization } from '@/composables/useOrganization'
 
@@ -181,6 +183,7 @@ const props = defineProps({
   pageTitle: { type: String, default: '' }
 })
 
+const route = useRoute()
 const router = useRouter()
 const { user, signOut } = useAuth()
 const { currentOrganization, canAdmin } = useOrganization()
@@ -188,6 +191,8 @@ const { currentOrganization, canAdmin } = useOrganization()
 const sidebarOpen = ref(true)
 const userMenuOpen = ref(false)
 const isMobile = ref(false)
+const userMenuRef = ref(null)
+const recoveryTimeoutIds = []
 
 const initials = computed(() => {
   const name = user.value?.full_name || user.value?.email || '?'
@@ -205,13 +210,197 @@ async function handleSignOut() {
   router.push('/')
 }
 
-function checkMobile() {
-  isMobile.value = window.innerWidth < 1024
-  if (isMobile.value) sidebarOpen.value = false
+function closeTransientUi() {
+  userMenuOpen.value = false
+
+  if (isMobile.value) {
+    sidebarOpen.value = false
+  }
 }
 
-onMounted(() => { checkMobile(); window.addEventListener('resize', checkMobile) })
-onUnmounted(() => { window.removeEventListener('resize', checkMobile) })
+function checkMobile() {
+  isMobile.value = window.innerWidth < 1024
+  if (isMobile.value) {
+    sidebarOpen.value = false
+  }
+}
+
+/**
+ * @param {MouseEvent} event
+ */
+function handleDocumentClick(event) {
+  if (!userMenuOpen.value || !userMenuRef.value) {
+    return
+  }
+
+  if (!(event.target instanceof Node) || !userMenuRef.value.contains(event.target)) {
+    userMenuOpen.value = false
+  }
+}
+
+/**
+ * @param {KeyboardEvent} event
+ */
+function handleDocumentKeydown(event) {
+  if (event.key === 'Escape') {
+    closeTransientUi()
+  }
+}
+
+function clearScheduledRecovery() {
+  while (recoveryTimeoutIds.length > 0) {
+    const timeoutId = recoveryTimeoutIds.pop()
+    window.clearTimeout(timeoutId)
+  }
+}
+
+/**
+ * @param {Element|null} element
+ * @returns {boolean}
+ */
+function isStaleFullscreenOverlay(element) {
+  if (!(element instanceof HTMLElement)) {
+    return false
+  }
+
+  if (element === document.body || element === document.documentElement || element.id === 'app') {
+    return false
+  }
+
+  if (element.dataset.baseModalOverlay === 'true' && element.querySelector('[role="dialog"]')) {
+    return false
+  }
+
+  if (element.closest('[role="dialog"], [aria-modal="true"]')) {
+    return false
+  }
+
+  const style = window.getComputedStyle(element)
+  if (
+    style.display === 'none' ||
+    style.visibility === 'hidden' ||
+    style.pointerEvents === 'none' ||
+    !['fixed', 'absolute', 'sticky'].includes(style.position)
+  ) {
+    return false
+  }
+
+  const rect = element.getBoundingClientRect()
+  const coversViewport =
+    rect.left <= 0 &&
+    rect.top <= 0 &&
+    rect.width >= window.innerWidth * 0.95 &&
+    rect.height >= window.innerHeight * 0.95
+
+  if (!coversViewport) {
+    return false
+  }
+
+  const className = String(element.className || '')
+  const zIndex = Number.parseInt(style.zIndex || '0', 10)
+  return /(backdrop|overlay|modal|scrim|sheet|drawer)/i.test(className) || zIndex >= 90
+}
+
+function releaseStaleOverlays() {
+  const staleModalOverlays = document.querySelectorAll('[data-base-modal-overlay="true"]')
+  for (const overlay of staleModalOverlays) {
+    if (!(overlay instanceof HTMLElement)) {
+      continue
+    }
+
+    if (!overlay.querySelector('[role="dialog"]')) {
+      overlay.remove()
+    }
+  }
+
+  const probePoints = [
+    [window.innerWidth / 2, window.innerHeight / 2],
+    [window.innerWidth * 0.25, window.innerHeight * 0.5],
+    [window.innerWidth * 0.75, window.innerHeight * 0.5]
+  ]
+
+  for (const [x, y] of probePoints) {
+    const topElement = document.elementFromPoint(x, y)
+    if (!isStaleFullscreenOverlay(topElement)) {
+      continue
+    }
+
+    topElement.style.pointerEvents = 'none'
+    topElement.setAttribute('data-interaction-recovered', 'true')
+    console.warn('[PartnerLayout] Stale overlay neutralized after focus/visibility resume.', topElement)
+  }
+}
+
+function recoverInteractionState() {
+  closeTransientUi()
+
+  document.documentElement.style.pointerEvents = 'auto'
+  document.body.style.pointerEvents = 'auto'
+  document.documentElement.removeAttribute('inert')
+  document.body.removeAttribute('inert')
+
+  releaseStaleOverlays()
+}
+
+function scheduleInteractionRecovery() {
+  clearScheduledRecovery()
+  recoverInteractionState()
+
+  for (const delayMs of [60, 180, 320]) {
+    const timeoutId = window.setTimeout(() => {
+      recoverInteractionState()
+    }, delayMs)
+    recoveryTimeoutIds.push(timeoutId)
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    scheduleInteractionRecovery()
+  }
+}
+
+function handleWindowFocus() {
+  scheduleInteractionRecovery()
+}
+
+/**
+ * @param {PointerEvent} event
+ */
+function handleDocumentPointerDown(event) {
+  if (isStaleFullscreenOverlay(event.target)) {
+    scheduleInteractionRecovery()
+  }
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeTransientUi()
+  }
+)
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  window.addEventListener('focus', handleWindowFocus)
+  window.addEventListener('pageshow', handleWindowFocus)
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleDocumentKeydown)
+  document.addEventListener('pointerdown', handleDocumentPointerDown, true)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  clearScheduledRecovery()
+  window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('focus', handleWindowFocus)
+  window.removeEventListener('pageshow', handleWindowFocus)
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleDocumentKeydown)
+  document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 </script>
 
 <script>

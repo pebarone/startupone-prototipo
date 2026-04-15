@@ -8,6 +8,27 @@ import { supabase } from '@/lib/supabase'
 import { runtimeApiBaseUrl } from '@/lib/runtime-config'
 
 const baseURL = runtimeApiBaseUrl
+let accessToken = null
+
+/**
+ * Keep an in-memory token so requests do not block on getSession locks.
+ * @param {string|null|undefined} nextToken
+ */
+export function setApiAccessToken(nextToken) {
+  accessToken = nextToken || null
+}
+
+if (supabase) {
+  void supabase.auth.getSession().then(({ data }) => {
+    setApiAccessToken(data.session?.access_token)
+  }).catch((err) => {
+    console.warn('[API] Unable to prime access token from session.', err)
+  })
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setApiAccessToken(session?.access_token)
+  })
+}
 
 export const api = axios.create({
   baseURL,
@@ -16,16 +37,12 @@ export const api = axios.create({
   }
 })
 
-// Attach Bearer Token from Supabase session
+// Attach Bearer token from in-memory auth state.
 api.interceptors.request.use(
-  async (config) => {
-    if (!supabase) {
-      return config
-    }
-
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`
+  (config) => {
+    if (accessToken) {
+      config.headers = config.headers || {}
+      config.headers.Authorization = `Bearer ${accessToken}`
     }
     return config
   },

@@ -5,7 +5,7 @@
 
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
-import { api } from '@/composables/useApi'
+import { api, setApiAccessToken } from '@/composables/useApi'
 import { runtimeSupabaseOAuthProvider } from '@/lib/runtime-config'
 
 /**
@@ -92,16 +92,22 @@ export function useAuth() {
       const { data } = await supabase.auth.getSession()
       session.value = data.session
       user.value = data.session?.user ?? null
+      setApiAccessToken(data.session?.access_token)
 
       if (session.value) {
         await fetchMe()
       }
 
-      supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      supabase.auth.onAuthStateChange((_event, newSession) => {
         session.value = newSession
         user.value = newSession?.user ?? null
+        setApiAccessToken(newSession?.access_token)
+
         if (newSession) {
-          await fetchMe()
+          // Keep callback non-blocking to avoid auth lock contention on tab refocus.
+          window.setTimeout(() => {
+            void fetchMe()
+          }, 0)
         } else {
           memberships.value = []
         }
@@ -132,6 +138,7 @@ export function useAuth() {
       session.value = null
       user.value = null
       memberships.value = []
+      setApiAccessToken(null)
       return
     }
 
@@ -140,6 +147,7 @@ export function useAuth() {
     session.value = null
     user.value = null
     memberships.value = []
+    setApiAccessToken(null)
   }
 
   return {

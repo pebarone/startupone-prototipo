@@ -186,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '@/composables/useApi'
 import { useOrganization } from '@/composables/useOrganization'
@@ -300,9 +300,33 @@ function memberStatusLabel(status) {
   return { active: 'Ativo', invited: 'Convidado', disabled: 'Desabilitado' }[status] || status
 }
 
+function closeTransientUi() {
+  showInviteModal.value = false
+  showEditModal.value = false
+  inviteError.value = ''
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    closeTransientUi()
+  }
+}
+
+function handleWindowFocus() {
+  closeTransientUi()
+}
+
 onMounted(async () => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('focus', handleWindowFocus)
+
   const org = await fetchOrganization(orgId)
   if (org) setCurrentOrganization(org)
   await fetchMembers()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('focus', handleWindowFocus)
 })
 </script>
