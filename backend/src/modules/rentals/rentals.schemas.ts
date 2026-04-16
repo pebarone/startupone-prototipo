@@ -28,6 +28,7 @@ export type RentalWithLocker = Rental & {
 
 export type CreateRentalBody = {
   locker_id: string;
+  payment_confirmed: true;
 };
 
 export type WebAuthnRegistrationCredential = {
@@ -245,9 +246,10 @@ export const rentalWithLockerSchema = {
 export const createRentalSchema = {
   body: {
     type: "object",
-    required: ["locker_id"],
+    required: ["locker_id", "payment_confirmed"],
     properties: {
-      locker_id: uuidSchema
+      locker_id: uuidSchema,
+      payment_confirmed: { type: "boolean", const: true }
     },
     additionalProperties: false
   },

@@ -27,12 +27,12 @@
             </div>
           </div>
 
-          <div v-if="rental.locker" class="mt-6 border-t border-slate-100 pt-6">
+           <div v-if="lockerVisual" class="mt-6 border-t border-slate-100 pt-6">
              <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-4">Contexto visual</p>
              <div class="max-w-[160px] mx-auto">
                 <LockerGrid 
-                  :lockers="[rental.locker]" 
-                  :selected-locker-id="rental.locker.id"
+                :lockers="[lockerVisual]" 
+                :selected-locker-id="lockerVisual.id"
                   :interactive="false"
                   :global-animation-state="rental.status === 'finished' ? 'open' : 'idle'"
                 />
@@ -249,6 +249,29 @@ const extraChargeCents = computed(() => retrieval.value?.extra_charge_cents ?? r
 const totalCents = computed(() => retrieval.value?.total_cents ?? rental.value?.total_cents ?? rental.value?.initial_fee_cents ?? 0)
 const displayMinutes = computed(() => formatMinutes(retrieval.value?.minutes_used ?? deriveMinutesUsed(rental.value)))
 const paymentButtonLabel = computed(() => (extraChargeCents.value > 0 ? 'Confirmar pagamento e encerrar aluguel' : 'Encerrar aluguel'))
+const lockerVisual = computed(() => {
+  if (!rental.value?.locker) {
+    return null
+  }
+
+  if (rental.value.status === 'storing') {
+    return {
+      ...rental.value.locker,
+      status: 'free',
+      status_label: 'Seu locker'
+    }
+  }
+
+  if (rental.value.status === 'pending_retrieval_payment') {
+    return {
+      ...rental.value.locker,
+      status: 'free',
+      status_label: 'Pagamento'
+    }
+  }
+
+  return rental.value.locker
+})
 
 watch(rentalId, async () => {
   await loadRental()

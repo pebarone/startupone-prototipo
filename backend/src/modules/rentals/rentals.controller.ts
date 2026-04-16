@@ -34,7 +34,11 @@ export async function createRentalController(
   request: FastifyRequest<{ Body: CreateRentalBody }>,
   reply: FastifyReply
 ) {
-  const rental = await createRentalService(request.body.locker_id, getRequestContext(request, "anonymous"));
+  const rental = await createRentalService(
+    request.body.locker_id,
+    request.body.payment_confirmed,
+    getRequestContext(request, "anonymous")
+  );
   return reply.code(201).send(rental);
 }
 

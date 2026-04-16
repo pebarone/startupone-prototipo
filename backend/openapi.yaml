@@ -570,7 +570,7 @@ paths:
               $ref: "#/components/schemas/CreateRentalRequest"
       responses:
         "201":
-          description: Rental created and locker occupied
+          description: Rental created after payment confirmation and locker occupied
           content:
             application/json:
               schema:
@@ -1460,12 +1460,15 @@ components:
               $ref: "#/components/schemas/Locker"
     CreateRentalRequest:
       type: object
-      required: [locker_id]
+      required: [locker_id, payment_confirmed]
       additionalProperties: false
       properties:
         locker_id:
           type: string
           format: uuid
+        payment_confirmed:
+          type: boolean
+          const: true
     WebAuthnOptions:
       type: object
       required: [challenge, timeout]

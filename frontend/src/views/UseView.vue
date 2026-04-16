@@ -33,72 +33,81 @@
           {{ error }}
         </div>
 
-        <div v-else class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div class="space-y-4">
-            <div class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-              <div class="mb-3 flex flex-wrap items-center gap-2 px-1">
-                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"><span class="h-2.5 w-2.5 rounded-full bg-brand-600" />Lockers livres</span>
-                <span v-if="geoLabel" :class="['inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium', geoStatus === 'granted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-500']"><span :class="['h-1.5 w-1.5 rounded-full', geoStatus === 'granted' ? 'bg-emerald-500' : 'bg-slate-400']" />{{ geoLabel }}</span>
-                <button type="button" class="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700" @click="resolveUserLocation">Atualizar GPS</button>
+        <div v-else class="space-y-5">
+          <div class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+            <div class="mb-3 flex flex-wrap items-center gap-2 px-1">
+              <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"><span class="h-2.5 w-2.5 rounded-full bg-brand-600" />Mapa de locais</span>
+              <span v-if="geoLabel" :class="['inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium', geoStatus === 'granted' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-500']"><span :class="['h-1.5 w-1.5 rounded-full', geoStatus === 'granted' ? 'bg-emerald-500' : 'bg-slate-400']" />{{ geoLabel }}</span>
+              <button type="button" class="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700" @click="resolveUserLocation">Atualizar GPS</button>
+            </div>
+            <div class="relative overflow-hidden rounded-2xl">
+              <div class="pointer-events-none absolute inset-x-3 bottom-3 z-[500] flex justify-center">
+                <Transition name="map-hint">
+                  <button v-if="showNearestHint" type="button" class="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/80 bg-white/88 px-3.5 py-2.5 text-left shadow-[0_14px_32px_rgba(15,23,42,0.12)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)]" @click="jumpToNearest">
+                    <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100">
+                      <svg class="h-4.5 w-4.5 text-red-500 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" :style="{ transform: `rotate(${nearestLocation.bearing}deg)` }">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l5 12-5-2-5 2 5-12Z" />
+                      </svg>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Mais perto de voce</p>
+                      <p class="truncate text-sm font-semibold text-slate-900">{{ nearestLocation.name }}</p>
+                      <p class="text-xs text-slate-500">{{ nearestDistanceLabel }}</p>
+                    </div>
+                    <span class="hidden text-xs font-semibold text-brand-700 sm:block">Ir agora</span>
+                  </button>
+                </Transition>
               </div>
-              <div class="relative overflow-hidden rounded-2xl">
-                <div class="pointer-events-none absolute inset-x-3 bottom-3 z-[500] flex justify-center">
-                  <Transition name="map-hint">
-                    <button v-if="showNearestHint" type="button" class="pointer-events-auto inline-flex max-w-full items-center gap-3 rounded-full border border-white/80 bg-white/88 px-3.5 py-2.5 text-left shadow-[0_14px_32px_rgba(15,23,42,0.12)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)]" @click="jumpToNearest">
-                      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100">
-                        <svg class="h-4.5 w-4.5 text-red-500 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" :style="{ transform: `rotate(${nearestLocation.bearing}deg)` }">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l5 12-5-2-5 2 5-12Z" />
-                        </svg>
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Mais perto de voce</p>
-                        <p class="truncate text-sm font-semibold text-slate-900">{{ nearestLocation.name }}</p>
-                        <p class="text-xs text-slate-500">{{ nearestDistanceLabel }}</p>
-                      </div>
-                      <span class="hidden text-xs font-semibold text-brand-700 sm:block">Ir agora</span>
-                    </button>
-                  </Transition>
-                </div>
-                <LockerMap :locations="locations" :selected-location-id="selectedLocationId" :center="mapCenter" :user-location="userLocation" :fit-to-locations="false" :height="mapHeight" @select-location="selectLocation" />
-              </div>
+              <LockerMap :locations="locations" :selected-location-id="selectedLocationId" :center="mapCenter" :user-location="userLocation" :fit-to-locations="false" :height="mapHeight" @select-location="selectLocation" />
             </div>
           </div>
 
-          <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <template v-if="selectedLocation">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
-                  <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
-                  <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
-                </div>
-                <span v-if="selectedLocationDistanceLabel" class="inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">A {{ selectedLocationDistanceLabel }} de você</span>
+          <div v-if="selectedLocation" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Local selecionado</p>
+                <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">{{ selectedLocation.name }}</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">{{ selectedLocation.address }}</p>
               </div>
-              <div class="mt-4 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-4"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preço base</p><div class="mt-3 flex items-center justify-between text-sm text-brand-900"><span>Ativação</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div></div>
-              
-              <div class="mt-8">
-                <div class="mb-4 flex items-center justify-between">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Lockers no local</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">Clique em um locker livre para alugar</p>
-                  </div>
-                  <div class="flex items-center gap-2">
-                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{{ availableLockers.length }} livres</span>
-                  </div>
-                </div>
 
-                <LockerGrid 
-                  :lockers="lockers"
-                  :selected-locker-id="selectedLocker?.id"
-                  :loading="isLockersLoading"
-                  :polling="isPolling"
-                  :global-animation-state="globalAnimationState"
-                  @select="selectLocker"
-                />
+              <div class="space-y-2">
+                <span v-if="selectedLocationDistanceLabel" class="inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">A {{ selectedLocationDistanceLabel }} de você</span>
+                <div class="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-900">
+                  <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-700">Preço base</p>
+                  <div class="mt-1.5 flex items-center justify-between gap-4"><span>Ativação</span><strong>{{ formatCents(selectedLocation.initial_fee_cents ?? 500) }}</strong></div>
+                </div>
               </div>
-            </template>
-            <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nenhum ponto disponivel agora.</div>
-          </aside>
+            </div>
+
+            <div class="mt-5 grid gap-2 text-xs font-semibold sm:grid-cols-2 lg:grid-cols-4">
+              <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">Total: {{ lockers.length }}</div>
+              <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">Disponíveis: {{ availableLockers.length }}</div>
+              <div class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">Ocupados: {{ occupiedLockers.length }}</div>
+              <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">Manutenção: {{ maintenanceLockers.length }}</div>
+            </div>
+
+            <div class="mt-6">
+              <div class="mb-4 flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Armários deste local</p>
+                  <p class="mt-0.5 text-[10px] text-slate-500">Toque em um armário verde para iniciar o aluguel</p>
+                </div>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">{{ availableLockers.length }} livres</span>
+              </div>
+
+              <LockerGrid 
+                :lockers="lockers"
+                :selected-locker-id="selectedLocker?.id"
+                :loading="isLockersLoading"
+                :polling="isPolling"
+                :require-available="true"
+                :global-animation-state="globalAnimationState"
+                @select="selectLocker"
+              />
+            </div>
+          </div>
+
+          <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nenhum ponto disponivel agora.</div>
         </div>
       </section>
 
@@ -160,6 +169,14 @@
           <h2 class="text-4xl font-black tracking-tight text-white">Locker aberto!</h2>
           <p class="mt-3 text-lg text-brand-100">A chave ja esta vinculada ao seu aparelho.</p>
           <p class="mx-auto mt-2 max-w-sm text-sm text-brand-200">Guarde seus itens, feche o locker e so entao comece a contagem do tempo.</p>
+          <div v-if="selectedLocker" class="mx-auto mt-6 max-w-[220px] rounded-2xl border border-white/20 bg-white/10 p-3">
+            <LockerGrid
+              :lockers="[selectedLocker]"
+              :interactive="false"
+              :selected-locker-id="selectedLocker.id"
+              :global-animation-state="globalAnimationState === 'closing' ? 'closing' : 'open'"
+            />
+          </div>
           <div class="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white"><span class="h-2 w-2 animate-pulse rounded-full bg-brand-300" />Taxa: {{ formatCents(lockerHourlyRate) }}/hora</div>
           <div class="mt-8"><button type="button" class="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-sm font-semibold text-brand-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-50 disabled:opacity-50" :disabled="actionLoading" @click="startStoring"><BaseSpinner v-if="actionLoading" size="sm" color="brand" /><span>{{ actionLoading ? 'Fechando locker...' : 'Guardei meus itens → Fechar locker' }}</span></button></div>
         </div>
@@ -169,6 +186,14 @@
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div class="bg-slate-900 px-6 py-5 text-center">
             <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Locker <span class="font-mono text-white">{{ selectedLocker?.code }}</span> em uso</p>
+            <div v-if="selectedLocker" class="mx-auto mb-4 max-w-[210px]">
+              <LockerGrid
+                :lockers="[selectedLocker]"
+                :interactive="false"
+                :selected-locker-id="selectedLocker.id"
+                global-animation-state="idle"
+              />
+            </div>
             <div class="font-mono text-5xl font-black tracking-widest text-white">{{ timerDisplay }}</div>
             <p class="mt-2 text-sm text-slate-400">tempo decorrido</p>
           </div>
@@ -256,6 +281,8 @@ const steps = [{ key: 'choose', label: 'Localizar' }, { key: 'pay', label: 'Paga
 const currentStepIndex = computed(() => Math.max(0, steps.findIndex((step) => step.key === currentStep.value)))
 const selectedLocation = computed(() => locations.value.find((item) => item.id === selectedLocationId.value) || null)
 const availableLockers = computed(() => lockers.value.filter(l => l.status === 'free'))
+const occupiedLockers = computed(() => lockers.value.filter(l => l.status === 'occupied'))
+const maintenanceLockers = computed(() => lockers.value.filter(l => l.status === 'maintenance'))
 const lockerInitialFee = computed(() => selectedLocation.value?.initial_fee_cents ?? 500)
 const lockerHourlyRate = computed(() => !selectedLocation.value || !selectedLocker.value ? 500 : selectedLocker.value.size === 'P' ? selectedLocation.value.hourly_rate_small ?? 500 : selectedLocker.value.size === 'M' ? selectedLocation.value.hourly_rate_medium ?? 1000 : selectedLocation.value.hourly_rate_large ?? 1500)
 const biometricStateLabel = computed(() => biometricState.value === 'scanning' ? 'Registrando a chave biometrica deste aparelho...' : biometricState.value === 'success' ? 'Chave biometrica registrada com sucesso!' : 'Pressione para cadastrar sua digital')
@@ -336,13 +363,6 @@ watch(currentStep, (newStep) => {
     startPolling(selectedLocationId.value)
   } else if (newStep !== 'choose') {
     stopPolling()
-  }
-  
-  if (newStep === 'open') {
-    globalAnimationState.value = 'open'
-  } else if (newStep === 'storing') {
-    globalAnimationState.value = 'closing'
-    setTimeout(() => { globalAnimationState.value = 'idle' }, 800)
   }
 })
 
@@ -490,6 +510,11 @@ function jumpToNearest() {
 }
 
 function selectLocker(locker) {
+  if (locker?.status !== 'free') {
+    error.value = 'Este armário não está disponível para um novo aluguel.'
+    return
+  }
+
   selectedLocker.value = locker
   currentRental.value = null
   biometricState.value = 'idle'
@@ -497,12 +522,12 @@ function selectLocker(locker) {
   elapsedSeconds.value = 0
   stopTimer()
   
-  // Preview animation
   globalAnimationState.value = 'preview'
   
   setTimeout(() => {
     currentStep.value = 'pay'
     error.value = ''
+    globalAnimationState.value = 'idle'
     animateStep()
   }, 400)
 }
@@ -515,7 +540,10 @@ async function simulatePayment() {
   actionLoading.value = true
   error.value = ''
   try {
-    currentRental.value = await api.post('/rentals', { locker_id: selectedLocker.value.id })
+    currentRental.value = await api.post('/rentals', {
+      locker_id: selectedLocker.value.id,
+      payment_confirmed: true
+    })
     biometricState.value = 'idle'
     linkCopied.value = false
     elapsedSeconds.value = 0
@@ -552,6 +580,7 @@ async function startBiometricRegistration() {
 
 function goToOpen() {
   currentStep.value = 'open'
+  globalAnimationState.value = 'open'
   error.value = ''
   animateStep()
 }
@@ -564,6 +593,9 @@ async function startStoring() {
   actionLoading.value = true
   error.value = ''
   try {
+    globalAnimationState.value = 'closing'
+    await new Promise((resolve) => window.setTimeout(resolve, 280))
+
     currentRental.value = await api.post(`/rentals/${currentRental.value.id}/start-storing`, {})
     
     // Save to local storage for the RetrieveEntryView list
@@ -580,9 +612,11 @@ async function startStoring() {
     } catch (err) {}
 
     currentStep.value = 'storing'
+    globalAnimationState.value = 'idle'
     syncTimer()
     animateStep()
   } catch (requestError) {
+    globalAnimationState.value = 'open'
     error.value = getApiErrorMessage(requestError, 'Não foi possível iniciar a contagem do locker.')
   } finally {
     actionLoading.value = false

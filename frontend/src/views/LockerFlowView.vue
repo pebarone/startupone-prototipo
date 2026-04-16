@@ -502,7 +502,10 @@ async function startRentalRegistration() {
   actionError.value = ''
 
   try {
-    const rental = await api.post('/rentals', { locker_id: lockerId.value })
+    const rental = await api.post('/rentals', {
+      locker_id: lockerId.value,
+      payment_confirmed: true
+    })
     currentRental.value = rental
     persistPendingRentalId(rental.id)
     await completePendingRegistration(rental.id)

@@ -27,7 +27,8 @@
     <!-- Grid -->
     <div
       v-else
-      class="grid grid-cols-2 gap-4 transition-all duration-500 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4"
+      class="grid gap-4 transition-all duration-500"
+      :style="gridStyle"
     >
       <LockerItem
         v-for="locker in lockers"
@@ -82,6 +83,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  animateAll: {
+    type: Boolean,
+    default: false
+  },
   emptyMessage: {
     type: String,
     default: 'Nenhum locker disponível neste local.'
@@ -95,14 +100,19 @@ const props = defineProps({
 
 defineEmits(['select'])
 
+const gridStyle = computed(() => ({
+  gridTemplateColumns: 'repeat(auto-fit, minmax(138px, 1fr))'
+}))
+
 function getAnimationState(locker) {
-  // If this locker is the selected one, follow the global animation state
+  if (props.animateAll) {
+    return props.globalAnimationState
+  }
+
   if (props.selectedLockerId === locker.id) {
     return props.globalAnimationState
   }
-  
-  // For others, if we are in 'opening' or 'open' state globally, 
-  // maybe we keep them 'idle' or slightly dimmed
+
   return 'idle'
 }
 </script>

@@ -59,7 +59,15 @@ const DEFAULT_RATES: Record<string, number> = {
   G: 1500
 };
 
-export async function createRentalService(lockerId: string, context: RequestContext): Promise<Rental> {
+export async function createRentalService(
+  lockerId: string,
+  paymentConfirmed: boolean,
+  context: RequestContext
+): Promise<Rental> {
+  if (!paymentConfirmed) {
+    throw validationError("Initial payment must be confirmed before reserving a locker.");
+  }
+
   return withTransaction(async (client) => {
     const locker = await findLockerForRentalUpdate(lockerId, client);
 
