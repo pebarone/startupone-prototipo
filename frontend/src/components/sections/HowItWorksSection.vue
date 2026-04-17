@@ -39,11 +39,11 @@
               <div class="absolute inset-0 bg-brand-50 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-slate-200">02</span>
               <svg class="w-10 h-10 text-brand-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
               </svg>
             </div>
-            <h4 class="text-base font-bold text-slate-900 mb-2">Pague via PIX</h4>
-            <p class="text-slate-500 text-sm">Taxa de ativação simples. Pague via PIX na hora, sem burocracia.</p>
+            <h4 class="text-base font-bold text-slate-900 mb-2">Cadastre sua biometria</h4>
+            <p class="text-slate-500 text-sm">Biometria vinculada ao locker. Só você consegue abrir para retirar.</p>
           </div>
 
           <!-- Step 3 -->
@@ -52,11 +52,11 @@
               <div class="absolute inset-0 bg-brand-50 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-slate-200">03</span>
               <svg class="w-10 h-10 text-brand-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
             </div>
-            <h4 class="text-base font-bold text-slate-900 mb-2">Cadastre sua digital</h4>
-            <p class="text-slate-500 text-sm">Binomotria vinculada ao locker. Só você consegue abrir para retirar.</p>
+            <h4 class="text-base font-bold text-slate-900 mb-2">Pague via PIX</h4>
+            <p class="text-slate-500 text-sm">Taxa de ativação simples. Pague via PIX na hora, sem burocracia.</p>
           </div>
 
           <!-- Step 4 -->

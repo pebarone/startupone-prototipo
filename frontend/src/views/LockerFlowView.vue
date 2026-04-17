@@ -81,14 +81,14 @@
               <p class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/80">
                 Novo aluguel
               </p>
-              <h2 class="mt-4 text-3xl font-black tracking-tight">Pague e cadastre a biometria do telefone</h2>
+              <h2 class="mt-4 text-3xl font-black tracking-tight">Cadastre a biometria antes do PIX</h2>
               <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-                O desbloqueio fica vinculado a este aparelho por WebAuthn. Na retirada, basta escanear o mesmo QR do locker e confirmar a biometria novamente.
+                A digital fica vinculada a este aparelho primeiro. O locker só será reservado e aberto depois da confirmação do PIX inicial.
               </p>
 
               <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
                 <div class="flex items-center justify-between text-sm">
-                  <span class="text-slate-300">Taxa de ativacao</span>
+                  <span class="text-slate-300">Taxa de ativação</span>
                   <span class="font-black text-white">{{ formatCents(lockerContext.initial_fee_cents) }}</span>
                 </div>
                 <div class="mt-3 flex items-center justify-between text-sm">
@@ -98,15 +98,15 @@
               </div>
 
               <div v-if="!webauthnSupported" class="mt-5 rounded-xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                {{ webauthnSupportHint || 'Este navegador nao suporta WebAuthn. Abra o QR em um navegador atualizado no celular.' }}
+                {{ webauthnSupportHint || 'Este navegador não suporta WebAuthn. Abra o QR em um navegador atualizado no celular.' }}
               </div>
             </div>
 
             <div class="rounded-2xl bg-white p-5 text-slate-900 shadow-lg">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-600">Confirmacao</p>
-              <h3 class="mt-2 text-xl font-black tracking-tight">Liberar o locker agora</h3>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-600">Biometria</p>
+              <h3 class="mt-2 text-xl font-black tracking-tight">Registrar este celular</h3>
               <p class="mt-2 text-sm leading-6 text-slate-500">
-                Depois do cadastro biometrico, o locker entra em uso e este aparelho vira a chave publica autorizada para a retirada.
+                Depois da biometria, a tela avança para o PIX. Só então o locker fica reservado e muda para vermelho.
               </p>
 
               <button
@@ -116,7 +116,7 @@
                 @click="startRentalRegistration"
               >
                 <BaseSpinner v-if="actionLoading" size="sm" color="white" />
-                <span>{{ actionLoading ? 'Cadastrando biometria...' : 'Pagar taxa e cadastrar biometria' }}</span>
+                <span>{{ actionLoading ? 'Cadastrando biometria...' : 'Cadastrar biometria' }}</span>
               </button>
             </div>
           </div>
@@ -128,9 +128,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 class="mt-5 text-2xl font-black tracking-tight text-slate-900">Ativacao em andamento</h2>
+          <h2 class="mt-5 text-2xl font-black tracking-tight text-slate-900">Locker reservado em outro aparelho</h2>
           <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-            Este locker ja recebeu a taxa inicial, mas o cadastro WebAuthn ainda nao foi concluido no celular que iniciou o aluguel. Finalize a ativacao naquele aparelho ou acione a operacao.
+            Este locker ja teve o PIX inicial confirmado e esta aguardando fechamento ou uso no aparelho que iniciou a ativacao.
           </p>
           <button
             type="button"
@@ -144,10 +144,10 @@
 
         <section v-else-if="screen === 'resume-registration'" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div class="bg-amber-500 px-6 py-8 text-center text-slate-950">
-            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-950/70">Ativacao pendente</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-950/70">Biometria pendente</p>
             <h2 class="mt-2 text-3xl font-black tracking-tight">Retome o cadastro biometrico neste celular</h2>
             <p class="mt-3 text-sm leading-6 text-amber-950/80">
-              A taxa inicial ja foi criada para este locker. Falta concluir a credencial WebAuthn neste aparelho para entrar em uso.
+              O aluguel já foi preparado para este locker, mas a credencial WebAuthn ainda não foi concluída neste aparelho.
             </p>
           </div>
 
@@ -155,7 +155,7 @@
             <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-5">
               <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700">Aluguel pendente</p>
               <p class="mt-3 text-sm leading-6 text-slate-600">
-                Use o mesmo navegador deste celular para retomar a biometria. Outros aparelhos nao conseguem finalizar este cadastro.
+                Use o mesmo navegador deste celular para concluir a biometria antes do pagamento inicial.
               </p>
             </div>
 
@@ -177,6 +177,72 @@
                 <span>{{ actionLoading ? 'Retomando cadastro...' : 'Retomar cadastro biometrico' }}</span>
               </button>
             </div>
+          </div>
+        </section>
+
+        <section v-else-if="screen === 'activation-payment'" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-100 px-6 py-6">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Pagamento inicial</p>
+            <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Biometria confirmada</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              O locker continua livre ate a confirmacao do PIX. Depois disso, ele fica reservado e abre para o usuario.
+            </p>
+          </div>
+
+          <div class="grid gap-5 px-6 py-6 lg:grid-cols-[1fr_320px]">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">Biometria</span>
+                <span class="font-semibold text-emerald-600">Cadastrada</span>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-sm">
+                <span class="text-slate-500">Taxa inicial</span>
+                <span class="font-semibold text-slate-900">{{ formatCents(currentRental.initial_fee_cents) }}</span>
+              </div>
+              <div class="mt-3 flex items-center justify-between text-sm">
+                <span class="text-slate-500">Taxa por hora</span>
+                <span class="font-semibold text-slate-900">{{ formatCents(currentRental.hourly_rate_cents) }}</span>
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-slate-900 p-5 text-white">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Proximo passo</p>
+              <h3 class="mt-2 text-xl font-black tracking-tight">Confirmar PIX</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-300">
+                Esta confirmacao reserva o locker no backend e libera a abertura neste aparelho.
+              </p>
+              <button
+                type="button"
+                class="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="actionLoading || !currentRental?.id"
+                @click="confirmInitialPayment"
+              >
+                <BaseSpinner v-if="actionLoading" size="sm" color="white" />
+                <span>{{ actionLoading ? 'Confirmando PIX...' : 'Confirmar PIX e abrir locker' }}</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section v-else-if="screen === 'activation-open'" class="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-8 py-12 text-center shadow-[0_24px_60px_rgba(21,128,61,0.28)]">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-100">Locker reservado</p>
+          <h2 class="mt-2 text-4xl font-black tracking-tight text-white">Locker aberto!</h2>
+          <p class="mt-3 text-lg text-brand-100">O PIX inicial foi confirmado e este aparelho esta autorizado.</p>
+          <p class="mx-auto mt-2 max-w-sm text-sm text-brand-100/90">Guarde seus itens, feche a porta e toque no botao abaixo para iniciar a armazenagem.</p>
+          <div class="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white">
+            <span class="h-2 w-2 animate-pulse rounded-full bg-brand-300" />
+            {{ formatCents(currentRental.hourly_rate_cents) }}/hora
+          </div>
+          <div class="mt-8">
+            <button
+              type="button"
+              class="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-8 text-sm font-semibold text-brand-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-50 disabled:opacity-50"
+              :disabled="actionLoading || !currentRental?.id"
+              @click="startStoring"
+            >
+              <BaseSpinner v-if="actionLoading" size="sm" color="brand" />
+              <span>{{ actionLoading ? 'Fechando locker...' : 'Fechei o locker' }}</span>
+            </button>
           </div>
         </section>
 
@@ -384,6 +450,12 @@ const screen = computed(() => {
 })
 
 const modeLabel = computed(() => {
+  if (currentRental.value?.status === 'pending_registration') return 'Biometria pendente'
+  if (currentRental.value?.status === 'pending_activation_payment') return 'Aguardando PIX'
+  if (currentRental.value?.status === 'active') return 'Locker reservado'
+  if (currentRental.value?.status === 'storing') return 'Em uso'
+  if (currentRental.value?.status === 'pending_retrieval_payment') return 'Pagamento final'
+
   return {
     rent: 'Pronto para aluguel',
     retrieve: 'Locker ocupado',
@@ -596,6 +668,22 @@ async function startStoring() {
     currentRental.value = updatedRental
     retrievalResult.value = null
     clearPersistedPendingRentalId()
+
+    try {
+      const activeRentals = JSON.parse(window.localStorage.getItem('fastlock.active_rentals') || '[]')
+
+      if (!activeRentals.find((entry) => entry.id === updatedRental.id)) {
+        activeRentals.push({
+          id: updatedRental.id,
+          lockerCode: lockerContext.value?.locker?.code || 'LOCKER',
+          size: lockerContext.value?.locker?.size || 'M',
+          locationName: lockerContext.value?.location_name || 'Local nao identificado',
+          startedAt: updatedRental.unlocked_at || updatedRental.started_at || new Date().toISOString()
+        })
+        window.localStorage.setItem('fastlock.active_rentals', JSON.stringify(activeRentals))
+      }
+    } catch (storageError) {}
+
     lockerContext.value = {
       ...lockerContext.value,
       mode: 'retrieve',

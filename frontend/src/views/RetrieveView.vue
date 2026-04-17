@@ -43,14 +43,42 @@
             <p class="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Tempo decorrido</p>
             <div class="font-mono text-4xl font-black tracking-widest text-white">{{ timerDisplay }}</div>
             <p class="mt-2 text-xs text-slate-400">
-              Custo acumulado estimado:
+              Taxa extra estimada:
               <span class="font-semibold text-brand-400">{{ formatCents(accumulatedCost) }}</span>
             </p>
           </div>
         </div>
 
-        <div v-if="rental.status === 'active'" class="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-center shadow-sm">
-          <h2 class="text-xl font-black tracking-tight text-slate-900">Ativacao ainda em andamento</h2>
+        <div v-if="rental.status === 'pending_registration'" class="rounded-2xl border border-blue-200 bg-blue-50 px-6 py-6 text-center shadow-sm">
+          <h2 class="text-xl font-black tracking-tight text-slate-900">Biometria ainda nao concluida</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-600">
+            Este aluguel ainda esta aguardando o cadastro da biometria no celular que iniciou a ativacao.
+          </p>
+          <a
+            v-if="rental.locker?.id"
+            :href="`/locker/${rental.locker.id}`"
+            class="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+          >
+            Voltar para a ativacao
+          </a>
+        </div>
+
+        <div v-else-if="rental.status === 'pending_activation_payment'" class="rounded-2xl border border-violet-200 bg-violet-50 px-6 py-6 text-center shadow-sm">
+          <h2 class="text-xl font-black tracking-tight text-slate-900">Pagamento inicial pendente</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-600">
+            A biometria já foi cadastrada, mas o PIX inicial ainda não foi confirmado. O locker continua disponível até esse pagamento.
+          </p>
+          <a
+            v-if="rental.locker?.id"
+            :href="`/locker/${rental.locker.id}`"
+            class="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+          >
+            Concluir ativacao
+          </a>
+        </div>
+
+        <div v-else-if="rental.status === 'active'" class="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-center shadow-sm">
+          <h2 class="text-xl font-black tracking-tight text-slate-900">Locker reservado e aguardando fechamento</h2>
           <p class="mt-2 text-sm leading-6 text-slate-600">
             Este aluguel ja foi criado, mas o locker ainda nao entrou em armazenagem. Feche o locker na etapa de ativacao para comecar a contagem e liberar a retirada.
           </p>
@@ -126,7 +154,7 @@
               </div>
               <div class="border-t border-slate-200 pt-3">
                 <div class="flex items-center justify-between">
-                  <span class="font-bold text-slate-800">Total a pagar agora</span>
+                  <span class="font-bold text-slate-800">Taxa extra a pagar agora</span>
                   <span class="text-3xl font-black tracking-tight text-slate-900">{{ formatCents(extraChargeCents) }}</span>
                 </div>
               </div>
@@ -215,6 +243,7 @@ import LockerGrid from '@/components/lockers/LockerGrid.vue'
 import { api } from '@/composables/useApi'
 import { authenticatePasskey, getWebAuthnErrorMessage, getWebAuthnSupportHint, getWebAuthnSupportState } from '@/composables/useWebAuthn'
 import { getApiErrorMessage } from '@/lib/api-errors'
+import { deriveMinutesUsed as deriveRentalMinutesUsed, estimateExtraChargeCentsFromElapsedSeconds, normalizeTimestampToNow } from '@/lib/rental-pricing'
 
 const route = useRoute()
 const rentalId = computed(() => String(route.params.rentalId || ''))
@@ -243,15 +272,39 @@ const bioLabel = computed(() => {
 const timerDisplay = computed(() => formatElapsedTime(elapsedSeconds.value))
 const accumulatedCost = computed(() => {
   if (!rental.value) return 0
-  return (Math.ceil(Math.max(0, elapsedSeconds.value) / 3600) || 1) * (rental.value.hourly_rate_cents || 0)
+  return estimateExtraChargeCentsFromElapsedSeconds(elapsedSeconds.value, rental.value.hourly_rate_cents || 0)
 })
 const extraChargeCents = computed(() => retrieval.value?.extra_charge_cents ?? rental.value?.extra_charge_cents ?? 0)
 const totalCents = computed(() => retrieval.value?.total_cents ?? rental.value?.total_cents ?? rental.value?.initial_fee_cents ?? 0)
-const displayMinutes = computed(() => formatMinutes(retrieval.value?.minutes_used ?? deriveMinutesUsed(rental.value)))
+const displayMinutes = computed(() => formatMinutes(retrieval.value?.minutes_used ?? deriveRentalMinutesUsed(rental.value?.unlocked_at, rental.value?.retrieved_at)))
 const paymentButtonLabel = computed(() => (extraChargeCents.value > 0 ? 'Confirmar pagamento e encerrar aluguel' : 'Encerrar aluguel'))
 const lockerVisual = computed(() => {
   if (!rental.value?.locker) {
     return null
+  }
+
+  if (rental.value.status === 'pending_registration') {
+    return {
+      ...rental.value.locker,
+      status: 'maintenance',
+      status_label: 'Biometria'
+    }
+  }
+
+  if (rental.value.status === 'pending_activation_payment') {
+    return {
+      ...rental.value.locker,
+      status: 'maintenance',
+      status_label: 'PIX inicial'
+    }
+  }
+
+  if (rental.value.status === 'active') {
+    return {
+      ...rental.value.locker,
+      status: 'occupied',
+      status_label: 'Reservado'
+    }
   }
 
   if (rental.value.status === 'storing') {
@@ -305,7 +358,7 @@ async function loadRental() {
 
     if (data.status === 'pending_retrieval_payment') {
       retrieval.value = {
-        minutes_used: deriveMinutesUsed(data),
+        minutes_used: deriveRentalMinutesUsed(data.unlocked_at, data.retrieved_at),
         extra_charge_cents: data.extra_charge_cents,
         total_cents: data.total_cents
       }
@@ -395,9 +448,11 @@ function syncTimer(currentRental) {
     return
   }
 
-  let startedAt = new Date(currentRental.unlocked_at).getTime()
-  if (startedAt > Date.now()) {
-    startedAt = Date.now()
+  const startedAt = normalizeTimestampToNow(currentRental.unlocked_at)
+
+  if (!startedAt) {
+    elapsedSeconds.value = 0
+    return
   }
   const baseElapsed = Number.isFinite(currentRental.elapsed_seconds)
     ? Number(currentRental.elapsed_seconds)
@@ -424,7 +479,9 @@ function sizeLabel(size) {
 
 function statusText(status) {
   return {
-    active: 'Ativacao pendente',
+    pending_registration: 'Biometria pendente',
+    pending_activation_payment: 'Pagamento inicial',
+    active: 'Locker reservado',
     storing: 'Armazenando',
     pending_retrieval_payment: 'Aguardando pagamento',
     finished: 'Finalizado',
@@ -436,6 +493,8 @@ function statusPill(status) {
   const base = 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border '
 
   return {
+    pending_registration: `${base}border-blue-200 bg-blue-50 text-blue-700`,
+    pending_activation_payment: `${base}border-violet-200 bg-violet-50 text-violet-700`,
     active: `${base}border-blue-200 bg-blue-50 text-blue-700`,
     storing: `${base}border-amber-200 bg-amber-50 text-amber-700`,
     pending_retrieval_payment: `${base}border-brand-200 bg-brand-50 text-brand-700`,
@@ -478,16 +537,6 @@ function formatElapsedTime(seconds) {
   const secs = total % 60
 
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-}
-
-function deriveMinutesUsed(currentRental) {
-  if (!currentRental?.unlocked_at) {
-    return 0
-  }
-
-  const finishedAt = currentRental.retrieved_at ? new Date(currentRental.retrieved_at).getTime() : Date.now()
-  const startedAt = new Date(currentRental.unlocked_at).getTime()
-  return Math.max(1, Math.ceil((finishedAt - startedAt) / 60000))
 }
 
 function isProbablyWebAuthnError(error) {

@@ -292,10 +292,26 @@ export async function confirmInitialPaymentService(
       throw conflictError("Locker is no longer available for activation.");
     }
 
-    const updated = await confirmRentalInitialPaymentById(rentalId, client);
+    let updated: Rental | null = null;
+
+    for (let attempt = 0; attempt < ACCESS_CODE_ATTEMPTS; attempt += 1) {
+      try {
+        updated = await confirmRentalInitialPaymentById(rentalId, generateAccessCode(), client);
+      } catch (error) {
+        if (isPgError(error, "23505")) {
+          continue;
+        }
+
+        throw error;
+      }
+
+      if (updated) {
+        break;
+      }
+    }
 
     if (!updated) {
-      throw validationError("Rental could not be activated after the initial payment.");
+      throw internalError("Rental could not be activated after the initial payment.");
     }
 
     await markLockerOccupied(rental.locker_id, client);
@@ -454,10 +470,11 @@ export async function retrieveByCredentialService(
         1,
         Math.ceil((Date.now() - storedCredential.unlocked_at.getTime()) / 60000)
       );
-      const hoursUsed = Math.floor(minutesUsed / 60);
-      const extraChargeCents = hoursUsed * storedCredential.hourly_rate_cents;
-      const totalCents = storedCredential.initial_fee_cents + extraChargeCents;
-      const paymentRequired = extraChargeCents > 0;
+      const { extraChargeCents, totalCents, paymentRequired } = calculateRetrievalCharges(
+        minutesUsed,
+        storedCredential.initial_fee_cents,
+        storedCredential.hourly_rate_cents
+      );
 
       const updated = await setRentalRetrievalCharges(
         storedCredential.rental_id,
@@ -604,10 +621,11 @@ export async function retrieveLockerService(
     const unlockedAt = new Date(rental.unlocked_at);
     const now = new Date();
     const minutesUsed = Math.max(1, Math.ceil((now.getTime() - unlockedAt.getTime()) / 60000));
-    const hoursUsed = Math.floor(minutesUsed / 60);
-    const extraChargeCents = hoursUsed * rental.hourly_rate_cents;
-    const totalCents = rental.initial_fee_cents + extraChargeCents;
-    const paymentRequired = extraChargeCents > 0;
+    const { extraChargeCents, totalCents, paymentRequired } = calculateRetrievalCharges(
+      minutesUsed,
+      rental.initial_fee_cents,
+      rental.hourly_rate_cents
+    );
 
     await setRentalRetrievalCharges(rentalId, extraChargeCents, totalCents, client);
 
@@ -779,6 +797,21 @@ export { listRentalsByOrg };
 function deriveMinutesUsed(unlockedAt: Date, retrievedAt?: Date | null) {
   const endTime = retrievedAt?.getTime() ?? Date.now();
   return Math.max(1, Math.ceil((endTime - unlockedAt.getTime()) / 60000));
+}
+
+function calculateRetrievalCharges(
+  minutesUsed: number,
+  initialFeeCents: number,
+  hourlyRateCents: number
+) {
+  const billableHours = Math.floor(Math.max(0, minutesUsed) / 60);
+  const extraChargeCents = billableHours * hourlyRateCents;
+
+  return {
+    extraChargeCents,
+    totalCents: initialFeeCents + extraChargeCents,
+    paymentRequired: extraChargeCents > 0
+  };
 }
 
 async function recordAuthenticationFailure(

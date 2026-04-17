@@ -450,17 +450,21 @@ export async function findPendingActivationPaymentRentalByIdForUpdate(
   return result.rows[0] ?? null;
 }
 
-export async function confirmRentalInitialPaymentById(rentalId: string, db: Queryable): Promise<Rental | null> {
+export async function confirmRentalInitialPaymentById(
+  rentalId: string,
+  accessCode: string,
+  db: Queryable
+): Promise<Rental | null> {
   const result = await db.query<Rental>(
     `
     UPDATE rentals
-    SET status = 'active', updated_at = now()
+    SET status = 'active', access_code = $2, updated_at = now()
     WHERE id = $1
       AND status = 'pending_activation_payment'
     RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,
-    [rentalId]
+    [rentalId, accessCode]
   );
 
   return result.rows[0] ?? null;

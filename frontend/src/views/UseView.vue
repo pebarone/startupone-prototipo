@@ -18,14 +18,14 @@
       <section v-if="currentStep === 'choose'" class="step-content">
         <div class="mb-8 text-center">
           <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Escolha um locker</p>
-          <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Mapa publico de lockers</h1>
-          <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">Escolha um locker livre para iniciar a ativacao. O QR fixo do locker pode abrir direto esta mesma jornada.</p>
+          <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Mapa público de lockers</h1>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">Escolha um locker livre para iniciar a ativação. O QR fixo do locker pode abrir direto esta mesma jornada.</p>
         </div>
 
         <div v-if="isLoading" class="flex min-h-[420px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div class="flex flex-col items-center gap-4">
             <BaseSpinner size="xl" color="brand" />
-            <p class="text-sm text-slate-500">Carregando localizacoes...</p>
+            <p class="text-sm text-slate-500">Carregando localizações...</p>
           </div>
         </div>
 
@@ -50,7 +50,7 @@
                       </svg>
                     </div>
                     <div class="min-w-0">
-                      <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Mais perto de voce</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Mais perto de você</p>
                       <p class="truncate text-sm font-semibold text-slate-900">{{ nearestLocation.name }}</p>
                       <p class="text-xs text-slate-500">{{ nearestDistanceLabel }}</p>
                     </div>
@@ -107,7 +107,7 @@
             </div>
           </div>
 
-          <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nenhum ponto disponivel agora.</div>
+          <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Nenhum ponto disponível agora.</div>
         </div>
       </section>
 
@@ -122,14 +122,14 @@
               <div class="flex items-center justify-between text-sm"><span class="text-slate-500">Local</span><span class="font-semibold text-slate-900">{{ selectedLocation?.name }}</span></div>
               <div class="flex items-center justify-between text-sm"><span class="text-slate-500">Biometria</span><span class="font-semibold text-emerald-600">{{ biometricState === 'success' ? 'Cadastrada' : 'Pendente' }}</span></div>
               <div class="flex items-center justify-between text-sm"><span class="text-slate-500">Taxa por hora</span><span class="font-semibold text-slate-900">{{ formatCents(lockerHourlyRate) }}</span></div>
-              <div class="border-t border-slate-200 pt-3"><div class="flex items-center justify-between"><span class="font-semibold text-slate-700">Taxa de ativacao</span><span class="text-2xl font-black tracking-tight text-slate-900">{{ formatCents(lockerInitialFee) }}</span></div></div>
+              <div class="border-t border-slate-200 pt-3"><div class="flex items-center justify-between"><span class="font-semibold text-slate-700">Taxa de ativação</span><span class="text-2xl font-black tracking-tight text-slate-900">{{ formatCents(lockerInitialFee) }}</span></div></div>
             </div>
             <div class="flex flex-col items-center rounded-xl border-2 border-dashed border-brand-200 bg-brand-50/50 p-6">
               <p class="mb-3 text-sm font-semibold text-brand-700">Escaneie o QR Code PIX</p>
               <svg viewBox="0 0 120 120" class="h-36 w-36 rounded-lg bg-white p-2 shadow-sm" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" fill="white" rx="6" /><rect x="8" y="8" width="30" height="30" rx="3" fill="#111827" /><rect x="12" y="12" width="22" height="22" rx="2" fill="white" /><rect x="16" y="16" width="14" height="14" rx="1" fill="#111827" /><rect x="82" y="8" width="30" height="30" rx="3" fill="#111827" /><rect x="86" y="12" width="22" height="22" rx="2" fill="white" /><rect x="90" y="16" width="14" height="14" rx="1" fill="#111827" /><rect x="8" y="82" width="30" height="30" rx="3" fill="#111827" /><rect x="12" y="86" width="22" height="22" rx="2" fill="white" /><rect x="16" y="90" width="14" height="14" rx="1" fill="#111827" /><rect x="46" y="46" width="28" height="28" rx="4" fill="#16a34a" /><rect x="52" y="52" width="16" height="16" rx="2" fill="white" /></svg>
               <p class="mt-3 text-xs text-slate-500">Chave PIX FastLock · {{ formatCents(lockerInitialFee) }}</p>
             </div>
-            <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">Depois da confirmacao, o locker fica reservado, muda para vermelho e abre para o usuario.</div>
+            <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">Depois da confirmação, o locker fica reservado, muda para vermelho e abre para o usuário.</div>
             <div v-if="error" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
             <div class="mt-6 grid gap-3 sm:grid-cols-2">
               <button type="button" class="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5" @click="goToBiometricStep">Voltar para biometria</button>
@@ -143,7 +143,7 @@
         <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-8 py-10 text-center shadow-2xl">
           <p class="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-white/80">Biometria primeiro</p>
           <h2 class="mb-3 text-3xl font-black tracking-tight text-white">Cadastre sua biometria</h2>
-          <p class="mx-auto mb-8 max-w-sm text-sm text-slate-300">Sua digital vincula a chave deste aluguel ao aparelho. O locker so sera reservado e aberto depois da confirmacao do PIX.</p>
+          <p class="mx-auto mb-8 max-w-sm text-sm text-slate-300">Sua digital vincula a chave deste aluguel ao aparelho. O locker só será reservado e aberto depois da confirmação do PIX.</p>
 
           <div class="mx-auto mb-8 flex h-40 w-40 items-center justify-center">
             <div class="relative flex h-full w-full items-center justify-center">
@@ -169,7 +169,7 @@
         <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-8 py-12 text-center shadow-[0_24px_60px_rgba(21,128,61,0.28)]">
           <h2 class="text-4xl font-black tracking-tight text-white">Locker reservado e aberto!</h2>
           <p class="mt-3 text-lg text-brand-100">PIX confirmado e chave vinculada ao seu aparelho.</p>
-          <p class="mx-auto mt-2 max-w-sm text-sm text-brand-200">Guarde seus itens, feche o locker e so entao comece a contagem do tempo.</p>
+          <p class="mx-auto mt-2 max-w-sm text-sm text-brand-200">Guarde seus itens, feche o locker e só então comece a contagem do tempo.</p>
           <div v-if="selectedLocker" class="mx-auto mt-6 max-w-[220px] rounded-2xl border border-white/20 bg-white/10 p-3">
             <LockerGrid
               :lockers="[selectedLocker]"
@@ -261,7 +261,7 @@ const isPolling = ref(false)
 const actionLoading = ref(false)
 const error = ref('')
 const geoStatus = ref('pending')
-const geoLabel = ref('Buscando sua localizacao')
+const geoLabel = ref('Buscando sua localização')
 const mapCenter = ref({ lat: -23.55052, lng: -46.633308, zoom: 12 })
 const userLocation = ref(null)
 const biometricState = ref('idle')
@@ -287,7 +287,7 @@ const occupiedLockers = computed(() => lockers.value.filter(l => l.status === 'o
 const maintenanceLockers = computed(() => lockers.value.filter(l => l.status === 'maintenance'))
 const lockerInitialFee = computed(() => selectedLocation.value?.initial_fee_cents ?? 500)
 const lockerHourlyRate = computed(() => !selectedLocation.value || !selectedLocker.value ? 500 : selectedLocker.value.size === 'P' ? selectedLocation.value.hourly_rate_small ?? 500 : selectedLocker.value.size === 'M' ? selectedLocation.value.hourly_rate_medium ?? 1000 : selectedLocation.value.hourly_rate_large ?? 1500)
-const biometricStateLabel = computed(() => biometricState.value === 'scanning' ? 'Registrando a chave biometrica deste aparelho...' : biometricState.value === 'success' ? 'Biometria cadastrada. Agora confirme o PIX para reservar o locker.' : 'Pressione para cadastrar sua digital')
+const biometricStateLabel = computed(() => biometricState.value === 'scanning' ? 'Registrando a chave biométrica deste aparelho...' : biometricState.value === 'success' ? 'Biometria cadastrada. Agora confirme o PIX para reservar o locker.' : 'Pressione para cadastrar sua digital')
 const locationCandidates = computed(() => {
   const withAvailability = locations.value.filter((location) => Number(location.free_lockers ?? 0) > 0)
   return withAvailability.length ? withAvailability : locations.value
@@ -441,7 +441,7 @@ async function autoSelectLocker(lockerId) {
   try {
     const context = await api.get(`/lockers/${lockerId}/public-context`)
     if (context.mode !== 'rent' || context.locker?.status !== 'free') {
-      error.value = 'Este locker nao esta disponivel para uma nova ativacao. Use a pagina de retirada do aluguel em andamento.'
+      error.value = 'Este locker não está disponível para uma nova ativação. Use a página de retirada do aluguel em andamento.'
       return
     }
     selectedLocationId.value = context.locker.location_id || ''
@@ -449,14 +449,14 @@ async function autoSelectLocker(lockerId) {
     currentStep.value = 'biometric'
     animateStep()
   } catch (requestError) {
-    error.value = getApiErrorMessage(requestError, 'Nao foi possivel abrir este locker pelo QR.')
+    error.value = getApiErrorMessage(requestError, 'Não foi possível abrir este locker pelo QR.')
   }
 }
 
 function resolveUserLocation() {
   if (!navigator.geolocation) {
     geoStatus.value = 'fallback'
-    geoLabel.value = 'GPS indisponivel neste navegador'
+    geoLabel.value = 'GPS indisponível neste navegador'
     return
   }
   geoStatus.value = 'pending'
@@ -467,7 +467,7 @@ function resolveUserLocation() {
       lng: position.coords.longitude
     }
     geoStatus.value = 'granted'
-    geoLabel.value = 'Mapa centrado em voce'
+    geoLabel.value = 'Mapa centrado em você'
     mapCenter.value = { lat: position.coords.latitude, lng: position.coords.longitude, zoom: 14 }
     syncPreferredLocation()
   }, () => {
@@ -599,17 +599,10 @@ async function confirmInitialPayment() {
     globalAnimationState.value = 'open'
     animateStep()
   } catch (requestError) {
-    error.value = getApiErrorMessage(requestError, 'Nao foi possivel confirmar o pagamento inicial.')
+    error.value = getApiErrorMessage(requestError, 'Não foi possível confirmar o pagamento inicial.')
   } finally {
     actionLoading.value = false
   }
-}
-
-function goToOpen() {
-  currentStep.value = 'open'
-  globalAnimationState.value = 'open'
-  error.value = ''
-  animateStep()
 }
 
 async function startStoring() {
@@ -636,7 +629,7 @@ async function startStoring() {
       activeRentals.push({
         id: currentRental.value.id,
         lockerCode: selectedLocker.value.code,
-        size: sizeLabel(selectedLocker.value.size),
+        size: selectedLocker.value.size,
         locationName: selectedLocation.value.name,
         startedAt: new Date(resolveUnlockedAt(currentRental.value.unlocked_at) || Date.now()).toISOString()
       })

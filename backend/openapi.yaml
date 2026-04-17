@@ -570,7 +570,7 @@ paths:
               $ref: "#/components/schemas/CreateRentalRequest"
       responses:
         "201":
-          description: Rental created after payment confirmation and locker occupied
+          description: Rental draft created for biometric registration or immediately activated when payment is already confirmed
           content:
             application/json:
               schema:
@@ -636,7 +636,29 @@ paths:
               $ref: "#/components/schemas/WebAuthnRegistrationRequest"
       responses:
         "200":
-          description: Credential registered and rental kept ready for locker opening
+          description: Credential registered and rental moved to the next activation step
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rental"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/rentals/{id}/confirm-initial-payment:
+    post:
+      tags: [Rentals]
+      operationId: confirmRentalInitialPayment
+      summary: Confirm the initial PIX payment, reserve the locker, and move the rental to active
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Initial payment confirmed and locker reserved
           content:
             application/json:
               schema:
@@ -653,7 +675,7 @@ paths:
     post:
       tags: [Rentals]
       operationId: startRentalStoring
-      summary: Start the storing timer after the user closes the locker
+      summary: Start the storing timer after the user closes the reserved locker
       parameters:
         - $ref: "#/components/parameters/Id"
       responses:
@@ -988,7 +1010,7 @@ components:
       enum: [free, occupied, maintenance]
     RentalStatus:
       type: string
-      enum: [active, storing, pending_retrieval_payment, finished, cancelled]
+      enum: [pending_registration, pending_activation_payment, active, storing, pending_retrieval_payment, finished, cancelled]
     OrganizationStatus:
       type: string
       enum: [active, inactive]
@@ -1460,7 +1482,7 @@ components:
               $ref: "#/components/schemas/Locker"
     CreateRentalRequest:
       type: object
-      required: [locker_id, payment_confirmed]
+      required: [locker_id]
       additionalProperties: false
       properties:
         locker_id:
@@ -1468,7 +1490,7 @@ components:
           format: uuid
         payment_confirmed:
           type: boolean
-          const: true
+          default: false
     WebAuthnOptions:
       type: object
       required: [challenge, timeout]

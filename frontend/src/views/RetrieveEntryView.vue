@@ -255,7 +255,7 @@ async function buildLockerEntry(rentalEntry) {
 }
 
 /**
- * @param {'active'|'storing'|'pending_retrieval_payment'|'finished'|'cancelled'|string} status
+ * @param {'pending_registration'|'pending_activation_payment'|'active'|'storing'|'pending_retrieval_payment'|'finished'|'cancelled'|string} status
  * @returns {{ status: 'free'|'occupied'|'maintenance', label: string }}
  */
 function mapRentalStatusToLockerVisual(status) {
@@ -267,8 +267,16 @@ function mapRentalStatusToLockerVisual(status) {
     return { status: 'free', label: 'Pagamento' }
   }
 
+  if (status === 'pending_registration') {
+    return { status: 'maintenance', label: 'Biometria' }
+  }
+
+  if (status === 'pending_activation_payment') {
+    return { status: 'maintenance', label: 'PIX inicial' }
+  }
+
   if (status === 'active') {
-    return { status: 'maintenance', label: 'Ativando' }
+    return { status: 'occupied', label: 'Reservado' }
   }
 
   if (status === 'finished') {

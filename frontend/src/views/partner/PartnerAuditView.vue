@@ -381,7 +381,9 @@ const statusFilters = [
   { value: 'finished', label: 'Finalizados' },
   { value: 'storing', label: 'Em uso' },
   { value: 'pending_retrieval_payment', label: 'Aguard. pag.' },
-  { value: 'active', label: 'Pendentes' },
+  { value: 'pending_registration', label: 'Pend. biom.' },
+  { value: 'pending_activation_payment', label: 'Pend. PIX' },
+  { value: 'active', label: 'Reservados' },
   { value: 'cancelled', label: 'Cancelados' }
 ]
 
@@ -670,7 +672,7 @@ function canDelete(status) {
  * @param {string} status
  */
 function canOverride(status) {
-  return ['active', 'storing', 'pending_retrieval_payment'].includes(status)
+  return ['pending_registration', 'pending_activation_payment', 'active', 'storing', 'pending_retrieval_payment'].includes(status)
 }
 
 /**
@@ -707,7 +709,9 @@ function formatDate(date) {
  */
 function statusText(status) {
   return {
-    active: 'Pendente',
+    pending_registration: 'Pend. biom.',
+    pending_activation_payment: 'Pend. PIX',
+    active: 'Reservado',
     storing: 'Em uso',
     pending_retrieval_payment: 'Aguard. pag.',
     finished: 'Finalizado',
@@ -721,6 +725,8 @@ function statusText(status) {
 function statusPill(status) {
   const base = 'items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] border '
   return {
+    pending_registration: base + 'bg-sky-50 text-sky-700 border-sky-200',
+    pending_activation_payment: base + 'bg-violet-50 text-violet-700 border-violet-200',
     active: base + 'bg-blue-50 text-blue-700 border-blue-200',
     storing: base + 'bg-amber-50 text-amber-700 border-amber-200',
     pending_retrieval_payment: base + 'bg-brand-50 text-brand-700 border-brand-200',
