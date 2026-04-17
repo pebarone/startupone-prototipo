@@ -340,6 +340,7 @@ import {
   registerPasskey
 } from '@/composables/useWebAuthn'
 import { getApiErrorMessage } from '@/lib/api-errors'
+import { deriveMinutesUsed, estimateExtraChargeCents, normalizeTimestampToNow } from '@/lib/rental-pricing'
 
 const route = useRoute()
 const lockerId = computed(() => String(route.params.lockerId || ''))
@@ -358,7 +359,7 @@ const elapsedSeconds = ref(0)
 const webauthnState = getWebAuthnSupportState()
 const webauthnSupported = webauthnState.supported
 const webauthnSupportHint = getWebAuthnSupportHint()
-const pendingRegistrationRentalId = ref(loadPersistedPendingRentalId())
+const pendingActivationRentalId = ref(loadPersistedPendingRentalId())
 
 let timerInterval = null
 
@@ -366,7 +367,9 @@ const activeRental = computed(() => currentRental.value || lockerContext.value?.
 
 const screen = computed(() => {
   if (!lockerContext.value) return 'maintenance'
-  if (currentRental.value?.status === 'active' && currentRental.value?.id) return 'resume-registration'
+  if (currentRental.value?.status === 'pending_registration' && currentRental.value?.id) return 'resume-registration'
+  if (currentRental.value?.status === 'pending_activation_payment' && currentRental.value?.id) return 'activation-payment'
+  if (currentRental.value?.status === 'active' && currentRental.value?.id) return 'activation-open'
   if (currentRental.value?.status === 'storing') return 'storing'
   if (retrievalResult.value) return 'payment'
   if (currentRental.value?.status === 'finished') return 'done'
@@ -413,13 +416,20 @@ const statusColorClass = computed(() => {
 
 const paymentExtraCharge = computed(() => {
   if (retrievalResult.value) return retrievalResult.value.extra_charge_cents || 0
-  if (activeRental.value?.status === 'pending_retrieval_payment') return activeRental.value.extra_charge_cents || 0
+  if (activeRental.value?.status === 'pending_retrieval_payment') {
+    return activeRental.value.extra_charge_cents ?? estimateExtraChargeCents(
+      deriveMinutesUsed(activeRental.value.unlocked_at, activeRental.value.retrieved_at),
+      activeRental.value.hourly_rate_cents
+    )
+  }
   return 0
 })
 
 const paymentTotal = computed(() => {
   if (retrievalResult.value) return retrievalResult.value.total_cents || 0
-  if (activeRental.value?.status === 'pending_retrieval_payment') return activeRental.value.total_cents || 0
+  if (activeRental.value?.status === 'pending_retrieval_payment') {
+    return activeRental.value.total_cents ?? ((activeRental.value.initial_fee_cents || 0) + paymentExtraCharge.value)
+  }
   return activeRental.value?.initial_fee_cents || 0
 })
 
@@ -429,8 +439,7 @@ const paymentMinutesLabel = computed(() => {
   }
 
   if (activeRental.value?.retrieved_at && activeRental.value?.unlocked_at) {
-    const diff = Math.ceil((new Date(activeRental.value.retrieved_at) - new Date(activeRental.value.unlocked_at)) / 60000)
-    return formatMinutes(Math.max(1, diff))
+    return formatMinutes(deriveMinutesUsed(activeRental.value.unlocked_at, activeRental.value.retrieved_at))
   }
 
   return liveElapsedLabel.value || 'Ainda nao calculado'
@@ -462,13 +471,23 @@ async function refreshContext({ preserveActionError = false } = {}) {
       currentRental.value = null
     }
 
-    if (data.mode === 'rent') {
-      clearPersistedPendingRentalId()
+    if (pendingActivationRentalId.value) {
+      try {
+        const pendingRental = await api.get(`/rentals/${pendingActivationRentalId.value}`)
+
+        if (pendingRental?.locker_id === data.locker.id && !['finished', 'cancelled'].includes(pendingRental.status)) {
+          currentRental.value = pendingRental
+        } else {
+          clearPersistedPendingRentalId()
+        }
+      } catch (requestError) {
+        clearPersistedPendingRentalId()
+      }
     }
 
-    if (data.active_rental?.status === 'active' && pendingRegistrationRentalId.value) {
+    if (!currentRental.value && data.active_rental?.status === 'active' && pendingActivationRentalId.value) {
       currentRental.value = {
-        id: pendingRegistrationRentalId.value,
+        id: pendingActivationRentalId.value,
         locker_id: data.locker.id,
         status: 'active',
         initial_fee_cents: data.active_rental.initial_fee_cents,
@@ -504,7 +523,7 @@ async function startRentalRegistration() {
   try {
     const rental = await api.post('/rentals', {
       locker_id: lockerId.value,
-      payment_confirmed: true
+      payment_confirmed: false
     })
     currentRental.value = rental
     persistPendingRentalId(rental.id)
@@ -529,6 +548,66 @@ async function resumePendingRegistration() {
     await completePendingRegistration(currentRental.value.id)
   } catch (error) {
     await refreshAfterActionFailure(error, 'Falha ao retomar o cadastro biometrico deste aparelho.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function confirmInitialPayment() {
+  if (!currentRental.value?.id) {
+    actionError.value = 'Cadastre a biometria antes de confirmar o pagamento.'
+    return
+  }
+
+  actionLoading.value = true
+  actionError.value = ''
+
+  try {
+    const updatedRental = await api.post(`/rentals/${currentRental.value.id}/confirm-initial-payment`, {})
+    currentRental.value = updatedRental
+    persistPendingRentalId(updatedRental.id)
+    lockerContext.value = {
+      ...lockerContext.value,
+      mode: 'retrieve',
+      active_rental: updatedRental,
+      locker: {
+        ...lockerContext.value.locker,
+        status: 'occupied'
+      }
+    }
+  } catch (error) {
+    await refreshAfterActionFailure(error, 'Falha ao confirmar o pagamento inicial deste locker.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function startStoring() {
+  if (!currentRental.value?.id) {
+    actionError.value = 'Este locker ainda nao esta pronto para iniciar a armazenagem.'
+    return
+  }
+
+  actionLoading.value = true
+  actionError.value = ''
+
+  try {
+    const updatedRental = await api.post(`/rentals/${currentRental.value.id}/start-storing`, {})
+    currentRental.value = updatedRental
+    retrievalResult.value = null
+    clearPersistedPendingRentalId()
+    lockerContext.value = {
+      ...lockerContext.value,
+      mode: 'retrieve',
+      active_rental: updatedRental,
+      locker: {
+        ...lockerContext.value.locker,
+        status: 'occupied'
+      }
+    }
+    syncTimer()
+  } catch (error) {
+    await refreshAfterActionFailure(error, 'Falha ao iniciar a armazenagem deste locker.')
   } finally {
     actionLoading.value = false
   }
@@ -616,12 +695,20 @@ async function completePendingRegistration(rentalId) {
 
   currentRental.value = updatedRental
   retrievalResult.value = null
-  clearPersistedPendingRentalId()
-  lockerContext.value = {
-    ...lockerContext.value,
-    mode: 'retrieve',
-    active_rental: updatedRental
+  persistPendingRentalId(updatedRental.id)
+
+  if (updatedRental.status === 'active') {
+    lockerContext.value = {
+      ...lockerContext.value,
+      mode: 'retrieve',
+      active_rental: updatedRental,
+      locker: {
+        ...lockerContext.value.locker,
+        status: 'occupied'
+      }
+    }
   }
+
   syncTimer()
 }
 
@@ -635,10 +722,20 @@ function syncTimer() {
     return
   }
 
-  const startedAt = new Date(unlockedAt).getTime()
+  const startedAt = normalizeTimestampToNow(unlockedAt)
+
+  if (!startedAt) {
+    elapsedSeconds.value = 0
+    return
+  }
+
+  const baseElapsed = Number.isFinite(currentRental.value?.elapsed_seconds)
+    ? Number(currentRental.value.elapsed_seconds)
+    : Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
 
   const tick = () => {
-    elapsedSeconds.value = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+    const delta = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+    elapsedSeconds.value = Math.max(baseElapsed, delta)
   }
 
   tick()
@@ -670,7 +767,7 @@ function loadPersistedPendingRentalId() {
  * @param {string} rentalId
  */
 function persistPendingRentalId(rentalId) {
-  pendingRegistrationRentalId.value = rentalId
+  pendingActivationRentalId.value = rentalId
 
   if (typeof window === 'undefined') {
     return
@@ -680,7 +777,7 @@ function persistPendingRentalId(rentalId) {
 }
 
 function clearPersistedPendingRentalId() {
-  pendingRegistrationRentalId.value = ''
+  pendingActivationRentalId.value = ''
 
   if (typeof window === 'undefined') {
     return
@@ -703,7 +800,9 @@ function sizeLabel(size) {
  */
 function statusLabel(status) {
   return {
-    active: 'Ativacao pendente',
+    pending_registration: 'Biometria pendente',
+    pending_activation_payment: 'Pagamento inicial',
+    active: 'Pronto para fechar',
     storing: 'Em uso',
     pending_retrieval_payment: 'Pagamento pendente',
     finished: 'Finalizado',
@@ -724,7 +823,10 @@ function formatCents(cents) {
  * @returns {string}
  */
 function formatMinutes(minutes) {
-  const total = Math.max(1, Number(minutes) || 0)
+  const total = Math.max(0, Number(minutes) || 0)
+  if (!total) {
+    return '< 1 min'
+  }
   if (total < 60) {
     return `${total} min`
   }

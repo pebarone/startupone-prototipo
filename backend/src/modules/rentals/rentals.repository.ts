@@ -17,11 +17,18 @@ export type LocationPricing = {
   hourly_rate_large: number;
 };
 
-export type ActiveRentalForRegistration = {
+export type RentalForRegistration = {
   id: string;
   organization_id: string;
   locker_id: string;
   status: string;
+};
+
+export type PendingActivationPaymentRental = {
+  id: string;
+  organization_id: string;
+  locker_id: string;
+  status: "pending_activation_payment";
 };
 
 export type ActiveStoringRental = {
@@ -126,23 +133,24 @@ export async function findLocationPricing(locationId: string, db: Queryable): Pr
   return result.rows[0] ?? null;
 }
 
-export async function insertActiveRental(
+export async function insertRentalWithStatus(
   organizationId: string,
   lockerId: string,
   accessCode: string,
   initialFeeCents: number,
   hourlyRateCents: number,
+  status: "pending_registration" | "active",
   db: Queryable
 ): Promise<Rental | null> {
   const result = await db.query<Rental>(
     `
     INSERT INTO rentals (organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents, total_cents)
-    VALUES ($1, $2, $3, 'active', $4, $5, $4)
+    VALUES ($1, $2, $3, $6, $4, $5, $4)
     ON CONFLICT DO NOTHING
     RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,
-    [organizationId, lockerId, accessCode, initialFeeCents, hourlyRateCents]
+    [organizationId, lockerId, accessCode, initialFeeCents, hourlyRateCents, status]
   );
 
   return result.rows[0] ?? null;
@@ -220,15 +228,16 @@ export async function findRentalRecordById(id: string, db: Queryable): Promise<R
   return result.rows[0] ?? null;
 }
 
-export async function findActiveRentalByIdForUpdate(
+export async function findRentalForRegistrationByIdForUpdate(
   rentalId: string,
   db: Queryable
-): Promise<ActiveRentalForRegistration | null> {
-  const result = await db.query<ActiveRentalForRegistration>(
+): Promise<RentalForRegistration | null> {
+  const result = await db.query<RentalForRegistration>(
     `
     SELECT id, organization_id, locker_id, status
     FROM rentals
-    WHERE id = $1 AND status = 'active'
+    WHERE id = $1
+      AND status IN ('pending_registration', 'pending_activation_payment', 'active')
     FOR UPDATE
     `,
     [rentalId]
@@ -408,12 +417,46 @@ export async function upsertRentalWebAuthnCredential(
   return result.rows[0];
 }
 
-export async function activateRentalAfterRegistration(rentalId: string, db: Queryable): Promise<Rental | null> {
+export async function markRentalPendingActivationPaymentById(rentalId: string, db: Queryable): Promise<Rental | null> {
   const result = await db.query<Rental>(
     `
     UPDATE rentals
-    SET status = 'storing', unlocked_at = now(), updated_at = now()
-    WHERE id = $1 AND status = 'active'
+    SET status = 'pending_activation_payment', updated_at = now()
+    WHERE id = $1 AND status = 'pending_registration'
+    RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
+              started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
+    `,
+    [rentalId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function findPendingActivationPaymentRentalByIdForUpdate(
+  rentalId: string,
+  db: Queryable
+): Promise<PendingActivationPaymentRental | null> {
+  const result = await db.query<PendingActivationPaymentRental>(
+    `
+    SELECT id, organization_id, locker_id, status
+    FROM rentals
+    WHERE id = $1
+      AND status = 'pending_activation_payment'
+    FOR UPDATE
+    `,
+    [rentalId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function confirmRentalInitialPaymentById(rentalId: string, db: Queryable): Promise<Rental | null> {
+  const result = await db.query<Rental>(
+    `
+    UPDATE rentals
+    SET status = 'active', updated_at = now()
+    WHERE id = $1
+      AND status = 'pending_activation_payment'
     RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,
@@ -588,7 +631,7 @@ export async function cancelLiveRentalById(
     SET status = 'cancelled', finished_at = now(), updated_at = now()
     WHERE id = $1
       AND organization_id = $2
-      AND status IN ('active', 'storing', 'pending_retrieval_payment')
+      AND status IN ('pending_registration', 'pending_activation_payment', 'active', 'storing', 'pending_retrieval_payment')
     RETURNING id, organization_id, locker_id, access_code, status, initial_fee_cents, hourly_rate_cents,
               started_at, unlocked_at, retrieved_at, finished_at, extra_charge_cents, total_cents, created_at, updated_at
     `,

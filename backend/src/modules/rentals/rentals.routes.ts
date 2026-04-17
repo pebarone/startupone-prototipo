@@ -3,6 +3,7 @@ import { requireOrganizationAdminOrAdmin } from "../../security/admin-auth";
 import {
   bulkDeleteRentalsController,
   completeRegistrationController,
+  confirmInitialPaymentController,
   confirmRetrievalController,
   createAuthenticationOptionsController,
   createRetrievalAuthenticationOptionsController,
@@ -20,6 +21,7 @@ import {
   authenticationOptionsSchema,
   bulkDeleteRentalsSchema,
   completeRegistrationSchema,
+  confirmInitialPaymentSchema,
   confirmRetrievalSchema,
   createRentalSchema,
   deleteOrganizationRentalSchema,
@@ -33,6 +35,7 @@ import {
   startStoringSchema,
   type BulkDeleteRentalsBody,
   type CompleteRegistrationBody,
+  type ConfirmInitialPaymentBody,
   type CreateRentalBody,
   type DeleteOrganizationRentalParams,
   type OrganizationAuditParams,
@@ -63,6 +66,12 @@ export async function rentalsRoutes(app: FastifyInstance) {
     "/rentals/:id/start-storing",
     { schema: startStoringSchema },
     startStoringController
+  );
+
+  app.post<{ Params: RentalParams; Body: ConfirmInitialPaymentBody }>(
+    "/rentals/:id/confirm-initial-payment",
+    { schema: confirmInitialPaymentSchema },
+    confirmInitialPaymentController
   );
 
   app.post<{ Params: RentalParams }>(

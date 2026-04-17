@@ -7,26 +7,29 @@ import { recordAuditEvent } from "../audit/audit.repository";
 import {
   cancelLiveRentalById,
   clearPendingWebAuthnChallenges,
+  confirmRentalInitialPaymentById,
   deleteAuditEventsByRentalIds,
   deleteRentalHistoryByIds,
   deleteUnlockEventsByRentalIds,
-  findActiveRentalByIdForUpdate,
   findOpenWebAuthnLookupChallengeByChallengeForUpdate,
   findLockerForRentalUpdate,
   findLocationPricing,
   findOpenWebAuthnChallengeForUpdate,
+  findPendingActivationPaymentRentalByIdForUpdate,
   findRentalById,
+  findRentalForRegistrationByIdForUpdate,
   findRentalRecordById,
   findRentalHistoryDeleteCandidatesForUpdate,
   findRentalWebAuthnCredentialByRentalId,
   findRetrievableCredentialByCredentialIdForUpdate,
   findStoringRentalByIdForUpdate,
   finishRentalById,
-  insertActiveRental,
+  insertRentalWithStatus,
   insertWebAuthnChallenge,
   insertWebAuthnLookupChallenge,
   listRentalsByOrg,
   listRetrievableWebAuthnCredentials,
+  markRentalPendingActivationPaymentById,
   markLockerFreeById,
   markLockerOccupied,
   markWebAuthnChallengeUsed,
@@ -64,10 +67,6 @@ export async function createRentalService(
   paymentConfirmed: boolean,
   context: RequestContext
 ): Promise<Rental> {
-  if (!paymentConfirmed) {
-    throw validationError("Initial payment must be confirmed before reserving a locker.");
-  }
-
   return withTransaction(async (client) => {
     const locker = await findLockerForRentalUpdate(lockerId, client);
 
@@ -98,12 +97,13 @@ export async function createRentalService(
     let rental: Rental | null = null;
 
     for (let attempt = 0; attempt < ACCESS_CODE_ATTEMPTS; attempt += 1) {
-      rental = await insertActiveRental(
+      rental = await insertRentalWithStatus(
         locker.organization_id,
         lockerId,
         generateAccessCode(),
         initialFeeCents,
         hourlyRateCents,
+        paymentConfirmed ? "active" : "pending_registration",
         client
       );
 
@@ -116,7 +116,10 @@ export async function createRentalService(
       throw internalError("Could not create a live rental for this locker.");
     }
 
-    await markLockerOccupied(lockerId, client);
+    if (paymentConfirmed) {
+      await markLockerOccupied(lockerId, client);
+    }
+
     await recordAuditEvent(
       {
         ...context,
@@ -127,6 +130,7 @@ export async function createRentalService(
         metadata: {
           locker_id: lockerId,
           status: rental.status,
+          payment_confirmed: paymentConfirmed,
           initial_fee_cents: rental.initial_fee_cents,
           hourly_rate_cents: rental.hourly_rate_cents
         }
@@ -153,7 +157,7 @@ export async function createRegistrationOptionsService(
   context: RequestContext
 ) {
   return withTransaction(async (client) => {
-    const rental = await findActiveRentalByIdForUpdate(rentalId, client);
+    const rental = await findRentalForRegistrationByIdForUpdate(rentalId, client);
 
     if (!rental) {
       throw validationError("Rental not found or is not waiting for WebAuthn registration.");
@@ -191,7 +195,7 @@ export async function completeRegistrationService(
 ): Promise<Rental> {
   try {
     return await withTransaction(async (client) => {
-      const rental = await findActiveRentalByIdForUpdate(rentalId, client);
+      const rental = await findRentalForRegistrationByIdForUpdate(rentalId, client);
 
       if (!rental) {
         throw validationError("Rental not found or is not waiting for WebAuthn registration.");
@@ -226,7 +230,9 @@ export async function completeRegistrationService(
 
       await markWebAuthnChallengeUsed(challenge.id, client);
 
-      const updated = await findRentalRecordById(rentalId, client);
+      const updated = rental.status === "pending_registration"
+        ? await markRentalPendingActivationPaymentById(rentalId, client)
+        : await findRentalRecordById(rentalId, client);
 
       if (!updated) {
         throw validationError("Rental could not be loaded after WebAuthn registration.");
@@ -259,14 +265,67 @@ export async function completeRegistrationService(
   }
 }
 
+export async function confirmInitialPaymentService(
+  rentalId: string,
+  context: RequestContext
+): Promise<Rental> {
+  return withTransaction(async (client) => {
+    const rental = await findPendingActivationPaymentRentalByIdForUpdate(rentalId, client);
+
+    if (!rental) {
+      throw validationError("Rental is not waiting for the initial payment confirmation.");
+    }
+
+    const credential = await findRentalWebAuthnCredentialByRentalId(rentalId, client);
+
+    if (!credential) {
+      throw validationError("Register WebAuthn before confirming the initial payment.");
+    }
+
+    const locker = await findLockerForRentalUpdate(rental.locker_id, client);
+
+    if (!locker) {
+      throw notFoundError("Locker not found.");
+    }
+
+    if (locker.status !== "free") {
+      throw conflictError("Locker is no longer available for activation.");
+    }
+
+    const updated = await confirmRentalInitialPaymentById(rentalId, client);
+
+    if (!updated) {
+      throw validationError("Rental could not be activated after the initial payment.");
+    }
+
+    await markLockerOccupied(rental.locker_id, client);
+    await recordAuditEvent(
+      {
+        ...context,
+        organization_id: updated.organization_id,
+        action: "rental.initial_payment_confirmed",
+        resource_type: "rental",
+        resource_id: rentalId,
+        metadata: {
+          locker_id: updated.locker_id,
+          status: updated.status
+        }
+      },
+      client
+    );
+
+    return updated;
+  });
+}
+
 export async function startStoringService(
   rentalId: string,
   context: RequestContext
 ): Promise<Rental> {
   return withTransaction(async (client) => {
-    const rental = await findActiveRentalByIdForUpdate(rentalId, client);
+    const rental = await findRentalRecordById(rentalId, client);
 
-    if (!rental) {
+    if (!rental || rental.status !== "active") {
       throw validationError("Rental is not ready to start storing.");
     }
 

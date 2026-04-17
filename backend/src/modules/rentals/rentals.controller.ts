@@ -3,6 +3,7 @@ import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simp
 import { getRequestContext } from "../../context/request-context";
 import {
   completeRegistrationService,
+  confirmInitialPaymentService,
   confirmRetrievalPaymentService,
   createAuthenticationOptionsService,
   createRetrievalAuthenticationOptionsService,
@@ -20,6 +21,7 @@ import {
 import type {
   BulkDeleteRentalsBody,
   CompleteRegistrationBody,
+  ConfirmInitialPaymentBody,
   CreateRentalBody,
   DeleteOrganizationRentalParams,
   OrganizationAuditParams,
@@ -36,7 +38,7 @@ export async function createRentalController(
 ) {
   const rental = await createRentalService(
     request.body.locker_id,
-    request.body.payment_confirmed,
+    request.body.payment_confirmed ?? false,
     getRequestContext(request, "anonymous")
   );
   return reply.code(201).send(rental);
@@ -87,6 +89,17 @@ export async function startStoringController(
   reply: FastifyReply
 ) {
   const rental = await startStoringService(
+    request.params.id,
+    getRequestContext(request, "anonymous")
+  );
+  return reply.code(200).send(rental);
+}
+
+export async function confirmInitialPaymentController(
+  request: FastifyRequest<{ Params: RentalParams; Body: ConfirmInitialPaymentBody }>,
+  reply: FastifyReply
+) {
+  const rental = await confirmInitialPaymentService(
     request.params.id,
     getRequestContext(request, "anonymous")
   );

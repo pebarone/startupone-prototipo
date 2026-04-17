@@ -1,6 +1,14 @@
 import { lockerSchema, type Locker } from "../lockers/lockers.schemas";
 
-export const rentalStatuses = ["active", "storing", "pending_retrieval_payment", "finished", "cancelled"] as const;
+export const rentalStatuses = [
+  "pending_registration",
+  "pending_activation_payment",
+  "active",
+  "storing",
+  "pending_retrieval_payment",
+  "finished",
+  "cancelled"
+] as const;
 export type RentalStatus = (typeof rentalStatuses)[number];
 
 export type Rental = {
@@ -28,7 +36,7 @@ export type RentalWithLocker = Rental & {
 
 export type CreateRentalBody = {
   locker_id: string;
-  payment_confirmed: true;
+  payment_confirmed?: boolean;
 };
 
 export type WebAuthnRegistrationCredential = {
@@ -67,6 +75,7 @@ export type RetrieveLockerBody = {
 };
 
 export type StartStoringBody = Record<string, never>;
+export type ConfirmInitialPaymentBody = Record<string, never>;
 
 export type RetrievalResult = {
   rental_id: string;
@@ -246,10 +255,10 @@ export const rentalWithLockerSchema = {
 export const createRentalSchema = {
   body: {
     type: "object",
-    required: ["locker_id", "payment_confirmed"],
+    required: ["locker_id"],
     properties: {
       locker_id: uuidSchema,
-      payment_confirmed: { type: "boolean", const: true }
+      payment_confirmed: { type: "boolean", default: false }
     },
     additionalProperties: false
   },
@@ -321,6 +330,18 @@ export const retrievalLookupOptionsSchema = {
 } as const;
 
 export const startStoringSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: { id: uuidSchema },
+    additionalProperties: false
+  },
+  response: {
+    200: rentalSchema
+  }
+} as const;
+
+export const confirmInitialPaymentSchema = {
   params: {
     type: "object",
     required: ["id"],
