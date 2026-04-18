@@ -4,220 +4,554 @@
 #include <ESP32Servo.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <string.h>
 
-// --- Configurações Wokwi ---
-const char* ssid = "Wokwi-GUEST";
-const char* password = "";
+const char* WIFI_SSID = "Wokwi-GUEST";
+const char* WIFI_PASSWORD = "";
 
-// --- Configurações da API ---
+const char* API_BASE = "https://fast-lock-monolito.ambitiousriver-98471daa.eastus.azurecontainerapps.io/api";
+const char* LOCATION_ID = "7b77668b-3b10-4f71-ba0a-8befc2ea0342";
 
-const String LOCKER_ID = "c39b918f-cc05-4a3a-b8fb-48fe2762e883"; //lck-26
-const String API_URL = "https://fast-lock-monolito.ambitiousriver-98471daa.eastus.azurecontainerapps.io/api/lockers/" + LOCKER_ID + "/public-context";
+const unsigned long LOCKERS_POLL_INTERVAL_MS = 4000;
+const unsigned long CONTEXT_SLOT_INTERVAL_MS = 750;
+const unsigned long CONTEXT_REFRESH_OPEN_MS = 2000;
+const unsigned long CONTEXT_REFRESH_CLOSED_MS = 12000;
+const unsigned long CONTEXT_RETRY_MS = 5000;
+const unsigned long WIFI_RETRY_INTERVAL_MS = 5000;
+const unsigned long SERVO_STEP_DELAY_MS = 12;
+const int SERVO_STEP_DEGREES = 3;
 
-// --- Pinos de Hardware ---
-const int SERVO_PIN = 18;
+const int SERVO_LOCKED_ANGLE = 90;
+const int SERVO_OPEN_ANGLE = 0;
+const uint8_t LCD_COLUMNS = 16;
+const uint8_t LCD_ROWS = 2;
 
-Servo lockerServo;
-LiquidCrystal_I2C* lcd = nullptr;
-bool lcdReady = false;
-uint8_t lcdAddress = 0;
+enum LockerStatusCode : uint8_t {
+  STATUS_UNKNOWN,
+  STATUS_FREE,
+  STATUS_OCCUPIED,
+  STATUS_MAINTENANCE
+};
 
-// Variáveis para evitar atualizar o hardware desnecessariamente
-String currentState = ""; 
+enum LockerVisualState : uint8_t {
+  VISUAL_UNKNOWN,
+  VISUAL_FREE,
+  VISUAL_RESERVED,
+  VISUAL_OCCUPIED,
+  VISUAL_MAINTENANCE
+};
 
-bool i2cDeviceExists(uint8_t address) {
-  Wire.beginTransmission(address);
-  return Wire.endTransmission() == 0;
+struct LockerNode {
+  const char* id;
+  const char* code;
+  uint8_t servoPin;
+  uint8_t greenLedPin;
+  uint8_t redLedPin;
+  Servo servo;
+  LockerStatusCode status;
+  LockerVisualState renderedState;
+  bool contextKnown;
+  bool doorOpen;
+  int currentAngle;
+  unsigned long nextContextDueAt;
+
+  LockerNode(const char* lockerId, const char* lockerCode, uint8_t servoPinValue, uint8_t greenLedPinValue, uint8_t redLedPinValue)
+    : id(lockerId),
+      code(lockerCode),
+      servoPin(servoPinValue),
+      greenLedPin(greenLedPinValue),
+      redLedPin(redLedPinValue),
+      status(STATUS_UNKNOWN),
+      renderedState(VISUAL_UNKNOWN),
+      contextKnown(false),
+      doorOpen(false),
+      currentAngle(-1),
+      nextContextDueAt(0) {}
+};
+
+LockerNode lockers[] = {
+  LockerNode("c39b918f-cc05-4a3a-b8fb-48fe2762e883", "LCK-026", 13, 2, 25),
+  LockerNode("8f82a5c4-d978-404e-bcc0-a10a88337f17", "LCK-027", 14, 4, 26),
+  LockerNode("59bd9cf7-a9a6-470c-8cc6-50ace1480837", "LCK-028", 16, 5, 27),
+  LockerNode("21434570-d49d-4a49-aba4-68f7cca8c495", "LCK-029", 17, 19, 32),
+  LockerNode("3d1951ce-91aa-47f9-8112-e3b63b7955dc", "LCK-030", 18, 23, 33)
+};
+
+LiquidCrystal_I2C lockerLcds[] = {
+  LiquidCrystal_I2C(0x27, LCD_COLUMNS, LCD_ROWS),
+  LiquidCrystal_I2C(0x26, LCD_COLUMNS, LCD_ROWS),
+  LiquidCrystal_I2C(0x25, LCD_COLUMNS, LCD_ROWS),
+  LiquidCrystal_I2C(0x24, LCD_COLUMNS, LCD_ROWS),
+  LiquidCrystal_I2C(0x23, LCD_COLUMNS, LCD_ROWS)
+};
+
+const size_t LOCKER_COUNT = sizeof(lockers) / sizeof(lockers[0]);
+
+bool lcdsReady = false;
+bool hasSuccessfulPoll = false;
+size_t nextContextIndex = 0;
+
+unsigned long nextLockersPollAt = 0;
+unsigned long nextContextSlotAt = 0;
+unsigned long nextWifiRetryAt = 0;
+
+char lastLcdLine1[LOCKER_COUNT][LCD_COLUMNS + 1] = { { 0 } };
+char lastLcdLine2[LOCKER_COUNT][LCD_COLUMNS + 1] = { { 0 } };
+
+bool isDue(unsigned long now, unsigned long deadline) {
+  return static_cast<long>(now - deadline) >= 0;
 }
 
-uint8_t scanI2cBus() {
-  Serial.println("Escaneando barramento I2C...");
-  uint8_t firstFound = 0;
+size_t lockerIndexOf(const LockerNode* locker) {
+  return static_cast<size_t>(locker - lockers);
+}
 
-  for (uint8_t addr = 1; addr < 127; addr++) {
-    if (i2cDeviceExists(addr)) {
-      Serial.print("I2C device encontrado em 0x");
-      if (addr < 16) {
-        Serial.print("0");
-      }
-      Serial.println(addr, HEX);
-
-      if (firstFound == 0) {
-        firstFound = addr;
-      }
+LockerNode* findLockerById(const char* id) {
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    if (strcmp(lockers[index].id, id) == 0) {
+      return &lockers[index];
     }
   }
 
-  if (firstFound == 0) {
-    Serial.println("Nenhum dispositivo I2C encontrado.");
-  }
-
-  return firstFound;
+  return nullptr;
 }
 
-void lcdPrint(const String& line1, const String& line2 = "") {
-  if (!lcdReady || lcd == nullptr) {
+LockerStatusCode parseLockerStatus(const char* status) {
+  if (strcmp(status, "free") == 0) {
+    return STATUS_FREE;
+  }
+
+  if (strcmp(status, "occupied") == 0) {
+    return STATUS_OCCUPIED;
+  }
+
+  if (strcmp(status, "maintenance") == 0) {
+    return STATUS_MAINTENANCE;
+  }
+
+  return STATUS_UNKNOWN;
+}
+
+LockerVisualState resolveVisualState(const LockerNode& locker) {
+  if (locker.status == STATUS_MAINTENANCE) {
+    return VISUAL_MAINTENANCE;
+  }
+
+  if (locker.status == STATUS_FREE) {
+    return VISUAL_FREE;
+  }
+
+  if (locker.status == STATUS_OCCUPIED) {
+    return locker.doorOpen ? VISUAL_RESERVED : VISUAL_OCCUPIED;
+  }
+
+  return VISUAL_UNKNOWN;
+}
+
+const char* buildDisplayStatus(const LockerNode& locker) {
+  if (locker.status == STATUS_OCCUPIED && !locker.contextKnown) {
+    return "SINCRONIZANDO";
+  }
+
+  switch (resolveVisualState(locker)) {
+    case VISUAL_FREE:
+      return "LIVRE FECHADO";
+    case VISUAL_RESERVED:
+      return "RESERV ABERTO";
+    case VISUAL_OCCUPIED:
+      return "OCUP FECHADO";
+    case VISUAL_MAINTENANCE:
+      return "MANUT FECHADO";
+    default:
+      return "SEM DADOS";
+  }
+}
+
+void copyPaddedLine(char* destination, const char* source) {
+  const size_t maxLength = LCD_COLUMNS;
+  const size_t sourceLength = strlen(source);
+  const size_t copyLength = sourceLength < maxLength ? sourceLength : maxLength;
+
+  memset(destination, ' ', maxLength);
+  memcpy(destination, source, copyLength);
+  destination[maxLength] = '\0';
+}
+
+void renderLockerLcd(size_t index, const char* line1, const char* line2) {
+  if (!lcdsReady) {
     return;
   }
 
-  lcd->clear();
-  lcd->setCursor(0, 0);
-  lcd->print(line1);
-  lcd->setCursor(0, 1);
-  lcd->print(line2);
+  char paddedLine1[LCD_COLUMNS + 1];
+  char paddedLine2[LCD_COLUMNS + 1];
+  copyPaddedLine(paddedLine1, line1);
+  copyPaddedLine(paddedLine2, line2);
+
+  if (strcmp(lastLcdLine1[index], paddedLine1) != 0) {
+    lockerLcds[index].setCursor(0, 0);
+    lockerLcds[index].print(paddedLine1);
+    memcpy(lastLcdLine1[index], paddedLine1, sizeof(lastLcdLine1[index]));
+  }
+
+  if (strcmp(lastLcdLine2[index], paddedLine2) != 0) {
+    lockerLcds[index].setCursor(0, 1);
+    lockerLcds[index].print(paddedLine2);
+    memcpy(lastLcdLine2[index], paddedLine2, sizeof(lastLcdLine2[index]));
+  }
 }
 
-void initLcd() {
-  // No ESP32, inicializar o barramento I2C explicitamente evita LCD "apagado".
+void renderAllDisplaysMessage(const char* message) {
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    renderLockerLcd(index, lockers[index].code, message);
+  }
+}
+
+void renderLockerDisplay(size_t index) {
+  if (WiFi.status() != WL_CONNECTED) {
+    renderLockerLcd(index, lockers[index].code, "WIFI OFFLINE");
+    return;
+  }
+
+  if (!hasSuccessfulPoll) {
+    renderLockerLcd(index, lockers[index].code, "AGUARDANDO API");
+    return;
+  }
+
+  renderLockerLcd(index, lockers[index].code, buildDisplayStatus(lockers[index]));
+}
+
+void renderAllLockerDisplays() {
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    renderLockerDisplay(index);
+  }
+}
+
+void moveServo(LockerNode& locker, int targetAngle) {
+  if (locker.currentAngle == targetAngle) {
+    return;
+  }
+
+  const int startAngle = locker.currentAngle < 0 ? SERVO_LOCKED_ANGLE : locker.currentAngle;
+  const int direction = targetAngle >= startAngle ? 1 : -1;
+
+  locker.servo.attach(locker.servoPin, 500, 2400);
+
+  for (int angle = startAngle; angle != targetAngle; angle += direction * SERVO_STEP_DEGREES) {
+    locker.servo.write(angle);
+    delay(SERVO_STEP_DELAY_MS);
+  }
+
+  locker.servo.write(targetAngle);
+  delay(SERVO_STEP_DELAY_MS * 2);
+  locker.servo.detach();
+  locker.currentAngle = targetAngle;
+}
+
+void applyHardware(LockerNode& locker) {
+  if (locker.status == STATUS_OCCUPIED && !locker.contextKnown) {
+    return;
+  }
+
+  const LockerVisualState targetState = resolveVisualState(locker);
+
+  uint8_t greenLevel = LOW;
+  uint8_t redLevel = LOW;
+  int targetAngle = SERVO_LOCKED_ANGLE;
+
+  switch (targetState) {
+    case VISUAL_FREE:
+      greenLevel = HIGH;
+      redLevel = LOW;
+      targetAngle = SERVO_LOCKED_ANGLE;
+      break;
+    case VISUAL_RESERVED:
+      greenLevel = LOW;
+      redLevel = HIGH;
+      targetAngle = SERVO_OPEN_ANGLE;
+      break;
+    case VISUAL_OCCUPIED:
+      greenLevel = LOW;
+      redLevel = HIGH;
+      targetAngle = SERVO_LOCKED_ANGLE;
+      break;
+    case VISUAL_MAINTENANCE:
+      greenLevel = LOW;
+      redLevel = HIGH;
+      targetAngle = SERVO_LOCKED_ANGLE;
+      break;
+    default:
+      greenLevel = LOW;
+      redLevel = LOW;
+      targetAngle = SERVO_LOCKED_ANGLE;
+      break;
+  }
+
+  if (locker.renderedState == targetState && locker.currentAngle == targetAngle) {
+    return;
+  }
+
+  moveServo(locker, targetAngle);
+  digitalWrite(locker.greenLedPin, greenLevel);
+  digitalWrite(locker.redLedPin, redLevel);
+  locker.renderedState = targetState;
+}
+
+void applyHardwareToAll() {
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    applyHardware(lockers[index]);
+  }
+}
+
+void initLcds() {
   Wire.begin(21, 22, 100000);
-  delay(50);
+  delay(20);
 
-  lcdAddress = scanI2cBus();
-  if (lcdAddress == 0) {
-    lcdReady = false;
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    lockerLcds[index].init();
+    lockerLcds[index].backlight();
+    lockerLcds[index].clear();
+  }
+
+  lcdsReady = true;
+  renderAllDisplaysMessage("BOOT FASTLOCK");
+}
+
+void initHardware() {
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    pinMode(lockers[index].greenLedPin, OUTPUT);
+    pinMode(lockers[index].redLedPin, OUTPUT);
+    digitalWrite(lockers[index].greenLedPin, LOW);
+    digitalWrite(lockers[index].redLedPin, LOW);
+    moveServo(lockers[index], SERVO_LOCKED_ANGLE);
+    lockers[index].renderedState = VISUAL_UNKNOWN;
+  }
+}
+
+void connectToWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  renderAllDisplaysMessage("CONECT WIFI");
+  Serial.print("Conectando ao WiFi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(250);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("WiFi conectado.");
+  renderAllDisplaysMessage("SINCRONIZANDO");
+}
+
+void ensureWiFi(unsigned long now) {
+  if (WiFi.status() == WL_CONNECTED) {
     return;
   }
 
-  Serial.print("Inicializando LCD no endereco 0x");
-  if (lcdAddress < 16) {
-    Serial.print("0");
+  if (!isDue(now, nextWifiRetryAt)) {
+    return;
   }
-  Serial.println(lcdAddress, HEX);
 
-  if (lcd != nullptr) {
-    delete lcd;
-    lcd = nullptr;
+  Serial.println("WiFi offline. Tentando reconectar...");
+  WiFi.disconnect();
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  renderAllDisplaysMessage("WIFI OFFLINE");
+  nextWifiRetryAt = now + WIFI_RETRY_INTERVAL_MS;
+}
+
+bool fetchLockersSnapshot() {
+  char url[256];
+  snprintf(url, sizeof(url), "%s/lockers?location_id=%s&limit=20", API_BASE, LOCATION_ID);
+
+  HTTPClient http;
+  http.setReuse(false);
+  http.setTimeout(3000);
+  http.begin(url);
+
+  const int httpResponseCode = http.GET();
+  if (httpResponseCode != 200) {
+    Serial.printf("Erro ao listar lockers: HTTP %d\n", httpResponseCode);
+    http.end();
+    return false;
   }
-  lcd = new LiquidCrystal_I2C(lcdAddress, 16, 2);
 
-  lcd->init();
-  lcd->backlight();
-  lcd->clear();
-  lcd->setCursor(0, 0);
-  lcd->print("LCD OK");
-  lcd->setCursor(0, 1);
-  lcd->print("Addr 0x");
-  if (lcdAddress < 16) {
-    lcd->print("0");
+  JsonDocument doc;
+  const DeserializationError error = deserializeJson(doc, http.getStream());
+  if (error) {
+    Serial.printf("Falha no JSON da lista: %s\n", error.c_str());
+    http.end();
+    return false;
   }
-  lcd->print(lcdAddress, HEX);
 
-  lcdReady = true;
-  delay(500);
+  bool seen[LOCKER_COUNT] = { false };
+  const unsigned long now = millis();
+  JsonArray data = doc["data"].as<JsonArray>();
+
+  for (JsonObject item : data) {
+    const char* id = item["id"] | "";
+    LockerNode* locker = findLockerById(id);
+    if (locker == nullptr) {
+      continue;
+    }
+
+    const size_t lockerIndex = lockerIndexOf(locker);
+    seen[lockerIndex] = true;
+
+    const LockerStatusCode newStatus = parseLockerStatus(item["status"] | "");
+    if (locker->status != newStatus) {
+      Serial.printf("%s -> status %s\n", locker->code, item["status"] | "unknown");
+    }
+
+    locker->status = newStatus;
+
+    if (newStatus == STATUS_OCCUPIED) {
+      if (!locker->contextKnown) {
+        locker->nextContextDueAt = now;
+      }
+    } else {
+      locker->contextKnown = false;
+      locker->doorOpen = false;
+      locker->nextContextDueAt = 0;
+    }
+  }
+
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    if (seen[index]) {
+      continue;
+    }
+
+    lockers[index].status = STATUS_UNKNOWN;
+    lockers[index].contextKnown = false;
+    lockers[index].doorOpen = false;
+    lockers[index].nextContextDueAt = 0;
+  }
+
+  http.end();
+
+  for (size_t index = 0; index < LOCKER_COUNT; index++) {
+    if (lockers[index].status == STATUS_OCCUPIED && !lockers[index].contextKnown) {
+      refreshLockerContext(lockers[index]);
+    }
+  }
+
+  hasSuccessfulPoll = true;
+  applyHardwareToAll();
+  renderAllLockerDisplays();
+  return true;
+}
+
+bool refreshLockerContext(LockerNode& locker) {
+  char url[256];
+  snprintf(url, sizeof(url), "%s/lockers/%s/public-context", API_BASE, locker.id);
+
+  HTTPClient http;
+  http.setReuse(false);
+  http.setTimeout(3000);
+  http.begin(url);
+
+  const int httpResponseCode = http.GET();
+  if (httpResponseCode != 200) {
+    Serial.printf("Erro ao atualizar %s: HTTP %d\n", locker.code, httpResponseCode);
+    locker.nextContextDueAt = millis() + CONTEXT_RETRY_MS;
+    http.end();
+    return false;
+  }
+
+  JsonDocument doc;
+  const DeserializationError error = deserializeJson(doc, http.getStream());
+  if (error) {
+    Serial.printf("Falha no JSON de %s: %s\n", locker.code, error.c_str());
+    locker.nextContextDueAt = millis() + CONTEXT_RETRY_MS;
+    http.end();
+    return false;
+  }
+
+  const LockerStatusCode previousStatus = locker.status;
+  const bool previousDoorOpen = locker.doorOpen;
+  const bool previousContextKnown = locker.contextKnown;
+
+  locker.status = parseLockerStatus(doc["locker"]["status"] | "occupied");
+
+  bool newDoorOpen = false;
+  if (locker.status == STATUS_OCCUPIED) {
+    JsonVariant activeRental = doc["active_rental"];
+    if (!activeRental.isNull()) {
+      const char* rentalStatus = activeRental["status"] | "";
+      newDoorOpen = strcmp(rentalStatus, "active") == 0;
+    }
+
+    locker.contextKnown = true;
+    locker.doorOpen = newDoorOpen;
+    locker.nextContextDueAt = millis() + (locker.doorOpen ? CONTEXT_REFRESH_OPEN_MS : CONTEXT_REFRESH_CLOSED_MS);
+  } else {
+    locker.contextKnown = false;
+    locker.doorOpen = false;
+    locker.nextContextDueAt = 0;
+  }
+
+  http.end();
+
+  const bool visualChanged =
+    previousStatus != locker.status ||
+    previousDoorOpen != locker.doorOpen ||
+    previousContextKnown != locker.contextKnown;
+
+  if (visualChanged) {
+    Serial.printf("%s -> %s\n", locker.code, locker.doorOpen ? "RESERVADO/ABERTO" : "TRANCADO");
+    applyHardware(locker);
+    renderLockerDisplay(lockerIndexOf(&locker));
+  }
+
+  return true;
+}
+
+void refreshNextDueContext(unsigned long now) {
+  for (size_t offset = 0; offset < LOCKER_COUNT; offset++) {
+    const size_t index = (nextContextIndex + offset) % LOCKER_COUNT;
+    LockerNode& locker = lockers[index];
+
+    if (locker.status != STATUS_OCCUPIED) {
+      continue;
+    }
+
+    if (locker.contextKnown && !isDue(now, locker.nextContextDueAt)) {
+      continue;
+    }
+
+    nextContextIndex = (index + 1) % LOCKER_COUNT;
+    refreshLockerContext(locker);
+    return;
+  }
 }
 
 void setup() {
   Serial.begin(115200);
-  
-  // Inicializa o Servo (Trancado = 0 graus)
-  lockerServo.attach(SERVO_PIN);
-  lockerServo.write(0);
-  
-  // Inicializa o Display LCD
-  initLcd();
-  lcdPrint("Iniciando...");
+  initLcds();
+  initHardware();
+  connectToWiFi();
 
-  // Conecta ao Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  
-  Serial.println("\nConectado ao WiFi!");
-  lcdPrint("Conectado API!");
-  delay(1000);
+  nextLockersPollAt = millis();
+  nextContextSlotAt = millis();
+  nextWifiRetryAt = millis();
 }
 
 void loop() {
+  const unsigned long now = millis();
+  ensureWiFi(now);
+
   if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(API_URL);
-    int httpResponseCode = http.GET();
-    
-    if (httpResponseCode == 200) {
-      String payload = http.getString();
-      
-      // Parse do JSON usando o tamanho dinâmico (ideal para respostas complexas)
-      JsonDocument doc;
-      DeserializationError error = deserializeJson(doc, payload);
-      
-      if (!error) {
-        String lockerStatus = doc["locker"]["status"].as<String>();
-        String rentalStatus = "";
-        
-        // Verifica se há um aluguel ativo associado
-        if (!doc["active_rental"].isNull()) {
-          rentalStatus = doc["active_rental"]["status"].as<String>();
-        }
-
-        // Lógica de Estados baseada no seu openapi.yaml
-        String newState = "";
-        String msgLinha1 = "";
-        String msgLinha2 = "";
-        int targetAngle = 0;
-
-        if (lockerStatus == "maintenance") {
-          newState = "MAINTENANCE";
-          msgLinha1 = "Manutencao";
-          msgLinha2 = "Indisponivel";
-          targetAngle = 0; // Trancado
-        } 
-        else if (lockerStatus == "free") {
-          newState = "FREE";
-          msgLinha1 = "Locker Livre";
-          msgLinha2 = "Pronto para uso";
-          targetAngle = 0; // Trancado
-        } 
-        else if (lockerStatus == "occupied") {
-          // Se está ocupado, o estado do aluguel dita se a porta está aberta ou fechada
-          if (rentalStatus == "active") {
-            // O usuário acabou de alugar (ou destrancou), esperando colocar o item
-            newState = "OPEN";
-            msgLinha1 = "Locker Aberto";
-            msgLinha2 = "Guarde seu item";
-            targetAngle = 90; // Aberto!
-          } 
-          else if (rentalStatus == "storing") {
-            // Item guardado e trancado
-            newState = "STORING";
-            msgLinha1 = "Em Uso";
-            msgLinha2 = "Trancado Seguro";
-            targetAngle = 0; // Trancado
-          } 
-          else if (rentalStatus == "pending_retrieval_payment") {
-            // Aguardando taxa extra para retirar
-            newState = "PAYMENT_PENDING";
-            msgLinha1 = "Aguardando Pgto";
-            msgLinha2 = "Trancado";
-            targetAngle = 0; // Trancado
-          }
-          else {
-            // Fallback genérico para ocupado
-            newState = "OCCUPIED_UNKNOWN";
-            msgLinha1 = "Ocupado";
-            msgLinha2 = "Trancado";
-            targetAngle = 0;
-          }
-        }
-
-        // Só atualiza o hardware físico se o estado mudou (evita "flicker" no LCD e vibração no servo)
-        if (newState != currentState) {
-          currentState = newState;
-
-          lcdPrint(msgLinha1, msgLinha2);
-          
-          lockerServo.write(targetAngle);
-          
-          Serial.println(">>> Estado mudou para: " + newState);
-        }
-      }
-    } else {
-      Serial.println("Erro na requisição: " + String(httpResponseCode));
+    if (isDue(now, nextLockersPollAt)) {
+      fetchLockersSnapshot();
+      nextLockersPollAt = now + LOCKERS_POLL_INTERVAL_MS;
     }
-    http.end();
+
+    if (isDue(now, nextContextSlotAt)) {
+      refreshNextDueContext(now);
+      nextContextSlotAt = now + CONTEXT_SLOT_INTERVAL_MS;
+    }
+  } else {
+    renderAllDisplaysMessage("WIFI OFFLINE");
   }
-  
-  // Delay de 3 segundos para não espancar o backend de chamadas (Polling)
-  delay(3000); 
 }

@@ -2,18 +2,174 @@
   "version": 1,
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp1", "top": 180, "left": 10, "attrs": {} },
-    { "type": "wokwi-servo", "id": "servo1", "top": 60, "left": 210, "attrs": {} },
-    { "type": "wokwi-lcd1602", "id": "lcd1", "top": 300, "left": 160, "attrs": { "pins": "i2c" } }
+    { "type": "board-esp32-devkit-c-v4", "id": "esp1", "top": 854.4, "left": 446.44, "attrs": {} },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -464,
+      "left": 591.2,
+      "attrs": { "pins": "i2c", "i2cAddress": "0x27" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l26g",
+      "top": -310.8,
+      "left": 675.8,
+      "attrs": { "color": "green", "label": "26 G" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l26r",
+      "top": -310.8,
+      "left": 637.4,
+      "attrs": { "color": "red", "label": "26 R" }
+    },
+    { "type": "wokwi-servo", "id": "servo1", "top": -376.4, "left": 892.8, "attrs": {} },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd2",
+      "top": -224,
+      "left": 581.6,
+      "attrs": { "pins": "i2c", "i2cAddress": "0x26" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l27g",
+      "top": -70.8,
+      "left": 666.2,
+      "attrs": { "color": "green", "label": "27 G" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l27r",
+      "top": -70.8,
+      "left": 627.8,
+      "attrs": { "color": "red", "label": "27 R" }
+    },
+    { "type": "wokwi-servo", "id": "servo2", "top": -136.4, "left": 883.2, "attrs": {} },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd3",
+      "top": 6.4,
+      "left": 591.2,
+      "attrs": { "pins": "i2c", "i2cAddress": "0x25" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l28g",
+      "top": 169.2,
+      "left": 647,
+      "attrs": { "color": "green", "label": "28 G" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l28r",
+      "top": 169.2,
+      "left": 608.6,
+      "attrs": { "color": "red", "label": "28 R" }
+    },
+    { "type": "wokwi-servo", "id": "servo3", "top": 94, "left": 902.4, "attrs": {} },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd4",
+      "top": 265.6,
+      "left": 600.8,
+      "attrs": { "pins": "i2c", "i2cAddress": "0x24" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l29g",
+      "top": 505.2,
+      "left": 666.2,
+      "attrs": { "color": "green", "label": "29 G" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l29r",
+      "top": 505.2,
+      "left": 627.8,
+      "attrs": { "color": "red", "label": "29 R" }
+    },
+    { "type": "wokwi-servo", "id": "servo4", "top": 362.8, "left": 902.4, "attrs": {} },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd5",
+      "top": 592,
+      "left": 591.2,
+      "attrs": { "pins": "i2c", "i2cAddress": "0x23" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l30g",
+      "top": 764.4,
+      "left": 675.8,
+      "attrs": { "color": "green", "label": "30 G" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "l30r",
+      "top": 764.4,
+      "left": 627.8,
+      "attrs": { "color": "red", "label": "30 R" }
+    },
+    { "type": "wokwi-servo", "id": "servo5", "top": 689.2, "left": 892.8, "attrs": {} }
   ],
   "connections": [
-    [ "esp1:18", "servo1:PWM", "green", [ "v0" ] ],
+    [ "esp1:13", "servo1:PWM", "green", [ "v0" ] ],
     [ "esp1:5V", "servo1:V+", "red", [ "v0" ] ],
     [ "esp1:GND", "servo1:GND", "black", [ "v0" ] ],
+    [ "esp1:14", "servo2:PWM", "green", [ "v0" ] ],
+    [ "esp1:5V", "servo2:V+", "red", [ "v0" ] ],
+    [ "esp1:GND", "servo2:GND", "black", [ "v0" ] ],
+    [ "esp1:16", "servo3:PWM", "green", [ "v0" ] ],
+    [ "esp1:5V", "servo3:V+", "red", [ "v0" ] ],
+    [ "esp1:GND", "servo3:GND", "black", [ "v0" ] ],
+    [ "esp1:17", "servo4:PWM", "green", [ "v0" ] ],
+    [ "esp1:5V", "servo4:V+", "red", [ "v0" ] ],
+    [ "esp1:GND", "servo4:GND", "black", [ "v0" ] ],
+    [ "esp1:18", "servo5:PWM", "green", [ "v0" ] ],
+    [ "esp1:5V", "servo5:V+", "red", [ "v0" ] ],
+    [ "esp1:GND", "servo5:GND", "black", [ "v0" ] ],
+    [ "esp1:2", "l26g:A", "green", [ "v0" ] ],
+    [ "esp1:GND", "l26g:C", "black", [ "v0" ] ],
+    [ "esp1:25", "l26r:A", "red", [ "v0" ] ],
+    [ "esp1:GND", "l26r:C", "black", [ "v0" ] ],
+    [ "esp1:4", "l27g:A", "green", [ "v0" ] ],
+    [ "esp1:GND", "l27g:C", "black", [ "v0" ] ],
+    [ "esp1:26", "l27r:A", "red", [ "v0" ] ],
+    [ "esp1:GND", "l27r:C", "black", [ "v0" ] ],
+    [ "esp1:5", "l28g:A", "green", [ "v0" ] ],
+    [ "esp1:GND", "l28g:C", "black", [ "v0" ] ],
+    [ "esp1:27", "l28r:A", "red", [ "v0" ] ],
+    [ "esp1:GND", "l28r:C", "black", [ "v0" ] ],
+    [ "esp1:19", "l29g:A", "green", [ "v0" ] ],
+    [ "esp1:GND", "l29g:C", "black", [ "v0" ] ],
+    [ "esp1:32", "l29r:A", "red", [ "v0" ] ],
+    [ "esp1:GND", "l29r:C", "black", [ "v0" ] ],
+    [ "esp1:23", "l30g:A", "green", [ "v0" ] ],
+    [ "esp1:GND", "l30g:C", "black", [ "v0" ] ],
+    [ "esp1:33", "l30r:A", "red", [ "v0" ] ],
+    [ "esp1:GND", "l30r:C", "black", [ "v0" ] ],
     [ "esp1:21", "lcd1:SDA", "blue", [ "v0" ] ],
     [ "esp1:22", "lcd1:SCL", "yellow", [ "v0" ] ],
     [ "esp1:5V", "lcd1:VCC", "red", [ "v0" ] ],
-    [ "esp1:GND", "lcd1:GND", "black", [ "v0" ] ]
+    [ "esp1:GND", "lcd1:GND", "black", [ "v0" ] ],
+    [ "esp1:21", "lcd2:SDA", "blue", [ "v0" ] ],
+    [ "esp1:22", "lcd2:SCL", "yellow", [ "v0" ] ],
+    [ "esp1:5V", "lcd2:VCC", "red", [ "v0" ] ],
+    [ "esp1:GND", "lcd2:GND", "black", [ "v0" ] ],
+    [ "esp1:21", "lcd3:SDA", "blue", [ "v0" ] ],
+    [ "esp1:22", "lcd3:SCL", "yellow", [ "v0" ] ],
+    [ "esp1:5V", "lcd3:VCC", "red", [ "v0" ] ],
+    [ "esp1:GND", "lcd3:GND", "black", [ "v0" ] ],
+    [ "esp1:21", "lcd4:SDA", "blue", [ "v0" ] ],
+    [ "esp1:22", "lcd4:SCL", "yellow", [ "v0" ] ],
+    [ "esp1:5V", "lcd4:VCC", "red", [ "v0" ] ],
+    [ "esp1:GND", "lcd4:GND", "black", [ "v0" ] ],
+    [ "esp1:21", "lcd5:SDA", "blue", [ "v0" ] ],
+    [ "esp1:22", "lcd5:SCL", "yellow", [ "v0" ] ],
+    [ "esp1:5V", "lcd5:VCC", "red", [ "v0" ] ],
+    [ "esp1:GND", "lcd5:GND", "black", [ "v0" ] ]
   ],
   "dependencies": {}
 }

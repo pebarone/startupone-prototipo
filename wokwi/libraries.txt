@@ -1,3 +1,3 @@
 ArduinoJson
-Adafruit PWM Servo Driver Library
+ESP32Servo
 LiquidCrystal I2C
