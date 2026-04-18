@@ -37,7 +37,7 @@
             >
               <button 
                 type="button" 
-                class="w-full flex items-center justify-between px-6 py-5 text-left text-slate-900 font-semibold focus:outline-none focus-visible:bg-slate-50 transition-colors accordion-btn"
+                class="w-full flex items-center justify-between px-5 sm:px-6 py-4 min-h-[48px] text-left text-slate-900 font-semibold focus:outline-none focus-visible:bg-slate-50 transition-colors accordion-btn"
                 @click="toggleFaq(category.title, index)"
               >
                 <span class="pr-6">{{ faq.question }}</span>
@@ -60,11 +60,11 @@
                 :class="{ 'is-open': isFaqOpen(category.title, index) }"
               >
                 <div class="accordion-inner">
-                  <div class="px-6 pb-6 pt-1 text-sm text-slate-600 leading-relaxed flex flex-col sm:flex-row gap-6 items-start">
+                  <div class="px-5 sm:px-6 pb-6 pt-1 text-sm text-slate-600 leading-relaxed flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
                     <div class="flex-1 mt-2">
                       {{ faq.answer }}
                     </div>
-                    <div class="w-full sm:w-48 shrink-0 flex items-center justify-center p-6 bg-slate-50/50 rounded-2xl border border-slate-100/60 transition-transform duration-500 ease-out hover:scale-105 overflow-hidden">
+                    <div class="w-20 h-20 sm:w-48 sm:h-auto shrink-0 flex items-center justify-center p-4 sm:p-6 bg-slate-50/50 rounded-2xl border border-slate-100/60 transition-transform duration-500 ease-out hover:scale-105 overflow-hidden">
                       
                       <!-- SVG for open-locker -->
                       <svg v-if="faq.id === 'open-locker'" viewBox="0 0 120 120" class="w-20 h-20 text-brand-600" role="img" aria-label="Usuário escaneando QR code de um locker com o celular">

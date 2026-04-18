@@ -80,34 +80,38 @@
         </template>
       </div>
 
-      <!-- Mobile hamburger -->
+      <!-- Mobile hamburger (44×44 min tap target) -->
       <button
-        class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+        class="md:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
         @click="mobileOpen = !mobileOpen"
+        :aria-label="mobileOpen ? 'Fechar menu' : 'Abrir menu'"
+        aria-controls="mobile-menu"
       >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path v-if="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
     </div>
 
-    <!-- Mobile menu -->
+    <!-- Mobile menu (links min-h-[44px] for thumb safety) -->
     <Transition name="slideDown">
-      <div v-if="mobileOpen" class="md:hidden bg-white border-t border-slate-100 px-6 py-4 space-y-3">
+      <div v-if="mobileOpen" id="mobile-menu" class="md:hidden bg-white border-t border-slate-100 px-4 py-2 space-y-0.5 pb-safe">
         <template v-if="isHomePage">
-          <a href="#parceiros" @click.prevent="scrollTo('#parceiros'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">Parceiros</a>
-          <a href="#como-funciona" @click.prevent="scrollTo('#como-funciona'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">Como Funciona</a>
-          <a href="#solucao" @click.prevent="scrollTo('#solucao'); mobileOpen = false" class="block text-sm font-medium text-slate-700 py-2">A Solução</a>
-          <div class="border-t border-slate-100" />
+          <a href="#parceiros" @click.prevent="scrollTo('#parceiros'); mobileOpen = false" class="flex items-center min-h-[44px] text-sm font-medium text-slate-700 px-2">Parceiros</a>
+          <a href="#como-funciona" @click.prevent="scrollTo('#como-funciona'); mobileOpen = false" class="flex items-center min-h-[44px] text-sm font-medium text-slate-700 px-2">Como Funciona</a>
+          <a href="#solucao" @click.prevent="scrollTo('#solucao'); mobileOpen = false" class="flex items-center min-h-[44px] text-sm font-medium text-slate-700 px-2">A Solução</a>
+          <div class="border-t border-slate-100 my-1" />
         </template>
-        <a href="/use" class="block text-sm font-medium text-slate-700 py-2">Usar um Locker</a>
-        <a href="/retrieve" class="block text-sm font-medium text-slate-700 py-2">Retirar itens</a>
-        <a v-if="!isLoggedIn" href="/login" class="block w-full text-center py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold">Entrar / Seja Parceiro</a>
-        <template v-else>
-          <a href="/account" class="block text-sm font-medium text-slate-700 py-2">Minha Conta</a>
-          <button @click="handleSignOut" class="block w-full text-left text-sm font-medium text-red-500 py-2">Sair</button>
-        </template>
+        <a href="/use" class="flex items-center min-h-[44px] text-sm font-medium text-slate-700 px-2">Usar um Locker</a>
+        <a href="/retrieve" class="flex items-center min-h-[44px] text-sm font-medium text-slate-700 px-2">Retirar itens</a>
+        <div class="pt-1 pb-2">
+          <a v-if="!isLoggedIn" href="/login" class="flex items-center justify-center min-h-[44px] rounded-xl bg-slate-900 text-white text-sm font-semibold">Entrar / Seja Parceiro</a>
+          <template v-else>
+            <a href="/account" class="flex items-center min-h-[44px] text-sm font-medium text-slate-700 px-2">Minha Conta</a>
+            <button @click="handleSignOut" class="w-full flex items-center min-h-[44px] text-left text-sm font-medium text-red-500 px-2">Sair</button>
+          </template>
+        </div>
       </div>
     </Transition>
   </header>
@@ -154,7 +158,7 @@ function handleClickOutside(e) {
 }
 
 onMounted(() => {
-  window.addEventListener('scroll', () => { scrolled.value = window.scrollY > 50 })
+  window.addEventListener('scroll', () => { scrolled.value = window.scrollY > 50 }, { passive: true })
   document.addEventListener('click', handleClickOutside)
 })
 

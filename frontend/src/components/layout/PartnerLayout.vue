@@ -11,6 +11,10 @@
         !isMobile && sidebarOpen ? 'w-60' : '',
         !isMobile && !sidebarOpen ? 'w-[68px]' : ''
       ]"
+      @pointerdown="onSidebarPointerDown"
+      @pointermove="onSidebarPointerMove"
+      @pointerup="onSidebarPointerUp"
+      @pointercancel="onSidebarPointerUp"
     >
       <!-- Logo row -->
       <div class="flex items-center h-[60px] px-4 border-b border-slate-100 flex-shrink-0 gap-3">
@@ -147,10 +151,11 @@
             {{ roleLabel }}
           </span>
           <button
-            class="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            class="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
             @click="sidebarOpen = !sidebarOpen"
+            aria-label="Abrir menu"
           >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
@@ -193,6 +198,38 @@ const userMenuOpen = ref(false)
 const isMobile = ref(false)
 const userMenuRef = ref(null)
 const recoveryTimeoutIds = []
+
+// ─── Swipe-to-dismiss state ───
+let swipeStartX = 0
+let swipeStartY = 0
+let isSwiping = false
+const SWIPE_THRESHOLD = 60 // px leftward to close
+
+function onSidebarPointerDown(e) {
+  if (!isMobile.value || !sidebarOpen.value) return
+  swipeStartX = e.clientX
+  swipeStartY = e.clientY
+  isSwiping = true
+}
+
+function onSidebarPointerMove(e) {
+  if (!isSwiping) return
+  const dx = e.clientX - swipeStartX
+  const dy = Math.abs(e.clientY - swipeStartY)
+  // Only track horizontal-dominant swipes
+  if (dy > Math.abs(dx)) {
+    isSwiping = false
+  }
+}
+
+function onSidebarPointerUp(e) {
+  if (!isSwiping) return
+  isSwiping = false
+  const dx = e.clientX - swipeStartX
+  if (dx < -SWIPE_THRESHOLD) {
+    sidebarOpen.value = false
+  }
+}
 
 const initials = computed(() => {
   const name = user.value?.full_name || user.value?.email || '?'
@@ -430,8 +467,8 @@ export const SidebarLink = defineComponent({
     return () => h(RouterLink, {
       to: props.to,
       class: [
-        'flex items-center h-9 rounded-xl transition-all duration-150 active:scale-[0.98]',
-        props.collapsed ? 'w-9 justify-center mx-auto' : 'gap-3 px-3',
+        'flex items-center h-11 rounded-xl transition-all duration-150 active:scale-[0.98]',
+        props.collapsed ? 'w-11 justify-center mx-auto' : 'gap-3 px-3',
         isActive.value
           ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'
           : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'

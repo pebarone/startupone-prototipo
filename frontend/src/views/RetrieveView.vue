@@ -84,33 +84,33 @@
           </p>
         </div>
 
-        <div v-else-if="rental.status === 'storing' && currentStep === 'verify'" class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-8 py-10 text-center shadow-2xl">
-          <h2 class="mb-2 text-2xl font-black tracking-tight text-white">Verificacao biometrica</h2>
-          <p class="mx-auto mb-8 max-w-sm text-sm text-slate-300">
+        <div v-else-if="rental.status === 'storing' && currentStep === 'verify'" class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-6 sm:px-8 py-8 sm:py-10 text-center shadow-2xl">
+          <h2 class="mb-2 text-2xl font-black tracking-tight text-white">Verificaçao biometrica</h2>
+          <p class="mx-auto mb-6 max-w-sm text-sm text-slate-300">
             Esta pagina ja identifica o aluguel e o locker corretos. Sua digital apenas autoriza a retirada.
           </p>
 
-          <div class="mx-auto mb-8 flex h-40 w-40 items-center justify-center">
+          <div class="mx-auto mb-6 flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center">
             <div class="relative flex h-full w-full items-center justify-center">
               <div :class="['absolute inset-0 rounded-full border-4 transition-all duration-700', bioState === 'scanning' ? 'border-brand-400 opacity-30 animate-ping' : 'border-transparent']" />
               <div :class="['absolute inset-2 rounded-full border-2 transition-all duration-500', bioState === 'scanning' ? 'border-brand-400/60' : bioState === 'success' ? 'border-brand-500' : 'border-slate-600']" />
-              <div :class="['flex h-28 w-28 items-center justify-center rounded-full transition-all duration-500', bioState === 'idle' ? 'bg-slate-700' : bioState === 'scanning' ? 'bg-brand-900/50' : 'bg-brand-600']">
-                <svg class="h-14 w-14" :class="bioState === 'success' ? 'text-white' : 'text-slate-300'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <div :class="['flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full transition-all duration-500', bioState === 'idle' ? 'bg-slate-700' : bioState === 'scanning' ? 'bg-brand-900/50' : 'bg-brand-600']">
+                <svg class="h-10 w-10 sm:h-14 sm:w-14" :class="bioState === 'success' ? 'text-white' : 'text-slate-300'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
                   <path d="M12 1C8.13 1 5 4.13 5 8v1H4C2.9 9 2 9.9 2 11v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V8c0-3.87-3.13-7-7-7z" />
                 </svg>
               </div>
               <div v-if="bioState === 'scanning'" class="absolute inset-4 overflow-hidden rounded-full">
                 <div class="absolute h-0.5 w-full animate-scan-line bg-brand-400/80" />
               </div>
-              <div v-if="bioState === 'success'" class="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
-                <svg class="h-5 w-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div v-if="bioState === 'success'" class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white shadow-lg">
+                <svg class="h-4 w-4 sm:h-5 sm:w-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <p class="mb-6 text-sm font-semibold text-white">{{ bioLabel }}</p>
+          <p class="mb-5 text-sm font-semibold text-white">{{ bioLabel }}</p>
           <div v-if="!webauthnSupported" class="mx-auto mb-4 max-w-md rounded-lg border border-amber-400/30 bg-amber-900/30 px-4 py-3 text-sm text-amber-200">
             {{ webauthnSupportHint }}
           </div>

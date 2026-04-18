@@ -10,18 +10,27 @@
         <p class="mt-4 text-slate-500 text-lg">
           Escaneia, paga, cadastra sua digital, guarda — e volta quando quiser. Pague só pelo tempo que usou.
         </p>
+        
+        <!-- Mobile swipe hint -->
+        <div class="mt-6 md:hidden flex items-center justify-center gap-2 text-brand-500 font-medium text-sm">
+          <span>Deslize para ver os passos</span>
+          <svg class="w-5 h-5 animate-swipe-arrow text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </div>
       </div>
 
       <div class="relative steps-container">
-        <!-- Connecting line desktop -->
+        <!-- Connecting line desktop only -->
         <div class="hidden md:block absolute top-[50px] left-[8%] right-[8%] h-0.5 bg-slate-100 z-0 step-line">
           <div class="w-full h-full bg-brand-500 origin-left scale-x-0 line-progress"></div>
         </div>
 
-        <div class="grid md:grid-cols-5 gap-8 relative z-10">
+        <!-- Mobile: horizontal snap scroll | Desktop: 5-col grid -->
+        <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-8 md:grid md:grid-cols-5 md:gap-8 md:overflow-visible md:snap-none md:pb-0 relative z-10 hide-scrollbar">
 
           <!-- Step 1 -->
-          <div class="flex flex-col items-center text-center step-card">
+          <div class="flex flex-col items-center text-center step-card w-full flex-none snap-center md:w-auto md:snap-none">
             <div class="w-24 h-24 rounded-2xl bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center mb-6 relative overflow-hidden group">
               <div class="absolute inset-0 bg-brand-50 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-slate-200">01</span>
@@ -34,7 +43,7 @@
           </div>
 
           <!-- Step 2 -->
-          <div class="flex flex-col items-center text-center step-card">
+          <div class="flex flex-col items-center text-center step-card w-full flex-none snap-center md:w-auto md:snap-none">
             <div class="w-24 h-24 rounded-2xl bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center mb-6 relative overflow-hidden group">
               <div class="absolute inset-0 bg-brand-50 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-slate-200">02</span>
@@ -47,7 +56,7 @@
           </div>
 
           <!-- Step 3 -->
-          <div class="flex flex-col items-center text-center step-card">
+          <div class="flex flex-col items-center text-center step-card w-full flex-none snap-center md:w-auto md:snap-none">
             <div class="w-24 h-24 rounded-2xl bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center mb-6 relative overflow-hidden group">
               <div class="absolute inset-0 bg-brand-50 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-slate-200">03</span>
@@ -60,7 +69,7 @@
           </div>
 
           <!-- Step 4 -->
-          <div class="flex flex-col items-center text-center step-card">
+          <div class="flex flex-col items-center text-center step-card w-full flex-none snap-center md:w-auto md:snap-none">
             <div class="w-24 h-24 rounded-2xl bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center mb-6 relative overflow-hidden group">
               <div class="absolute inset-0 bg-brand-50 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-slate-200">04</span>
@@ -73,7 +82,7 @@
           </div>
 
           <!-- Step 5 -->
-          <div class="flex flex-col items-center text-center step-card">
+          <div class="flex flex-col items-center text-center step-card w-full flex-none snap-center md:w-auto md:snap-none">
             <div class="w-24 h-24 rounded-2xl bg-brand-900 border border-brand-800 shadow-xl shadow-brand-900/40 flex items-center justify-center mb-6 relative overflow-hidden group">
               <div class="absolute inset-0 bg-brand-800 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
               <span class="absolute top-2 right-2 text-xs font-black text-brand-700">05</span>
@@ -136,3 +145,21 @@ onMounted(() => {
   })
 })
 </script>
+
+<style scoped>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes swipe-arrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+.animate-swipe-arrow {
+  animation: swipe-arrow 1.5s ease-in-out infinite;
+}
+</style>

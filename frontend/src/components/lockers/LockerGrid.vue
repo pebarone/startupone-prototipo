@@ -101,7 +101,7 @@ const props = defineProps({
 defineEmits(['select'])
 
 const gridStyle = computed(() => ({
-  gridTemplateColumns: 'repeat(auto-fit, minmax(138px, 1fr))'
+  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))'
 }))
 
 function getAnimationState(locker) {

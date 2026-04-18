@@ -51,7 +51,7 @@
         <p class="font-mono text-xs font-black tracking-tight" :class="textClass">{{ locker.code }}</p>
         <p class="mt-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{{ sizeLabel }}</p>
       </div>
-      <span class="rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.14em]" :class="statusBadgeClass">{{ statusLabel }}</span>
+      <span class="rounded-full px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]" :class="statusBadgeClass">{{ statusLabel }}</span>
     </div>
   </button>
 </template>

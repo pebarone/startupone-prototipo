@@ -86,24 +86,24 @@
             <div
               v-for="membership in activeOrganizations"
               :key="membership.id"
-              class="px-8 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              class="px-5 sm:px-8 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors gap-3"
             >
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                   {{ (membership.organization?.name || '?')[0].toUpperCase() }}
                 </div>
-                <div>
-                  <p class="font-semibold text-slate-900 text-sm">{{ membership.organization?.name }}</p>
-                  <p class="text-xs text-slate-400">{{ membership.organization?.slug }}</p>
+                <div class="min-w-0">
+                  <p class="font-semibold text-slate-900 text-sm truncate">{{ membership.organization?.name }}</p>
+                  <p class="text-xs text-slate-400 truncate">{{ membership.organization?.slug }}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <BaseBadge :variant="roleVariant(membership.role)" variant-prefix="light">
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <BaseBadge :variant="roleVariant(membership.role)" variant-prefix="light" class="hidden sm:inline-flex">
                   {{ roleLabel(membership.role) }}
                 </BaseBadge>
                 <a
                   :href="`/partner/${membership.organization_id}/dashboard`"
-                  class="flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-500 transition-colors"
+                  class="inline-flex items-center gap-1 min-h-[44px] px-2 text-sm font-semibold text-brand-600 hover:text-brand-500 transition-colors"
                 >
                   Acessar
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

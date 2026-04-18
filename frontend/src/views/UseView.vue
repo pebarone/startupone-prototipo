@@ -7,7 +7,8 @@
             <svg v-if="currentStepIndex > index" class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
             <span v-else>{{ index + 1 }}</span>
           </div>
-          <span v-if="index < steps.length - 1" class="hidden h-0.5 w-5 transition-colors duration-300 sm:block" :class="currentStepIndex > index ? 'bg-brand-500' : 'bg-slate-200'" />
+          <!-- Connector line: full on sm+, short dash on mobile -->
+          <span v-if="index < steps.length - 1" class="h-0.5 transition-colors duration-300 sm:w-5" :class="[currentStepIndex > index ? 'bg-brand-500' : 'bg-slate-200', 'w-2']" />
         </div>
       </div>
 
@@ -140,24 +141,24 @@
       </section>
 
       <section v-else-if="currentStep === 'biometric'" class="step-content">
-        <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-8 py-10 text-center shadow-2xl">
+        <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-6 sm:px-8 py-8 sm:py-10 text-center shadow-2xl">
           <p class="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-white/80">Biometria primeiro</p>
-          <h2 class="mb-3 text-3xl font-black tracking-tight text-white">Cadastre sua biometria</h2>
-          <p class="mx-auto mb-8 max-w-sm text-sm text-slate-300">Sua digital vincula a chave deste aluguel ao aparelho. O locker só será reservado e aberto depois da confirmação do PIX.</p>
+          <h2 class="mb-3 text-2xl sm:text-3xl font-black tracking-tight text-white">Cadastre sua biometria</h2>
+          <p class="mx-auto mb-6 max-w-sm text-sm text-slate-300">Sua digital vincula a chave deste aluguel ao aparelho. O locker só será reservado e aberto depois da confirmação do PIX.</p>
 
-          <div class="mx-auto mb-8 flex h-40 w-40 items-center justify-center">
+          <div class="mx-auto mb-6 flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center">
             <div class="relative flex h-full w-full items-center justify-center">
               <div :class="['absolute inset-0 rounded-full border-4 transition-all duration-700', biometricState === 'scanning' ? 'border-brand-400 opacity-30 animate-ping' : 'border-transparent']" />
               <div :class="['absolute inset-2 rounded-full border-2 transition-all duration-500', biometricState === 'scanning' ? 'border-brand-400/60' : biometricState === 'success' ? 'border-brand-500' : 'border-slate-600']" />
-              <div :class="['flex h-28 w-28 items-center justify-center rounded-full transition-all duration-500', biometricState === 'idle' ? 'bg-slate-700' : biometricState === 'scanning' ? 'bg-brand-900/50' : 'bg-brand-600']">
-                <svg class="h-14 w-14" :class="biometricState === 'success' ? 'text-white' : 'text-slate-300'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 1C8.13 1 5 4.13 5 8v1H4C2.9 9 2 9.9 2 11v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V8c0-3.87-3.13-7-7-7z" /></svg>
+              <div :class="['flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full transition-all duration-500', biometricState === 'idle' ? 'bg-slate-700' : biometricState === 'scanning' ? 'bg-brand-900/50' : 'bg-brand-600']">
+                <svg class="h-10 w-10 sm:h-14 sm:w-14" :class="biometricState === 'success' ? 'text-white' : 'text-slate-300'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 1C8.13 1 5 4.13 5 8v1H4C2.9 9 2 9.9 2 11v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-1V8c0-3.87-3.13-7-7-7z" /></svg>
               </div>
               <div v-if="biometricState === 'scanning'" class="absolute inset-4 overflow-hidden rounded-full"><div class="absolute h-0.5 w-full animate-scan-line bg-brand-400/80" /></div>
-              <div v-if="biometricState === 'success'" class="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"><svg class="h-5 w-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg></div>
+              <div v-if="biometricState === 'success'" class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white shadow-lg"><svg class="h-4 w-4 sm:h-5 sm:w-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg></div>
             </div>
           </div>
 
-          <p class="mb-6 text-sm font-semibold text-white">{{ biometricStateLabel }}</p>
+          <p class="mb-5 text-sm font-semibold text-white">{{ biometricStateLabel }}</p>
           <div v-if="!webauthnSupported" class="mx-auto mb-4 max-w-md rounded-lg border border-amber-400/30 bg-amber-900/30 px-4 py-3 text-sm text-amber-200">{{ webauthnSupportHint }}</div>
           <div v-if="error" class="mx-auto mb-4 max-w-md rounded-lg border border-red-400/30 bg-red-900/30 px-4 py-3 text-sm text-red-300">{{ error }}</div>
           <button v-if="biometricState !== 'success'" type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-8 text-sm font-semibold transition-all duration-200" :class="biometricState === 'scanning' ? 'cursor-wait bg-white/10 text-white' : 'bg-brand-600 text-white hover:-translate-y-0.5 hover:bg-brand-500'" :disabled="biometricState === 'scanning' || actionLoading || !webauthnSupported" @click="startBiometricRegistration"><BaseSpinner v-if="biometricState === 'scanning'" size="sm" color="white" /><span>{{ biometricState === 'scanning' ? 'Lendo digital...' : 'Escanear digital' }}</span></button>
@@ -274,7 +275,7 @@ const webauthnState = getWebAuthnSupportState()
 const webauthnSupported = webauthnState.supported
 const webauthnSupportHint = getWebAuthnSupportHint()
 const baseUrl = typeof window === 'undefined' ? '' : window.location.origin
-const mapHeight = 'clamp(360px, 62vh, 560px)'
+const mapHeight = 'clamp(260px, 42vh, 560px)'
 const NEAREST_HINT_HIDE_DISTANCE_METERS = 180
 let timerInterval = null
 let pollingInterval = null

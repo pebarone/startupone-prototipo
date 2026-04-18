@@ -1,6 +1,6 @@
 <template>
   <footer class="py-12 bg-slate-50 border-t border-slate-200">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 text-slate-500 text-sm">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 text-slate-500 text-sm">
       <div class="md:col-span-2">
         <RouterLink to="/" class="flex items-center gap-2 mb-4 group inline-flex">
           <div class="w-8 h-8 rounded-lg bg-brand-900 flex items-center justify-center text-white">
@@ -21,10 +21,10 @@
       <div>
         <h6 class="font-bold text-slate-900 mb-4">Plataforma</h6>
         <ul class="space-y-3">
-          <li><RouterLink to="/#como-funciona" class="hover:text-brand-600 transition-colors">Como funciona</RouterLink></li>
-          <li><RouterLink to="/#solucao" class="hover:text-brand-600 transition-colors">Seguros (Tech Insurance)</RouterLink></li>
-          <li><RouterLink to="/#solucao" class="hover:text-brand-600 transition-colors">Cobrança por Hora</RouterLink></li>
-          <li><RouterLink to="/use" class="hover:text-brand-600 transition-colors">Encontrar Lockers</RouterLink></li>
+          <li><RouterLink to="/#como-funciona" class="block py-1.5 hover:text-brand-600 transition-colors">Como funciona</RouterLink></li>
+          <li><RouterLink to="/#solucao" class="block py-1.5 hover:text-brand-600 transition-colors">Seguros (Tech Insurance)</RouterLink></li>
+          <li><RouterLink to="/#solucao" class="block py-1.5 hover:text-brand-600 transition-colors">Cobrança por Hora</RouterLink></li>
+          <li><RouterLink to="/use" class="block py-1.5 hover:text-brand-600 transition-colors">Encontrar Lockers</RouterLink></li>
         </ul>
       </div>
 
