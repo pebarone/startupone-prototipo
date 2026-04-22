@@ -105,6 +105,6 @@ export function getWebAuthnErrorMessage(error, fallback = 'Falha ao validar a bi
 
 function assertWebAuthnSupported() {
   if (!isWebAuthnSupported()) {
-    throw new Error(getWebAuthnSupportHint() || 'WebAuthn nao esta disponivel neste navegador.')
+    throw new Error(getWebAuthnSupportHint() || 'WebAuthn nao esta disponível neste navegador.')
   }
 }

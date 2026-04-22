@@ -15,7 +15,7 @@
         </h2>
 
         <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-          Guarde itens por algumas horas ou leve a operacao para o seu estabelecimento com a mesma infraestrutura.
+          Guarde itens por algumas horas ou leve a operação para o seu estabelecimento com a mesma infraestrutura.
         </p>
 
         <div class="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row">

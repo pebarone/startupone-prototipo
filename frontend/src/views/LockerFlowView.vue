@@ -5,7 +5,7 @@
         <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Locker QR</p>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Fluxo do locker no seu celular</h1>
         <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-          Escaneie o QR fixo do locker, confirme a biometria do seu aparelho e use a mesma pagina para abrir novamente na retirada.
+          Escaneie o QR fixo do locker, confirme a biometria do seu aparelho e use a mesma página para abrir novamente na retirada.
         </p>
       </div>
 
@@ -69,9 +69,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M18.364 5.636l-1.414 1.414M6.343 17.657l-1.414 1.414M5.636 5.636l1.414 1.414m10.607 10.607l1.414 1.414M9 12h6m-3-3v6" />
             </svg>
           </div>
-          <h2 class="mt-5 text-2xl font-black tracking-tight text-slate-900">Locker indisponivel</h2>
+          <h2 class="mt-5 text-2xl font-black tracking-tight text-slate-900">Locker indisponível</h2>
           <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-            Este locker esta em manutencao ou sem um aluguel recuperavel no momento. Tente outro QR ou fale com a operacao.
+            Este locker está em manutenção ou sem um aluguel recuperável no momento. Tente outro QR ou fale com a operação.
           </p>
         </section>
 
@@ -130,7 +130,7 @@
           </div>
           <h2 class="mt-5 text-2xl font-black tracking-tight text-slate-900">Locker reservado em outro aparelho</h2>
           <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-            Este locker ja teve o PIX inicial confirmado e esta aguardando fechamento ou uso no aparelho que iniciou a ativacao.
+            Este locker já teve o PIX inicial confirmado e está aguardando fechamento ou uso no aparelho que iniciou a ativação.
           </p>
           <button
             type="button"
@@ -145,7 +145,7 @@
         <section v-else-if="screen === 'resume-registration'" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div class="bg-amber-500 px-6 py-8 text-center text-slate-950">
             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-amber-950/70">Biometria pendente</p>
-            <h2 class="mt-2 text-3xl font-black tracking-tight">Retome o cadastro biometrico neste celular</h2>
+            <h2 class="mt-2 text-3xl font-black tracking-tight">Retome o cadastro biométrico neste celular</h2>
             <p class="mt-3 text-sm leading-6 text-amber-950/80">
               O aluguel já foi preparado para este locker, mas a credencial WebAuthn ainda não foi concluída neste aparelho.
             </p>
@@ -160,9 +160,9 @@
             </div>
 
             <div class="rounded-2xl bg-slate-900 px-5 py-5 text-white">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Proximo passo</p>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Próximo passo</p>
               <p class="mt-3 text-sm leading-6 text-slate-300">
-                Gere uma nova challenge e confirme a biometria local para vincular a chave publica deste aluguel ao aparelho.
+                Gere uma nova challenge e confirme a biometria local para vincular a chave pública deste aluguel ao aparelho.
               </p>
               <p v-if="!webauthnSupported" class="mt-3 text-xs leading-5 text-amber-200">
                 {{ webauthnSupportHint }}
@@ -174,7 +174,7 @@
                 @click="resumePendingRegistration"
               >
                 <BaseSpinner v-if="actionLoading" size="sm" color="white" />
-                <span>{{ actionLoading ? 'Retomando cadastro...' : 'Retomar cadastro biometrico' }}</span>
+                <span>{{ actionLoading ? 'Retomando cadastro...' : 'Retomar cadastro biométrico' }}</span>
               </button>
             </div>
           </div>
@@ -185,7 +185,7 @@
             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Pagamento inicial</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Biometria confirmada</h2>
             <p class="mt-2 text-sm leading-6 text-slate-500">
-              O locker continua livre ate a confirmacao do PIX. Depois disso, ele fica reservado e abre para o usuario.
+              O locker continua livre até a confirmação do PIX. Depois disso, ele fica reservado e abre para o usuário.
             </p>
           </div>
 
@@ -206,7 +206,7 @@
             </div>
 
             <div class="rounded-2xl bg-slate-900 p-5 text-white">
-              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Proximo passo</p>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Próximo passo</p>
               <h3 class="mt-2 text-xl font-black tracking-tight">Confirmar PIX</h3>
               <p class="mt-2 text-sm leading-6 text-slate-300">
                 Esta confirmacao reserva o locker no backend e libera a abertura neste aparelho.
@@ -227,8 +227,8 @@
         <section v-else-if="screen === 'activation-open'" class="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-8 py-12 text-center shadow-[0_24px_60px_rgba(21,128,61,0.28)]">
           <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-100">Locker reservado</p>
           <h2 class="mt-2 text-4xl font-black tracking-tight text-white">Locker aberto!</h2>
-          <p class="mt-3 text-lg text-brand-100">O PIX inicial foi confirmado e este aparelho esta autorizado.</p>
-          <p class="mx-auto mt-2 max-w-sm text-sm text-brand-100/90">Guarde seus itens, feche a porta e toque no botao abaixo para iniciar a armazenagem.</p>
+          <p class="mt-3 text-lg text-brand-100">O PIX inicial foi confirmado e este aparelho está autorizado.</p>
+          <p class="mx-auto mt-2 max-w-sm text-sm text-brand-100/90">Guarde seus itens, feche a porta e toque no botão abaixo para iniciar a armazenagem.</p>
           <div class="mt-8 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white">
             <span class="h-2 w-2 animate-pulse rounded-full bg-brand-300" />
             {{ formatCents(currentRental.hourly_rate_cents) }}/hora
@@ -251,7 +251,7 @@
             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-100">Locker ativo</p>
             <h2 class="mt-2 text-3xl font-black tracking-tight">Locker aberto e protegido</h2>
             <p class="mt-3 text-sm leading-6 text-brand-100">
-              Feche esta pagina se quiser. Na retirada, escaneie o mesmo QR deste locker e confirme a biometria no telefone.
+              Feche esta página se quiser. Na retirada, escaneie o mesmo QR deste locker e confirme a biometria no telefone.
             </p>
           </div>
 
@@ -264,7 +264,7 @@
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5">
               <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Como retirar</p>
               <p class="mt-3 text-sm leading-6 text-slate-600">
-                Volte a este locker, escaneie o QR fixo e confirme a biometria neste mesmo aparelho. O backend valida a chave publica registrada neste aluguel.
+                Volte a este locker, escaneie o QR fixo e confirme a biometria neste mesmo aparelho. O backend valida a chave pública registrada neste aluguel.
               </p>
               <button
                 type="button"
@@ -272,7 +272,7 @@
                 :disabled="actionLoading"
                 @click="refreshContext"
               >
-                Atualizar pagina
+                Atualizar página
               </button>
             </div>
           </div>
@@ -284,7 +284,7 @@
           </p>
           <h2 class="mt-4 text-3xl font-black tracking-tight text-white">Confirme a biometria para abrir</h2>
           <p class="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-300">
-            Este QR identifica o aluguel em andamento. O desbloqueio so continua se a credencial WebAuthn registrada neste aparelho for validada com biometria local.
+            Este QR identifica o aluguel em andamento. O desbloqueio só continua se a credencial WebAuthn registrada neste aparelho for validada com biometria local.
           </p>
 
           <div class="mx-auto mt-8 rounded-2xl border border-white/10 bg-white/5 p-5 text-left text-sm text-slate-200 sm:max-w-md">
@@ -309,7 +309,7 @@
           </button>
 
           <p v-if="!webauthnSupported" class="mt-4 text-sm text-amber-200">
-            {{ webauthnSupportHint || 'Este navegador nao suporta WebAuthn. Abra o QR em um navegador atualizado no celular cadastrado.' }}
+            {{ webauthnSupportHint || 'Este navegador não suporta WebAuthn. Abra o QR em um navegador atualizado no celular cadastrado.' }}
           </p>
         </section>
 
@@ -317,7 +317,7 @@
           <div class="border-b border-slate-100 px-6 py-6">
             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Pagamento final</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Resumo da retirada</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-500">A biometria ja foi validada. Confirme o encerramento para liberar o locker.</p>
+            <p class="mt-2 text-sm leading-6 text-slate-500">A biometria já foi validada. Confirme o encerramento para liberar o locker.</p>
           </div>
 
           <div class="grid gap-5 px-6 py-6 lg:grid-cols-[1fr_320px]">
@@ -346,7 +346,7 @@
               <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Encerramento</p>
               <h3 class="mt-2 text-xl font-black tracking-tight">Finalizar retirada</h3>
               <p class="mt-2 text-sm leading-6 text-slate-300">
-                O comando abaixo encerra o aluguel, libera o locker no backend e move o registro para o historico operacional.
+                O comando abaixo encerra o aluguel, libera o locker no backend e move o registro para o histórico operacional.
               </p>
               <button
                 type="button"
@@ -609,7 +609,7 @@ async function startRentalRegistration() {
 
 async function resumePendingRegistration() {
   if (!currentRental.value?.id) {
-    actionError.value = 'Este cadastro biometrico nao pode mais ser retomado neste aparelho.'
+    actionError.value = 'Este cadastro biométrico nao pode mais ser retomado neste aparelho.'
     return
   }
 
@@ -619,7 +619,7 @@ async function resumePendingRegistration() {
   try {
     await completePendingRegistration(currentRental.value.id)
   } catch (error) {
-    await refreshAfterActionFailure(error, 'Falha ao retomar o cadastro biometrico deste aparelho.')
+    await refreshAfterActionFailure(error, 'Falha ao retomar o cadastro biométrico deste aparelho.')
   } finally {
     actionLoading.value = false
   }

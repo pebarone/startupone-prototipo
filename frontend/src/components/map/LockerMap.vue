@@ -59,7 +59,7 @@ const props = defineProps({
   },
   emptyLabel: {
     type: String,
-    default: 'Nenhuma localizacao cadastrada ainda.'
+    default: 'Nenhuma localização cadastrada ainda.'
   }
 })
 
@@ -376,7 +376,7 @@ function buildLocationPopupHtml(location) {
 
   return `
     <div class="locker-map-popup-card">
-      <p class="locker-map-popup-title">${escapeHtml(location?.name || 'Localizacao')}</p>
+      <p class="locker-map-popup-title">${escapeHtml(location?.name || 'Localização')}</p>
       <p class="locker-map-popup-address">${escapeHtml(summarizeAddress(location?.address || ''))}</p>
       <div class="locker-map-popup-stats">
         <span>${freeLockers} livre${freeLockers === 1 ? '' : 's'}</span>
@@ -392,7 +392,7 @@ function buildLocationPopupHtml(location) {
 function buildUserPopupHtml() {
   return `
     <div class="locker-map-popup-card">
-      <p class="locker-map-popup-title">Sua localizacao</p>
+      <p class="locker-map-popup-title">Sua localização</p>
       <p class="locker-map-popup-address">GPS ativo neste mapa.</p>
     </div>
   `

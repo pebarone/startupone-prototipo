@@ -87,7 +87,7 @@
         <div v-else-if="rental.status === 'storing' && currentStep === 'verify'" class="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 px-6 sm:px-8 py-8 sm:py-10 text-center shadow-2xl">
           <h2 class="mb-2 text-2xl font-black tracking-tight text-white">Verificaçao biometrica</h2>
           <p class="mx-auto mb-6 max-w-sm text-sm text-slate-300">
-            Esta pagina ja identifica o aluguel e o locker corretos. Sua digital apenas autoriza a retirada.
+            Esta página ja identifica o aluguel e o locker corretos. Sua digital apenas autoriza a retirada.
           </p>
 
           <div class="mx-auto mb-6 flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center">

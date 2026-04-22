@@ -3,17 +3,17 @@
     <div v-if="isLoading" class="flex min-h-[50vh] items-center justify-center">
       <div class="flex flex-col items-center gap-3">
         <div class="h-7 w-7 rounded-full border-2 border-slate-200 border-t-brand-600 animate-spin" />
-        <p class="text-sm text-slate-400">Carregando historico...</p>
+        <p class="text-sm text-slate-400">Carregando histórico...</p>
       </div>
     </div>
 
     <template v-else>
       <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Historico</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Histórico</p>
           <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Auditoria de alugueis</h1>
           <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Consulte o historico da organizacao, filtre por localizacao, limpe registros encerrados e execute liberacao operacional quando um aluguel travar.
+            Consulte o histórico da organizacao, filtre por localização, limpe registros encerrados e execute liberacao operacional quando um aluguel travar.
           </p>
         </div>
 
@@ -51,7 +51,7 @@
         <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div class="xl:max-w-sm">
             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Filtrar por localizacao
+              Filtrar por localização
             </label>
             <select
               v-model="selectedLocationId"
@@ -104,7 +104,7 @@
               @change="toggleSelectPage"
             />
           </label>
-          <span>Locker / Localizacao</span>
+          <span>Locker / Localização</span>
           <span class="hidden sm:block">Status</span>
           <span class="hidden md:block">Inicio</span>
           <span>Total</span>
@@ -118,7 +118,7 @@
             </svg>
           </div>
           <p class="text-sm font-semibold text-slate-600">Nenhum aluguel encontrado</p>
-          <p class="text-xs text-slate-400">Ajuste os filtros ou troque a localizacao.</p>
+          <p class="text-xs text-slate-400">Ajuste os filtros ou troque a localização.</p>
         </div>
 
         <div v-else>
@@ -144,7 +144,7 @@
             <div class="min-w-0">
               <p class="font-mono text-sm font-black text-slate-900">{{ rental.locker_code }}</p>
               <p class="mt-0.5 truncate text-xs text-slate-400">
-                {{ rental.location_name || 'Sem localizacao' }} · {{ sizeLabel(rental.locker_size) }}
+                {{ rental.location_name || 'Sem localização' }} · {{ sizeLabel(rental.locker_size) }}
               </p>
             </div>
 
@@ -293,12 +293,12 @@
 
         <h3 class="text-center text-lg font-black text-slate-900">Liberacao operacional</h3>
         <p class="mt-2 text-center text-sm leading-6 text-slate-500">
-          Esta acao cancela o aluguel em andamento, libera o locker e grava a justificativa na auditoria.
+          Esta ação cancela o aluguel em andamento, libera o locker e grava a justificativa na auditoria.
         </p>
 
         <div v-if="overrideTarget" class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           <p class="font-mono font-black text-slate-900">{{ overrideTarget.locker_code }}</p>
-          <p class="mt-1">{{ statusText(overrideTarget.status) }} · {{ overrideTarget.location_name || 'Sem localizacao' }}</p>
+          <p class="mt-1">{{ statusText(overrideTarget.status) }} · {{ overrideTarget.location_name || 'Sem localização' }}</p>
         </div>
 
         <label class="mt-4 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500" for="override-reason">
@@ -454,11 +454,11 @@ const deleteTitle = computed(() =>
 
 const deleteDescription = computed(() => {
   if (!deleteTargets.value.length) {
-    return 'Esta acao e irreversivel.'
+    return 'Esta ação e irreversivel.'
   }
 
   if (deleteTargets.value.length === 1) {
-    return 'O registro sera removido junto com eventos relacionados de desbloqueio e auditoria.'
+    return 'O registro será removido junto com eventos relacionados de desbloqueio e auditoria.'
   }
 
   return 'Os registros selecionados serao removidos em lote junto com os eventos relacionados.'
@@ -511,10 +511,10 @@ async function fetchHistory() {
 
     const liveCount = rentals.value.filter((rental) => canOverride(rental.status)).length
     if (liveCount > 0) {
-      loadWarning.value = `${liveCount} registro(s) seguem em andamento. Use a liberacao operacional apenas quando a operacao tiver confirmado o atendimento presencial.`
+      loadWarning.value = `${liveCount} registro(s) seguem em andamento. Use a liberacao operacional apenas quando a operação tiver confirmado o atendimento presencial.`
     }
   } catch (error) {
-    toastError(getApiErrorMessage(error, 'Falha ao carregar historico de alugueis.'))
+    toastError(getApiErrorMessage(error, 'Falha ao carregar histórico de alugueis.'))
   } finally {
     isLoading.value = false
   }

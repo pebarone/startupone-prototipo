@@ -28,7 +28,7 @@
           <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Visao geral</p>
           <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Bom dia, {{ firstName }}</h1>
           <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Acompanhe ocupacao, receita e operacao da organizacao {{ currentOrganization?.name || 'ativa' }} em um unico painel.
+            Acompanhe ocupacao, receita e operação da organizacao {{ currentOrganization?.name || 'ativa' }} em um unico painel.
           </p>
         </div>
 

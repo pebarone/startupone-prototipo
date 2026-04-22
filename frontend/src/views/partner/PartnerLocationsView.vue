@@ -308,9 +308,9 @@
 
     <ConfirmDialog
       v-model="showDeleteModal"
-      title="Excluir localizacao?"
+      title="Excluir localização?"
       :description="deleteDescription"
-      confirm-label="Excluir localizacao"
+      confirm-label="Excluir localização"
       :loading="isDeletingLocation"
       :details="deleteDetails"
       @confirm="confirmLocationDelete"
@@ -407,10 +407,10 @@ const formattedLongitude = computed(() =>
 
 const deleteDescription = computed(() => {
   if (!locationPendingDelete.value) {
-    return 'Esta acao remove a localizacao de forma permanente.'
+    return 'Esta ação remove a localização de forma permanente.'
   }
 
-  return `A localizacao ${locationPendingDelete.value.name} sera removida permanentemente.`
+  return `A localização ${locationPendingDelete.value.name} será removida permanentemente.`
 })
 
 const deleteDetails = computed(() => {
@@ -597,7 +597,7 @@ async function saveLocation() {
       selectedLocationId.value = savedLocationId
     }
   } catch (error) {
-    formError.value = getApiErrorMessage(error, 'Nao foi possivel salvar a localizacao.')
+    formError.value = getApiErrorMessage(error, 'Nao foi possivel salvar a localização.')
   } finally {
     isSaving.value = false
   }
@@ -620,7 +620,7 @@ async function confirmLocationDelete() {
 
   try {
     await api.delete(`/organizations/${orgId}/locations/${locationPendingDelete.value.id}`)
-    success('Localizacao removida.')
+    success('Localização removida.')
 
     if (selectedLocationId.value === locationPendingDelete.value.id) {
       selectedLocationId.value = ''
@@ -630,7 +630,7 @@ async function confirmLocationDelete() {
     locationPendingDelete.value = null
     await fetchLocations()
   } catch (error) {
-    toastError(getApiErrorMessage(error, 'Nao foi possivel excluir a localizacao.'))
+    toastError(getApiErrorMessage(error, 'Nao foi possivel excluir a localização.'))
   } finally {
     isDeletingLocation.value = false
   }

@@ -47,7 +47,7 @@
       <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
         <div class="border-b border-slate-100 px-4 py-4 sm:px-6">
           <p class="text-sm font-bold text-slate-800">Acessos da organizacao</p>
-          <p class="mt-1 text-xs leading-5 text-slate-400">O convite continua visivel ate que o membro aceite ou seja desativado.</p>
+          <p class="mt-1 text-xs leading-5 text-slate-400">O convite continua visivel até que o membro aceite ou seja desativado.</p>
         </div>
 
         <div v-if="members.length === 0" class="px-6 py-12 text-center">

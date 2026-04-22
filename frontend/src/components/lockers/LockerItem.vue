@@ -100,7 +100,7 @@ const statusLabel = computed(() => {
   return {
     free: 'Livre',
     occupied: 'Ocupado',
-    maintenance: 'Manutencao'
+    maintenance: 'Manutenção'
   }[props.locker.status] || props.locker.status
 })
 
@@ -181,7 +181,7 @@ const svgUid = computed(() => String(props.locker.id || props.locker.code || 'lo
 const frameGradientId = computed(() => `locker-frame-${svgUid.value}`)
 const doorGradientId = computed(() => `locker-door-${svgUid.value}`)
 
-const ariaLabel = computed(() => `Armario ${props.locker.code}, tamanho ${sizeLabel.value}, status ${statusLabel.value}`)
+const ariaLabel = computed(() => `Armário ${props.locker.code}, tamanho ${sizeLabel.value}, status ${statusLabel.value}`)
 
 function handleSelect() {
   if (isButtonDisabled.value) {

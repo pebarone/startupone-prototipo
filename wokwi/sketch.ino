@@ -10,7 +10,7 @@ const char* WIFI_SSID = "Wokwi-GUEST";
 const char* WIFI_PASSWORD = "";
 
 const char* API_BASE = "https://fast-lock-monolito.ambitiousriver-98471daa.eastus.azurecontainerapps.io/api";
-const char* LOCATION_ID = "7b77668b-3b10-4f71-ba0a-8befc2ea0342";
+const char* LOCATION_ID = "2a5c4947-f038-4bea-b1c8-b676461053bd";
 
 const unsigned long LOCKERS_POLL_INTERVAL_MS = 4000;
 const unsigned long CONTEXT_SLOT_INTERVAL_MS = 750;
@@ -70,11 +70,11 @@ struct LockerNode {
 };
 
 LockerNode lockers[] = {
-  LockerNode("c39b918f-cc05-4a3a-b8fb-48fe2762e883", "LCK-026", 13, 2, 25),
-  LockerNode("8f82a5c4-d978-404e-bcc0-a10a88337f17", "LCK-027", 14, 4, 26),
-  LockerNode("59bd9cf7-a9a6-470c-8cc6-50ace1480837", "LCK-028", 16, 5, 27),
-  LockerNode("21434570-d49d-4a49-aba4-68f7cca8c495", "LCK-029", 17, 19, 32),
-  LockerNode("3d1951ce-91aa-47f9-8112-e3b63b7955dc", "LCK-030", 18, 23, 33)
+  LockerNode("65ddd4ee-226f-46c1-88e8-a49a21c4930b", "ANL-001", 13, 2, 25),
+  LockerNode("4e01bca6-88f6-4169-8976-136cbf0c2d52", "ANL-002", 14, 4, 26),
+  LockerNode("dabf29da-c3b7-48b5-a80b-8b63be946f21", "ANL-003", 16, 5, 27),
+  LockerNode("c2cc0a66-8386-48d7-b2e4-e0977fc8353d", "ANL-004", 17, 19, 32),
+  LockerNode("d43ad7b6-ce53-457c-a6a8-12aa67664b87", "ANL-005", 18, 23, 33)
 };
 
 LiquidCrystal_I2C lockerLcds[] = {

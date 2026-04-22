@@ -10,10 +10,10 @@
     <template v-else>
       <div class="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Operacao</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Operação</p>
           <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Lockers da organizacao</h1>
           <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Cadastre, organize e vincule cada locker a uma localizacao para manter o mapa publico e a operacao coerentes.
+            Cadastre, organize e vincule cada locker a uma localização para manter o mapa publico e a operação coerentes.
           </p>
         </div>
 
@@ -51,12 +51,12 @@
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Com localizacao</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Com localização</p>
               <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ assignedLockersCount }}</p>
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Sem localizacao</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Sem localização</p>
               <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ unassignedLockersCount }}</p>
             </div>
 
@@ -73,7 +73,7 @@
 
             <div class="mt-4">
               <label for="location-filter" class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Localizacao
+                Localização
               </label>
               <select
                 id="location-filter"
@@ -81,7 +81,7 @@
                 class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/30"
               >
                 <option value="all">Todas ({{ locationFilterCount('all') }})</option>
-                <option value="unassigned">Sem localizacao ({{ locationFilterCount('unassigned') }})</option>
+                <option value="unassigned">Sem localização ({{ locationFilterCount('unassigned') }})</option>
                 <option v-for="location in locations" :key="location.id" :value="location.id">
                   {{ location.name }} ({{ locationFilterCount(location.id) }})
                 </option>
@@ -94,7 +94,7 @@
           <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
-              <p class="mt-1 text-sm text-slate-500">Priorize a visualizacao por disponibilidade ou manutencao.</p>
+              <p class="mt-1 text-sm text-slate-500">Priorize a visualizacao por disponibilidade ou manutenção.</p>
             </div>
 
             <div class="flex flex-wrap gap-2">
@@ -125,7 +125,7 @@
         </div>
         <h2 class="mt-5 text-xl font-black tracking-tight text-slate-900">Nenhum locker cadastrado.</h2>
         <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
-          Crie o primeiro locker e vincule-o a uma localizacao para aparecer no mapa publico.
+          Crie o primeiro locker e vincule-o a uma localização para aparecer no mapa publico.
         </p>
         <button
           v-if="canAdmin"
@@ -139,7 +139,7 @@
 
       <div v-else-if="!filteredLockers.length" class="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <p class="text-sm font-semibold text-slate-700">Nenhum locker encontrado com os filtros selecionados.</p>
-        <p class="mt-2 text-sm text-slate-500">Troque o status ou amplie a localizacao para recuperar os lockers.</p>
+        <p class="mt-2 text-sm text-slate-500">Troque o status ou amplie a localização para recuperar os lockers.</p>
       </div>
 
       <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -170,7 +170,7 @@
 
           <dl class="mt-4 grid gap-3 sm:grid-cols-2">
             <div class="min-w-0">
-              <dt class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Localizacao</dt>
+              <dt class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Localização</dt>
               <dd class="mt-1">
                 <span
                   class="inline-flex max-w-full truncate rounded-full border px-2.5 py-1 text-xs font-semibold"
@@ -228,7 +228,7 @@
                 :disabled="updatingId === locker.id || deletingId === locker.id"
                 @click="patchStatus(locker.id, 'maintenance')"
               >
-                {{ locker.status === 'free' ? 'Em manutencao' : 'Manutencao' }}
+                {{ locker.status === 'free' ? 'Em manutenção' : 'Manutenção' }}
               </button>
             </div>
           </div>
@@ -245,7 +245,7 @@
     >
       <div class="space-y-5">
         <div>
-          <label for="locker-code" class="mb-1.5 block text-sm font-medium text-slate-700">Codigo *</label>
+          <label for="locker-code" class="mb-1.5 block text-sm font-medium text-slate-700">Código *</label>
           <input
             id="locker-code"
             v-model="lockerForm.code"
@@ -277,13 +277,13 @@
         </div>
 
         <div>
-          <label for="locker-location" class="mb-1.5 block text-sm font-medium text-slate-700">Localizacao</label>
+          <label for="locker-location" class="mb-1.5 block text-sm font-medium text-slate-700">Localização</label>
           <select
             id="locker-location"
             v-model="lockerForm.location_id"
             class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           >
-            <option value="">Sem localizacao</option>
+            <option value="">Sem localização</option>
             <option v-for="location in locations" :key="location.id" :value="location.id">
               {{ location.name }}
             </option>
@@ -343,7 +343,7 @@
           </div>
 
           <div>
-            <label for="bulk-start" class="mb-1.5 block text-sm font-medium text-slate-700">Numero inicial</label>
+            <label for="bulk-start" class="mb-1.5 block text-sm font-medium text-slate-700">Número inicial</label>
             <input
               id="bulk-start"
               v-model.number="bulkForm.startAt"
@@ -383,13 +383,13 @@
           </div>
 
           <div>
-            <label for="bulk-location" class="mb-1.5 block text-sm font-medium text-slate-700">Localizacao</label>
+            <label for="bulk-location" class="mb-1.5 block text-sm font-medium text-slate-700">Localização</label>
             <select
               id="bulk-location"
               v-model="bulkForm.location_id"
               class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
-              <option value="">Sem localizacao</option>
+              <option value="">Sem localização</option>
               <option v-for="location in locations" :key="location.id" :value="location.id">
                 {{ location.name }}
               </option>
@@ -531,7 +531,7 @@ const filters = [
   { label: 'Todos', value: 'all' },
   { label: 'Livres', value: 'free' },
   { label: 'Ocupados', value: 'occupied' },
-  { label: 'Manutencao', value: 'maintenance' }
+  { label: 'Manutenção', value: 'maintenance' }
 ]
 
 const LOCKERS_FETCH_LIMIT = 100
@@ -610,7 +610,7 @@ const activeLocationFilterLabel = computed(() => {
   }
 
   if (activeLocationFilter.value === 'unassigned') {
-    return 'Sem localizacao'
+    return 'Sem localização'
   }
 
   return locationLabel(activeLocationFilter.value)
@@ -637,10 +637,10 @@ const bulkPreview = computed(() => {
 
 const deleteDescription = computed(() => {
   if (!lockerPendingDelete.value) {
-    return 'Esta acao remove o locker de forma permanente.'
+    return 'Esta ação remove o locker de forma permanente.'
   }
 
-  return `O locker ${lockerPendingDelete.value.code} sera removido de forma permanente.`
+  return `O locker ${lockerPendingDelete.value.code} será removido de forma permanente.`
 })
 
 const deleteDetails = computed(() => {
@@ -651,7 +651,7 @@ const deleteDetails = computed(() => {
   return [
     `Locker ${lockerPendingDelete.value.code}`,
     `Status atual: ${statusLabel(lockerPendingDelete.value.status)}`,
-    `Localizacao: ${locationLabel(lockerPendingDelete.value.location_id)}`
+    `Localização: ${locationLabel(lockerPendingDelete.value.location_id)}`
   ]
 })
 
@@ -910,10 +910,10 @@ function locationFilterCount(filterValue) {
  */
 function locationLabel(locationId) {
   if (!locationId) {
-    return 'Sem localizacao'
+    return 'Sem localização'
   }
 
-  return locations.value.find((location) => location.id === locationId)?.name || 'Localizacao'
+  return locations.value.find((location) => location.id === locationId)?.name || 'Localização'
 }
 
 /**
@@ -936,7 +936,7 @@ function statusLabel(status) {
   return {
     free: 'Livre',
     occupied: 'Ocupado',
-    maintenance: 'Manutencao'
+    maintenance: 'Manutenção'
   }[status] || status
 }
 

@@ -277,5 +277,5 @@ export function formatNominatimName(address, displayName = '') {
   }
 
   const summary = formatNominatimAddress(address, displayName)
-  return summary.split(' | ')[0]?.split(',')[0]?.trim() || 'Localizacao'
+  return summary.split(' | ')[0]?.split(',')[0]?.trim() || 'Localização'
 }

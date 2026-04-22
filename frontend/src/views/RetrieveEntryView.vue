@@ -6,7 +6,7 @@
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Retirada inteligente</p>
             <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Buscar armarios vinculados</h1>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Use sua biometria para localizar os armarios ativos. Os resultados aparecem agrupados por localizacao.</p>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Use sua biometria para localizar os armarios ativos. Os resultados aparecem agrupados por localização.</p>
           </div>
 
           <button
@@ -42,11 +42,11 @@
         >
           <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Localizacao</p>
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Localização</p>
               <h2 class="mt-1 text-xl font-black tracking-tight text-slate-900">{{ group.locationName }}</h2>
               <p v-if="group.locationAddress" class="mt-1 text-xs text-slate-500">{{ group.locationAddress }}</p>
             </div>
-            <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">{{ group.lockers.length }} armario{{ group.lockers.length > 1 ? 's' : '' }}</span>
+            <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">{{ group.lockers.length }} armário{{ group.lockers.length > 1 ? 's' : '' }}</span>
           </div>
 
           <LockerGrid
@@ -56,16 +56,16 @@
             :require-available="false"
             :animate-all="true"
             :global-animation-state="lockerAnimationState"
-            empty-message="Nenhum armario ativo neste local."
+            empty-message="Nenhum armário ativo neste local."
             @select="openRentalLocker"
           />
 
-          <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Toque em um armario para abrir os detalhes da retirada.</p>
+          <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Toque em um armário para abrir os detalhes da retirada.</p>
         </article>
       </section>
 
       <section v-else-if="hasSearched" class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-        Nenhum armario ativo foi localizado para esta biometria agora.
+        Nenhum armário ativo foi localizado para esta biometria agora.
       </section>
 
       <section v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
