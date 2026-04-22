@@ -23,30 +23,34 @@
 
     <div v-else>
 
-      <!-- Page header -->
-      <div class="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
+      <div class="mb-6 flex flex-col gap-4 sm:mb-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 class="text-2xl font-black text-slate-900 tracking-tight">
-            Bom dia, {{ firstName }}
-          </h1>
-          <p class="text-slate-400 text-sm mt-1">{{ currentOrganization?.name }} · última atualização agora</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">Visao geral</p>
+          <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Bom dia, {{ firstName }}</h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Acompanhe ocupacao, receita e operacao da organizacao {{ currentOrganization?.name || 'ativa' }} em um unico painel.
+          </p>
         </div>
-        <button
-          id="btn-refresh"
-          @click="fetchAll(true)"
-          :disabled="isRefreshing"
-          class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand-500 sm:w-auto"
-        >
-          <svg :class="['w-4 h-4', isRefreshing && 'animate-spin']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          Atualizar
-        </button>
+
+        <div class="flex flex-col gap-2 sm:items-end">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Atualizacao sob demanda</p>
+          <button
+            id="btn-refresh"
+            @click="fetchAll(true)"
+            :disabled="isRefreshing"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/25 transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand-500 sm:w-auto"
+          >
+            <svg :class="['w-4 h-4', isRefreshing && 'animate-spin']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Atualizar
+          </button>
+        </div>
       </div>
 
       <!-- KPI row — 4 cards -->
       <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Total de Lockers" :value="m.total_lockers ?? 0" delta="+0%" icon-color="#0ea5e9" :icon-path="icons.grid" />
+        <MetricCard label="Total de Lockers" :value="m.total_lockers ?? 0" delta="inventario atual" icon-color="#0ea5e9" :icon-path="icons.grid" />
         <MetricCard label="Lockers Livres" :value="m.free_lockers ?? 0" :delta="`${freeRate}% livre`" icon-color="#16a34a" :icon-path="icons.unlock" accent />
         <MetricCard label="Lockers Ocupados" :value="m.occupied_lockers ?? 0" :delta="`${occupiedRate}% ocupação`" icon-color="#d97706" :icon-path="icons.lock" />
         <MetricCard label="Aluguéis Ativos" :value="m.active_rentals ?? 0" delta="em andamento" icon-color="#7c3aed" :icon-path="icons.activity" />

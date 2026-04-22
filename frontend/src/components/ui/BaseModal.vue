@@ -8,19 +8,22 @@
       <!-- Backdrop -->
       <div
         class="absolute inset-0 bg-black/40"
+        aria-hidden="true"
         @mousedown="closeOnBackdrop && close()"
       />
 
       <!-- Panel -->
       <div
         :class="[
-          'relative z-10 w-full bg-white border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden flex flex-col',
+          'relative z-10 w-full bg-white border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden flex flex-col overscroll-contain',
           'rounded-t-2xl sm:rounded-2xl',
           'max-h-[92dvh] sm:max-h-[90vh] pb-safe',
           maxWidthClass
         ]"
         role="dialog"
+        aria-modal="true"
         :aria-label="title"
+        tabindex="-1"
       >
         <!-- Header -->
         <div v-if="title || $slots.header" class="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
@@ -40,7 +43,7 @@
         </div>
 
         <!-- Body — scrollable -->
-        <div class="px-5 py-5 overflow-y-auto flex-1">
+        <div class="px-5 py-5 overflow-y-auto flex-1 overscroll-contain">
           <slot />
         </div>
 
@@ -89,6 +92,12 @@ function handleWindowFocus() {
   recoverModalState()
 }
 
+function handleDocumentKeydown(event) {
+  if (event.key === 'Escape' && props.modelValue) {
+    close()
+  }
+}
+
 const maxWidthClass = computed(() => ({
   sm: 'sm:max-w-sm',
   md: 'sm:max-w-md',
@@ -111,10 +120,12 @@ watch(
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('keydown', handleDocumentKeydown)
 })
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('keydown', handleDocumentKeydown)
 })
 </script>

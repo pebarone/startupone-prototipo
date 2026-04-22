@@ -101,15 +101,15 @@
                 <BaseBadge :variant="roleVariant(membership.role)" variant-prefix="light" class="hidden sm:inline-flex">
                   {{ roleLabel(membership.role) }}
                 </BaseBadge>
-                <a
-                  :href="`/partner/${membership.organization_id}/dashboard`"
+                <RouterLink
+                  :to="`/partner/${membership.organization_id}/dashboard`"
                   class="inline-flex items-center gap-1 min-h-[44px] px-2 text-sm font-semibold text-brand-600 hover:text-brand-500 transition-colors"
                 >
                   Acessar
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                   </svg>
-                </a>
+                </RouterLink>
               </div>
             </div>
           </div>

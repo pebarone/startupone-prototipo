@@ -54,13 +54,13 @@
           <p class="mt-2 text-sm leading-6 text-slate-600">
             Este aluguel ainda esta aguardando o cadastro da biometria no celular que iniciou a ativacao.
           </p>
-          <a
+          <RouterLink
             v-if="rental.locker?.id"
-            :href="`/locker/${rental.locker.id}`"
+            :to="`/locker/${rental.locker.id}`"
             class="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
           >
             Voltar para a ativacao
-          </a>
+          </RouterLink>
         </div>
 
         <div v-else-if="rental.status === 'pending_activation_payment'" class="rounded-2xl border border-violet-200 bg-violet-50 px-6 py-6 text-center shadow-sm">
@@ -68,13 +68,13 @@
           <p class="mt-2 text-sm leading-6 text-slate-600">
             A biometria já foi cadastrada, mas o PIX inicial ainda não foi confirmado. O locker continua disponível até esse pagamento.
           </p>
-          <a
+          <RouterLink
             v-if="rental.locker?.id"
-            :href="`/locker/${rental.locker.id}`"
+            :to="`/locker/${rental.locker.id}`"
             class="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
           >
             Concluir ativacao
-          </a>
+          </RouterLink>
         </div>
 
         <div v-else-if="rental.status === 'active'" class="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-center shadow-sm">
@@ -225,9 +225,9 @@
           </div>
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <a href="/use" class="inline-flex h-11 items-center justify-center rounded-xl bg-white px-6 text-sm font-semibold text-brand-700 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-50">
+            <RouterLink to="/use" class="inline-flex h-11 items-center justify-center rounded-xl bg-white px-6 text-sm font-semibold text-brand-700 transition-[background-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-brand-50">
               Novo aluguel
-            </a>
+            </RouterLink>
           </div>
         </div>
       </template>

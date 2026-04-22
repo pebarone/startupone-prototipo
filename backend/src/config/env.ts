@@ -1,4 +1,10 @@
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 const DEFAULT_PORT = 3333;
+
+loadLocalEnvFiles();
 
 function readNumber(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -42,6 +48,56 @@ function normalizeWebAuthnRpId(value: string): string {
       .replace(/^https?:\/\//i, "")
       .replace(/\/.*$/, "")
       .replace(/:\d+$/, "");
+  }
+}
+
+function loadLocalEnvFiles() {
+  const configDir = dirname(fileURLToPath(import.meta.url));
+  const backendRoot = resolve(configDir, "../..");
+  const envFiles = [
+    resolve(backendRoot, ".env.local"),
+    resolve(backendRoot, ".env")
+  ];
+
+  for (const envFilePath of envFiles) {
+    loadEnvFile(envFilePath);
+  }
+}
+
+function loadEnvFile(filePath: string) {
+  if (!existsSync(filePath)) {
+    return;
+  }
+
+  const content = readFileSync(filePath, "utf8");
+
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)$/);
+    if (!match) {
+      continue;
+    }
+
+    const [, key, rawValue] = match;
+    let value = rawValue.trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    value = value.replace(/\\n/g, "\n");
+
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
   }
 }
 

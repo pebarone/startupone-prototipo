@@ -3,7 +3,7 @@
     :type="type"
     :disabled="disabled || loading"
     :class="[
-      'relative inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+      'relative inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-[background-color,color,border-color,box-shadow,transform,opacity] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
       sizeClass,
       variantClass,
       (disabled || loading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'

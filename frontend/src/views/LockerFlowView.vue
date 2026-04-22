@@ -382,9 +382,9 @@
             >
               Voltar ao locker
             </button>
-            <a href="/use" class="inline-flex h-11 items-center justify-center rounded-xl border border-white/30 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+            <RouterLink to="/use" class="inline-flex h-11 items-center justify-center rounded-xl border border-white/30 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10">
               Escolher outro locker
-            </a>
+            </RouterLink>
           </div>
         </section>
       </template>

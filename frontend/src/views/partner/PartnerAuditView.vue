@@ -47,36 +47,39 @@
         </div>
       </div>
 
-      <div class="mb-5 flex flex-col gap-3 xl:flex-row xl:items-end">
-        <div class="flex-1">
-          <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Filtrar por localizacao
-          </label>
-          <select
-            v-model="selectedLocationId"
-            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
-            @change="page = 1; clearSelection(); fetchHistory()"
-          >
-            <option value="">Todas as localizacoes</option>
-            <option v-for="loc in locations" :key="loc.id" :value="loc.id">{{ loc.name }}</option>
-          </select>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <div class="flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-slate-100 p-1">
-            <button
-              v-for="filter in statusFilters"
-              :key="filter.value"
-              type="button"
-              class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-              :class="statusFilter === filter.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
-              @click="statusFilter = filter.value"
+      <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div class="xl:max-w-sm">
+            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Filtrar por localizacao
+            </label>
+            <select
+              v-model="selectedLocationId"
+              class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              @change="page = 1; clearSelection(); fetchHistory()"
             >
-              {{ filter.label }}
-            </button>
+              <option value="">Todas as localizacoes</option>
+              <option v-for="loc in locations" :key="loc.id" :value="loc.id">{{ loc.name }}</option>
+            </select>
+          </div>
+
+          <div class="flex-1">
+            <p class="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Status</p>
+            <div class="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-slate-100 p-1">
+              <button
+                v-for="filter in statusFilters"
+                :key="filter.value"
+                type="button"
+                class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                :class="statusFilter === filter.value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                @click="statusFilter = filter.value"
+              >
+                {{ filter.label }}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <div v-if="loadWarning" class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
         {{ loadWarning }}

@@ -2,58 +2,60 @@
   <BaseModal :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" title="Criar Organização" max-width="md" @close="$emit('update:modelValue', false)">
     <!-- Step 1: Name -->
     <div v-if="step === 1">
-      <p class="text-slate-400 text-sm mb-6">
+      <p class="mb-6 text-sm text-slate-500">
         Sua organização representa seu negócio na plataforma FastLock. Você será o proprietário e poderá convidar membros da equipe.
       </p>
       <div class="space-y-4">
         <div>
-          <label for="org-name" class="block text-sm font-medium text-slate-300 mb-2">Nome da Organização *</label>
+          <label for="org-name" class="mb-2 block text-sm font-medium text-slate-700">Nome da Organização *</label>
           <input
             id="org-name"
             v-model="form.name"
             type="text"
-            placeholder="Ex: Shopping Paulista"
+            name="organization_name"
+            autocomplete="organization"
+            placeholder="Ex.: Shopping Paulista"
             maxlength="80"
-            class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors text-sm"
+            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
             @keyup.enter="nextStep"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Slug (URL amigável)</label>
-          <div class="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-            <span class="text-slate-500 text-sm">fastlock.app/</span>
-            <span class="text-white text-sm font-mono">{{ generatedSlug || '...' }}</span>
+          <label class="mb-2 block text-sm font-medium text-slate-700">Slug (URL amigável)</label>
+          <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <span class="text-sm text-slate-500">fastlock.app/</span>
+            <span class="text-sm font-mono text-slate-900">{{ generatedSlug || '...' }}</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1">Gerado automaticamente. Pode ser personalizado após a criação.</p>
+          <p class="mt-1 text-xs text-slate-500">Gerado automaticamente. Pode ser personalizado após a criação.</p>
         </div>
       </div>
 
-      <div v-if="errorMsg" class="mt-4 p-3 rounded-xl bg-red-950/60 border border-red-800/60 text-red-400 text-sm">
+      <div v-if="errorMsg" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
         {{ errorMsg }}
       </div>
     </div>
 
     <!-- Step 2: Confirming -->
     <div v-else-if="step === 2" class="text-center py-4">
-      <div class="w-16 h-16 rounded-2xl bg-brand-600/20 border border-brand-600/40 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50">
+        <svg class="h-8 w-8 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
         </svg>
       </div>
-      <h3 class="text-lg font-bold text-white mb-1">{{ form.name }}</h3>
-      <p class="text-slate-400 text-sm mb-6">Confirme a criação da sua organização</p>
-      <div class="bg-slate-800/60 rounded-xl p-4 text-left space-y-2 mb-2">
+      <h3 class="mb-1 text-lg font-bold text-slate-900">{{ form.name }}</h3>
+      <p class="mb-6 text-sm text-slate-500">Confirme a criação da sua organização</p>
+      <div class="mb-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-400">Nome</span>
-          <span class="text-white font-medium">{{ form.name }}</span>
+          <span class="text-slate-500">Nome</span>
+          <span class="font-medium text-slate-900">{{ form.name }}</span>
         </div>
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-400">Slug</span>
-          <span class="text-white font-mono text-xs">{{ generatedSlug }}</span>
+          <span class="text-slate-500">Slug</span>
+          <span class="font-mono text-xs text-slate-900">{{ generatedSlug }}</span>
         </div>
         <div class="flex items-center justify-between text-sm">
-          <span class="text-slate-400">Seu papel</span>
-          <span class="text-brand-400 font-semibold">Proprietário</span>
+          <span class="text-slate-500">Seu papel</span>
+          <span class="font-semibold text-brand-700">Proprietário</span>
         </div>
       </div>
     </div>
@@ -62,7 +64,7 @@
       <button
         v-if="step === 1"
         @click="$emit('update:modelValue', false)"
-        class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+        class="rounded-xl px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
       >
         Cancelar
       </button>
@@ -70,7 +72,7 @@
         v-if="step === 2"
         @click="step = 1"
         :disabled="isCreating"
-        class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-40"
+        class="rounded-xl px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 disabled:opacity-40"
       >
         Voltar
       </button>

@@ -3,8 +3,9 @@
 
     <!-- ─── Sidebar ─── -->
     <aside
+      id="partner-sidebar"
       :class="[
-        'fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-slate-100 transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]',
+        'fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-slate-100 transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overscroll-contain',
         isMobile ? 'w-[88vw] max-w-[320px] shadow-xl' : 'shadow-sm',
         isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0',
         isMobile && !sidebarOpen ? 'pointer-events-none' : 'pointer-events-auto',
@@ -32,7 +33,10 @@
         <button
           v-show="sidebarOpen"
           @click="sidebarOpen = false"
-          class="ml-auto p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
+          class="ml-auto flex h-10 w-10 items-center justify-center rounded-lg text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+          aria-label="Recolher menu lateral"
+          aria-controls="partner-sidebar"
+          aria-expanded="true"
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7"/>
@@ -42,7 +46,10 @@
         <button
           v-show="!sidebarOpen"
           @click="sidebarOpen = true"
-          class="ml-auto p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
+          class="ml-auto flex h-10 w-10 items-center justify-center rounded-lg text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+          aria-label="Expandir menu lateral"
+          aria-controls="partner-sidebar"
+          aria-expanded="false"
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7"/>
@@ -54,7 +61,7 @@
       <div v-if="currentOrganization" class="px-3 pt-3 pb-1">
         <div
           :class="[
-            'rounded-xl p-2.5 transition-all duration-200',
+            'rounded-xl p-2.5 transition-[background-color,border-color,transform,box-shadow] duration-200',
             sidebarOpen ? 'bg-brand-50 border border-brand-100' : 'flex justify-center'
           ]"
         >
@@ -91,7 +98,7 @@
           @click="userMenuOpen = !userMenuOpen"
         >
           <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-slate-100">
-            <img v-if="user.avatar_url" :src="user.avatar_url" class="w-full h-full object-cover" />
+            <img v-if="user.avatar_url" :src="user.avatar_url" :alt="user.full_name || 'Avatar da conta'" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold">
               {{ initials }}
             </div>
@@ -151,9 +158,11 @@
             {{ roleLabel }}
           </span>
           <button
-            class="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            class="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg hover:bg-slate-100 text-slate-500 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
             @click="sidebarOpen = !sidebarOpen"
-            aria-label="Abrir menu"
+            :aria-label="sidebarOpen ? 'Fechar menu' : 'Abrir menu'"
+            aria-controls="partner-sidebar"
+            :aria-expanded="sidebarOpen ? 'true' : 'false'"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -467,7 +476,7 @@ export const SidebarLink = defineComponent({
     return () => h(RouterLink, {
       to: props.to,
       class: [
-        'flex items-center h-11 rounded-xl transition-all duration-150 active:scale-[0.98]',
+        'flex items-center h-11 rounded-xl transition-[background-color,color,transform,box-shadow] duration-150 active:scale-[0.98]',
         props.collapsed ? 'w-11 justify-center mx-auto' : 'gap-3 px-3',
         isActive.value
           ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/25'

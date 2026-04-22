@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="locker-item group relative block w-full outline-none transition-all duration-300"
+    class="locker-item group relative block w-full transition-[transform,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
     :class="[
       isButtonDisabled ? 'cursor-default' : 'cursor-pointer',
       selected ? 'z-10' : 'z-0'
@@ -12,7 +12,7 @@
   >
     <div v-if="selected" class="absolute -inset-1.5 rounded-2xl bg-brand-500/20 blur-md" />
 
-    <div class="relative overflow-hidden rounded-2xl border p-1.5 shadow-sm transition-all duration-300" :class="[shellClass, sizeClass]">
+    <div class="relative overflow-hidden rounded-2xl border p-1.5 shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-300" :class="[shellClass, sizeClass]">
       <svg viewBox="0 0 124 150" class="h-full w-full" role="img" aria-hidden="true">
         <defs>
           <linearGradient :id="frameGradientId" x1="0" y1="0" x2="0" y2="1">

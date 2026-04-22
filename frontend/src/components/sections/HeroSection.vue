@@ -22,18 +22,18 @@
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto buttons opacity-0 translate-y-4">
-          <a href="/use" class="px-8 py-4 rounded-xl bg-slate-900 text-white font-semibold hover:bg-brand-900 hover:shadow-2xl hover:shadow-brand-900/40 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden group">
+          <RouterLink to="/use" class="px-8 py-4 rounded-xl bg-slate-900 text-white font-semibold hover:bg-brand-900 hover:shadow-2xl hover:shadow-brand-900/40 transition-[background-color,box-shadow,transform] duration-500 hover:-translate-y-1 relative overflow-hidden group">
             <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></span>
             <span class="relative z-10 flex items-center justify-center gap-2">
               Quero Guardar Algo
               <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </span>
-          </a>
+          </RouterLink>
           
-          <a :href="partnerEntryHref" class="px-8 py-4 rounded-xl bg-white text-slate-900 border border-slate-200 font-semibold hover:border-brand-300 hover:bg-brand-50 transition-all duration-300 relative flex items-center justify-center gap-2 group">
+          <RouterLink :to="partnerEntryHref" class="px-8 py-4 rounded-xl bg-white text-slate-900 border border-slate-200 font-semibold hover:border-brand-300 hover:bg-brand-50 transition-[background-color,border-color,transform] duration-300 relative flex items-center justify-center gap-2 group">
             <svg class="w-5 h-5 text-brand-600 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
             Tornar-se Parceiro
-          </a>
+          </RouterLink>
         </div>
         
         <div class="mt-12 flex items-center gap-[-10px] avatars opacity-0 translate-y-4">

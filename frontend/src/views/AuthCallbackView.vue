@@ -4,7 +4,7 @@
     <div class="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-emerald-300/10 rounded-full blur-3xl pointer-events-none" />
 
     <div class="relative z-10 flex flex-col items-center gap-6 text-center">
-      <a href="/" class="flex items-center gap-2 mb-2">
+      <RouterLink to="/" class="flex items-center gap-2 mb-2">
         <div class="w-10 h-10 rounded-xl bg-brand-900 flex items-center justify-center text-white shadow-lg">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -18,7 +18,7 @@
         <span class="font-heading font-black text-xl tracking-tight text-slate-900">
           Fast<span class="text-brand-600">Lock</span>
         </span>
-      </a>
+      </RouterLink>
 
       <div v-if="state === 'loading'" class="flex flex-col items-center gap-4">
         <div class="relative w-10 h-10">
@@ -51,12 +51,12 @@
         </div>
         <p class="text-slate-900 font-semibold">Falha na autenticação</p>
         <p class="text-slate-500 text-sm mt-1 mb-4">{{ errorMsg }}</p>
-        <a
-          href="/login"
+        <RouterLink
+          to="/login"
           class="inline-block px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-brand-900 transition-colors"
         >
           Tentar novamente
-        </a>
+        </RouterLink>
       </div>
     </div>
   </div>

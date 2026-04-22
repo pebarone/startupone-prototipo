@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 w-80" aria-live="polite" aria-label="Notificações">
+    <div class="fixed inset-x-4 bottom-4 z-[100] flex flex-col gap-2 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-80" aria-live="polite" aria-label="Notificações">
       <TransitionGroup name="toast" tag="div" class="flex flex-col gap-2">
         <div
           v-for="t in toasts"
@@ -37,7 +37,7 @@
 
           <!-- Dismiss X -->
           <button
-            class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-slate-500"
+            class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-100 transition-opacity hover:text-slate-500 sm:opacity-0 sm:group-hover:opacity-100"
             :aria-label="'Fechar notificação'"
             @click.stop="dismiss(t.id)"
           >

@@ -30,6 +30,23 @@
         </button>
       </div>
 
+      <div v-if="locations.length" class="mb-6 grid gap-3 sm:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pontos cadastrados</p>
+          <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ locations.length }}</p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Lockers vinculados</p>
+          <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ totalLinkedLockers }}</p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Lockers livres</p>
+          <p class="mt-2 text-3xl font-black tracking-tight text-slate-900">{{ totalFreeLockers }}</p>
+        </div>
+      </div>
+
       <div v-if="!locations.length" class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
           <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,8 +67,13 @@
         </button>
       </div>
 
-      <div v-else class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div v-else class="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside class="space-y-4">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Lista de pontos</p>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Selecione um local para destacar o pin no mapa e revisar a ocupacao daquele ponto.</p>
+          </div>
+
           <article
             v-for="location in locations"
             :key="location.id"
@@ -104,6 +126,11 @@
         </aside>
 
         <section class="space-y-4">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Mapa</p>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Confira a distribuicao dos pontos e use a selecao lateral para revisar um local especifico.</p>
+          </div>
+
           <LockerMap
             :locations="locations"
             :selected-location-id="selectedLocationId"
@@ -146,13 +173,15 @@
         <div class="grid gap-4 lg:grid-cols-2">
           <div>
             <label for="location-name" class="mb-1.5 block text-sm font-medium text-slate-700">Nome do ponto *</label>
-            <input
-              id="location-name"
-              v-model="form.name"
-              type="text"
-              placeholder="Ex: Estação da Sé"
-              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-            />
+          <input
+            id="location-name"
+            v-model="form.name"
+            type="text"
+            name="location_name"
+            autocomplete="organization"
+            placeholder="Ex.: Estação da Sé"
+            class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
           </div>
 
           <div>
@@ -162,7 +191,9 @@
                 id="location-address"
                 v-model="form.address"
                 type="text"
-                placeholder="Rua, numero, bairro, cidade"
+                name="location_address"
+                autocomplete="street-address"
+                placeholder="Rua, número, bairro, cidade…"
                 class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 @keyup.enter="searchLocation"
               />
@@ -228,29 +259,29 @@
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="mb-1.5 block text-xs font-medium text-slate-400">Taxa de ativa&#231;&#227;o (R$)</label>
-              <input v-model.number="form.initial_fee_reais" type="number" min="0" step="0.5" placeholder="5,00"
+              <input v-model.number="form.initial_fee_reais" type="number" name="initial_fee_reais" min="0" step="0.5" inputmode="decimal" placeholder="Ex.: 5,00…"
                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
             <div>
               <label class="mb-1.5 block text-xs font-medium text-slate-400">Locker P &#160;R$/h</label>
-              <input v-model.number="form.hourly_rate_small_reais" type="number" min="0" step="0.5" placeholder="5,00"
+              <input v-model.number="form.hourly_rate_small_reais" type="number" name="hourly_rate_small_reais" min="0" step="0.5" inputmode="decimal" placeholder="Ex.: 5,00…"
                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
             <div>
               <label class="mb-1.5 block text-xs font-medium text-slate-400">Locker M &#160;R$/h</label>
-              <input v-model.number="form.hourly_rate_medium_reais" type="number" min="0" step="0.5" placeholder="10,00"
+              <input v-model.number="form.hourly_rate_medium_reais" type="number" name="hourly_rate_medium_reais" min="0" step="0.5" inputmode="decimal" placeholder="Ex.: 10,00…"
                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
             <div>
               <label class="mb-1.5 block text-xs font-medium text-slate-400">Locker G &#160;R$/h</label>
-              <input v-model.number="form.hourly_rate_large_reais" type="number" min="0" step="0.5" placeholder="15,00"
+              <input v-model.number="form.hourly_rate_large_reais" type="number" name="hourly_rate_large_reais" min="0" step="0.5" inputmode="decimal" placeholder="Ex.: 15,00…"
                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
           </div>
           <p class="mt-2 text-xs text-slate-400">Valores em reais (R$). Cobran&#231;a por hora cheia usada pelo cliente.</p>
         </div>
 
-        <div v-if="formError" class="rounded-lg border border-red-800 bg-red-950/60 px-3.5 py-3 text-sm text-red-300">
+        <div v-if="formError" class="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">
           {{ formError }}
         </div>
       </div>
@@ -258,7 +289,7 @@
       <template #footer>
         <button
           type="button"
-          class="px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:text-white"
+          class="px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
           @click="showModal = false"
         >
           Cancelar
@@ -333,6 +364,14 @@ const form = ref({
 
 const selectedLocation = computed(() =>
   locations.value.find((location) => location.id === selectedLocationId.value) || null
+)
+
+const totalLinkedLockers = computed(() =>
+  locations.value.reduce((sum, location) => sum + Number(location.total_lockers || 0), 0)
+)
+
+const totalFreeLockers = computed(() =>
+  locations.value.reduce((sum, location) => sum + Number(location.free_lockers || 0), 0)
 )
 
 const hasCoordinates = computed(() =>

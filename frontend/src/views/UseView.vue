@@ -320,7 +320,7 @@ const selectedLocationDistanceLabel = computed(() => {
     lng: Number(selectedLocation.value.longitude)
   }))
 })
-const retrieveLink = computed(() => currentRental.value ? `${baseUrl}/retrieve` : '')
+const retrieveLink = computed(() => currentRental.value ? `${baseUrl}/retrieve/${currentRental.value.id}` : '')
 const retrieveQrUrl = computed(() => currentRental.value ? `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&format=svg&data=${encodeURIComponent(retrieveLink.value)}` : '')
 
 watch(selectedLocationId, (newId) => {

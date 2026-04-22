@@ -3,7 +3,7 @@
 
     <!-- Minimal top bar -->
     <div class="h-16 flex items-center px-6 lg:px-8 border-b border-slate-100 bg-white">
-      <a href="/" class="flex items-center gap-2 group">
+      <RouterLink to="/" class="flex items-center gap-2 group">
         <div class="w-8 h-8 rounded-lg bg-brand-900 flex items-center justify-center text-white group-hover:bg-brand-600 transition-colors duration-200">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -12,7 +12,7 @@
         <span class="font-heading font-black text-lg tracking-tight text-slate-900">
           Fast<span class="text-brand-600">Lock</span>
         </span>
-      </a>
+      </RouterLink>
     </div>
 
     <!-- Centered content -->
@@ -92,7 +92,7 @@
         </div>
 
         <p class="text-center text-xs text-slate-400 mt-6">
-          <a href="/" class="hover:text-slate-600 transition-colors">← Voltar para a página inicial</a>
+          <RouterLink to="/" class="hover:text-slate-600 transition-colors">← Voltar para a página inicial</RouterLink>
         </p>
 
       </div>

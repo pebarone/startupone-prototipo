@@ -3,8 +3,22 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    color-scheme: light;
+    scroll-padding-top: 6.5rem;
+  }
+
   body {
     @apply bg-slate-50 text-slate-900;
+  }
+
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid theme('colors.brand.600');
+    outline-offset: 2px;
+  }
+
+  section[id] {
+    scroll-margin-top: 6.5rem;
   }
 }
 
@@ -67,4 +81,19 @@ html {
 }
 .pr-safe {
   padding-right: env(safe-area-inset-right, 0px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -123,8 +123,15 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to) {
-    if (to.hash) return { el: to.hash, behavior: 'smooth' }
-    return { top: 0, behavior: 'smooth' }
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (to.hash) {
+      return { el: to.hash, top: 88, behavior: prefersReducedMotion ? 'auto' : 'smooth' }
+    }
+
+    return { top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' }
   }
 })
 
