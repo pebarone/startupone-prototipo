@@ -39,11 +39,11 @@ const props = defineProps({
 })
 
 const sizeClass = computed(() => ({
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-5 py-2.5 text-sm',
-  lg: 'px-6 py-3 text-base',
-  xl: 'px-8 py-4 text-base'
-}[props.size] || 'px-5 py-2.5 text-sm'))
+  sm: 'px-3 py-2 text-sm min-h-[40px]',
+  md: 'px-5 py-2.5 text-sm min-h-[44px]',
+  lg: 'px-6 py-3 text-base min-h-[48px]',
+  xl: 'px-8 py-4 text-base min-h-[52px]'
+}[props.size] || 'px-5 py-2.5 text-sm min-h-[44px]'))
 
 const variantClass = computed(() => ({
   primary: 'bg-brand-600 text-white hover:bg-brand-500 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-600/30 focus-visible:ring-brand-500',

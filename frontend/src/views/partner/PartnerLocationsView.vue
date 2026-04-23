@@ -172,20 +172,21 @@
       <div class="space-y-5">
         <div class="grid gap-4 lg:grid-cols-2">
           <div>
-            <label for="location-name" class="mb-1.5 block text-sm font-medium text-slate-700">Nome do ponto *</label>
-          <input
-            id="location-name"
-            v-model="form.name"
-            type="text"
-            name="location_name"
-            autocomplete="organization"
-            placeholder="Ex.: Estação da Sé"
-            class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          />
+            <label for="location-name" class="mb-1.5 block text-sm font-medium text-slate-700">Nome do ponto <span aria-label="obrigatório">*</span></label>
+            <input
+              id="location-name"
+              v-model="form.name"
+              type="text"
+              name="location_name"
+              autocomplete="organization"
+              placeholder="Ex.: Estação da Sé"
+              aria-required="true"
+              class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
           </div>
 
           <div>
-            <label for="location-address" class="mb-1.5 block text-sm font-medium text-slate-700">Endereço *</label>
+            <label for="location-address" class="mb-1.5 block text-sm font-medium text-slate-700">Endereço <span aria-label="obrigatório">*</span></label>
             <div class="flex gap-2">
               <input
                 id="location-address"
@@ -194,6 +195,8 @@
                 name="location_address"
                 autocomplete="street-address"
                 placeholder="Rua, número, bairro, cidade…"
+                aria-required="true"
+                aria-describedby="location-address-hint"
                 class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 @keyup.enter="searchLocation"
               />
@@ -205,7 +208,7 @@
                 {{ isSearching ? 'Buscando...' : 'Buscar' }}
               </button>
             </div>
-            <p class="mt-1 text-xs text-slate-400">Use o endereço mais completo possível para posicionar o pin.</p>
+            <p id="location-address-hint" class="mt-1 text-xs text-slate-400">Use o endereço mais completo possível para posicionar o pin.</p>
           </div>
         </div>
 

@@ -11,17 +11,17 @@
       
       <!-- Text Area -->
       <div class="flex flex-col items-start hero-text">
-        <h1 class="text-5xl lg:text-7xl font-heading font-black tracking-tight text-slate-900 leading-tight mb-6" style="clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);">
+        <h1 class="text-5xl lg:text-7xl font-heading font-black tracking-tight text-slate-900 leading-tight mb-6 will-change-transform" style="clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);">
           <span class="block translate-y-[100%] opacity-0 title-line">Guarde com</span>
           <span class="block text-brand-600 translate-y-[100%] opacity-0 title-line">Confiança.</span>
           <span class="block translate-y-[100%] opacity-0 title-line">Explore livre.</span>
         </h1>
         
-        <p class="text-lg text-slate-600 mb-10 max-w-xl subtitle opacity-0 translate-y-4">
+        <p class="text-lg text-slate-600 mb-10 max-w-xl subtitle opacity-0 translate-y-4 will-change-transform">
           Nós transformamos o espaço ocioso do comércio local num ponto seguro para seus itens. Acesso biométrico, cobrança justa por hora e seguro incluso — tudo pelo celular.
         </p>
 
-        <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto buttons opacity-0 translate-y-4">
+        <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto buttons opacity-0 translate-y-4 will-change-transform">
           <RouterLink to="/use" class="px-8 py-4 rounded-xl bg-slate-900 text-white font-semibold hover:bg-brand-900 hover:shadow-2xl hover:shadow-brand-900/40 transition-[background-color,box-shadow,transform] duration-500 hover:-translate-y-1 relative overflow-hidden group">
             <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out"></span>
             <span class="relative z-10 flex items-center justify-center gap-2">
@@ -47,12 +47,11 @@
         </div>
       </div>
 
-      <!-- Animated Device Area (SVG Mockup) -->
-      <div class="relative w-full aspect-[4/5] lg:aspect-square flex items-center justify-center mockup-area opacity-0 translate-x-12">
+      <div class="relative w-full aspect-[4/5] lg:aspect-square flex items-center justify-center mockup-area opacity-0 translate-x-12 will-change-transform transform-gpu">
         <!-- Floating Elements -->
         <div class="absolute inset-0 z-0">
           <svg class="w-full h-full text-slate-200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path class="spin-slow origin-center" fill="currentColor" d="M44.7,-76.4C58.3,-69.2,71,-58.5,79.5,-45.1C88,-31.7,92.5,-15.8,92,-0.3C91.5,15.2,86,30.4,76.5,42.5C67,54.6,53.5,63.6,39.3,71.5C25.1,79.4,10.2,86.2,-4.5,91.8C-19.2,97.4,-33.6,101.9,-44.6,94.9C-55.6,87.9,-63.1,69.5,-71.4,53.1C-79.7,36.7,-88.8,22.3,-89.6,7.5C-90.4,-7.3,-82.9,-22.6,-73.4,-35.1C-63.9,-47.6,-52.4,-57.3,-39.8,-65.2C-27.2,-73.1,-13.6,-79.2,1.2,-81.3C16,-83.4,31.1,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
+            <path class="spin-slow origin-center will-change-transform transform-gpu" fill="currentColor" d="M44.7,-76.4C58.3,-69.2,71,-58.5,79.5,-45.1C88,-31.7,92.5,-15.8,92,-0.3C91.5,15.2,86,30.4,76.5,42.5C67,54.6,53.5,63.6,39.3,71.5C25.1,79.4,10.2,86.2,-4.5,91.8C-19.2,97.4,-33.6,101.9,-44.6,94.9C-55.6,87.9,-63.1,69.5,-71.4,53.1C-79.7,36.7,-88.8,22.3,-89.6,7.5C-90.4,-7.3,-82.9,-22.6,-73.4,-35.1C-63.9,-47.6,-52.4,-57.3,-39.8,-65.2C-27.2,-73.1,-13.6,-79.2,1.2,-81.3C16,-83.4,31.1,-83.6,44.7,-76.4Z" transform="translate(100 100)" />
           </svg>
         </div>
         
@@ -88,7 +87,7 @@
         </div>
 
         <!-- Floating Cards -->
-        <div class="absolute z-20 -left-12 top-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-1">
+        <div class="absolute z-20 -left-12 top-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-1 will-change-transform">
           <div class="w-10 h-10 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>
           </div>
@@ -98,7 +97,7 @@
           </div>
         </div>
         
-        <div class="absolute z-30 -right-8 bottom-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-2">
+        <div class="absolute z-30 -right-8 bottom-20 bg-white p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 float-card-2 will-change-transform">
           <div class="w-10 h-10 rounded-lg bg-brand-900 text-white flex items-center justify-center">
              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           </div>
@@ -140,23 +139,23 @@ onMounted(() => {
     ease: "power3.out"
   }, "-=0.6")
   
-  // Mockup entrance
+  // Mockup entrance with spring physics
   tl.to('.mockup-area', {
     x: 0,
     opacity: 1,
     duration: 1,
     ease: "back.out(1.2)"
   }, "-=1")
-
-  // Float cards
+  
+  // Float cards with spring energy
   gsap.fromTo('.float-card-1', { y: 15, opacity: 0 }, {
-    y: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 1
+    y: 0, opacity: 1, duration: 0.8, ease: "elastic.out(1, 0.5)", delay: 1
   })
   gsap.fromTo('.float-card-2', { y: -15, opacity: 0 }, {
-    y: 0, opacity: 1, duration: 1, ease: 'power2.out', delay: 1.2
+    y: 0, opacity: 1, duration: 0.8, ease: "elastic.out(1, 0.5)", delay: 1.2
   })
   
-  // Idle floating animation
+  // Idle floating animation with continuous motion
   gsap.to('.float-card-1', {
     y: -10,
     duration: 3,
@@ -173,24 +172,33 @@ onMounted(() => {
     delay: 0.5
   })
 
-  // Simulated unlock interaction
+  // Simulated unlock interaction with enhanced feedback
   const activateBtn = document.querySelector('.activate-btn')
   if(activateBtn) {
     activateBtn.addEventListener('mouseenter', () => {
       gsap.to('.progress-bar', { width: '100%', duration: 1.5, ease: 'power1.inOut' })
-      gsap.to('.lock-icon', { rotation: -20, yoyo: true, repeat: 3, duration: 0.1 })
+      gsap.to('.lock-icon', { 
+        rotation: -20, 
+        scale: 1.1,
+        duration: 0.2,
+        repeat: 3,
+        yoyo: true
+      })
+      gsap.to('.door-handle', { scale: 1.15, duration: 0.3, ease: 'back.out(2)' })
     })
     activateBtn.addEventListener('mouseleave', () => {
       gsap.to('.progress-bar', { width: '40%', duration: 0.5 })
+      gsap.to('.door-handle', { scale: 1, duration: 0.3, ease: 'back.out(2)' })
     })
     
     activateBtn.addEventListener('click', () => {
       const lockTl = gsap.timeline()
       lockTl.to('.success-overlay', { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.5)' })
-      lockTl.to('.success-overlay', { opacity: 0, scale: 0.5, duration: 0.3, delay: 1.5 })
+      lockTl.to('.success-overlay', { opacity: 0, scale: 0.5, duration: 0.3, delay: 1.5, ease: 'back.in' })
     })
   }
 })
+
 </script>
 
 <style scoped>

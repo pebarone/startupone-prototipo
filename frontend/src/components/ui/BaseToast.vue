@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div class="fixed inset-x-4 bottom-4 z-[100] flex flex-col gap-2 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-80" aria-live="polite" aria-label="Notificações">
+    <div class="fixed inset-x-4 bottom-4 z-[100] flex flex-col gap-2 sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-80 pb-safe" aria-live="assertive" aria-label="Notificações de sistema" role="region">
       <TransitionGroup name="toast" tag="div" class="flex flex-col gap-2">
         <div
           v-for="t in toasts"

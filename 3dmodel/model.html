@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastLock 3D Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        #ui-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 24px 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.8);
+            min-width: 320px;
+            z-index: 10;
+        }
+        h2 {
+            margin: 0 0 8px 0;
+            color: #1a2a40;
+            font-size: 1.3rem;
+        }
+        p.status-text {
+            margin: 0 0 20px 0;
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 500;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+        .status-closed {
+            background-color: #fef0f0;
+            color: #d93025;
+            border: 1px solid #fad2cf;
+        }
+        .status-open {
+            background-color: #e6f4ea;
+            color: #137333;
+            border: 1px solid #ceead6;
+        }
+        button {
+            background: #1a2a40;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background: #2a4060;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(26, 42, 64, 0.25);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #1a2a40;
+            font-weight: 500;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1a2a40;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">A renderizar ambiente 3D...</div>
+    <div id="canvas-container"></div>
+    
+    <div class="instructions">
+        🖱️ Clique e arraste para rodar a 360º<br>
+        🔍 Use o scroll do rato para fazer zoom
+    </div>
+
+    <div id="ui-panel" style="display: none;">
+        <h2>Estado do Cacifo</h2>
+        <div id="statusBadge" class="status-badge status-closed">🔒 FECHADO E SEGURO</div>
+        <p class="status-text" id="statusDesc">Os seus itens estão protegidos.</p>
+        <button id="toggleBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 13a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8z"></path>
+                <path d="M15 11V7a3 3 0 0 0-6 0v4"></path>
+            </svg>
+            Simular Biometria / Abrir
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Cores corrigidas e vibrantes
+        const COLORS = {
+            metal: 0xeaeaea,       // Metal mais claro e brilhante
+            darkBlue: 0x1a2a40,    // Azul escuro puro
+            green: 0x27a544,       // Verde vibrante FastLock
+            white: 0xffffff,
+            innerDark: 0x222222    // Interior escuro
+        };
+
+        let scene, camera, renderer, controls;
+        let doorGroup, innerLight;
+        let isLockerOpen = false;
+        let targetDoorRotation = 0;
+
+        init();
+        animate();
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f2f5);
+            scene.fog = new THREE.Fog(0xf0f2f5, 20, 70);
+
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(10, 6, 20);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // CORREÇÃO DE COR: Preserva as cores reais das texturas e materiais
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.LinearToneMapping; 
+            renderer.toneMappingExposure = 1.05;
+            
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(0, 4, 0);
+            controls.maxPolarAngle = Math.PI / 2 + 0.05;
+            controls.minDistance = 5;
+            controls.maxDistance = 35;
+
+            setupLighting();
+            buildEnvironment();
+            buildLocker();
+            buildKiosk();
+
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('toggleBtn').addEventListener('click', toggleLocker);
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('ui-panel').style.display = 'block';
+        }
+
+        function setupLighting() {
+            // Luz ambiente mais clara para evitar zonas demasiado escuras
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambientLight);
+
+            // Luz principal direcionada
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(12, 18, 15);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 50;
+            dirLight.shadow.camera.left = -15;
+            dirLight.shadow.camera.right = 15;
+            dirLight.shadow.camera.top = 15;
+            dirLight.shadow.camera.bottom = -15;
+            dirLight.shadow.bias = -0.0001;
+            scene.add(dirLight);
+
+            // Luz de preenchimento (Fill light) suave
+            const fillLight = new THREE.DirectionalLight(0xeef2ff, 0.4);
+            fillLight.position.set(-15, 10, -10);
+            scene.add(fillLight);
+        }
+
+        function buildEnvironment() {
+            const floorGeo = new THREE.PlaneGeometry(150, 150);
+            const floorMat = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff,
+                roughness: 0.8,
+                metalness: 0.0
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+        }
+
+        function buildLocker() {
+            const lockerGroup = new THREE.Group();
+            lockerGroup.position.set(-2.5, 0, 0);
+            scene.add(lockerGroup);
+
+            const w = 4.5, h = 8.5, d = 3.5;
+            const thick = 0.15;
+
+            const metalMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.metal,
+                metalness: 0.5,
+                roughness: 0.4,
+            });
+            const insideMaterial = new THREE.MeshStandardMaterial({
+                color: COLORS.innerDark,
+                roughness: 0.9
+            });
+
+            // Estrutura Exterior
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(thick, h, d), metalMaterial);
+            leftWall.position.set(-w/2 + thick/2, h/2, 0);
+            leftWall.castShadow = true; leftWall.receiveShadow = true;
+            lockerGroup.add(leftWall);
+
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(thick, h, d), metalMaterial);
+            rightWall.position.set(w/2 - thick/2, h/2, 0);
+            rightWall.castShadow = true; rightWall.receiveShadow = true;
+            lockerGroup.add(rightWall);
+
+            const topWall = new THREE.Mesh(new THREE.BoxGeometry(w - thick*2, thick, d), metalMaterial);
+            topWall.position.set(0, h - thick/2, 0);
+            topWall.castShadow = true; topWall.receiveShadow = true;
+            lockerGroup.add(topWall);
+
+            const bottomWall = new THREE.Mesh(new THREE.BoxGeometry(w - thick*2, thick, d), metalMaterial);
+            bottomWall.position.set(0, thick/2, 0);
+            bottomWall.castShadow = true; bottomWall.receiveShadow = true;
+            lockerGroup.add(bottomWall);
+
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(w - thick*2, h - thick*2, thick), insideMaterial);
+            backWall.position.set(0, h/2, -d/2 + thick/2);
+            backWall.receiveShadow = true;
+            lockerGroup.add(backWall);
+
+            // Porta
+            const doorTexture = createDoorTexture();
+            doorTexture.encoding = THREE.sRGBEncoding; // CORREÇÃO: Mantém a cor vibrante no 3D
+            
+            const doorMatFront = new THREE.MeshStandardMaterial({ 
+                map: doorTexture, 
+                metalness: 0.1, 
+                roughness: 0.7 
+            });
+            const doorMatBack = new THREE.MeshStandardMaterial({ color: COLORS.darkBlue, metalness: 0.1, roughness: 0.8 });
+            const doorMatEdge = new THREE.MeshStandardMaterial({ color: COLORS.metal, metalness: 0.5, roughness: 0.4 });
+
+            const doorMaterials = [doorMatEdge, doorMatEdge, doorMatEdge, doorMatEdge, doorMatFront, doorMatBack];
+
+            const doorW = w - thick*2 - 0.06; 
+            const doorH = h - thick*2 - 0.06;
+            const doorD = 0.15;
+
+            doorGroup = new THREE.Group();
+            doorGroup.position.set(-w/2 + thick, h/2, d/2 - doorD/2); // Eixo na dobradiça esquerda
+            lockerGroup.add(doorGroup);
+
+            const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, doorD), doorMaterials);
+            doorMesh.position.set(doorW/2, 0, 0); // Desloca a malha para alinhar com a dobradiça
+            doorMesh.castShadow = true;
+            doorGroup.add(doorMesh);
+
+            // CORREÇÃO DO PUXADOR: Agora posicionado corretamente na borda direita da porta
+            const buttonGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.06, 32);
+            const buttonMat = new THREE.MeshStandardMaterial({ color: COLORS.green, metalness: 0.3, roughness: 0.5 });
+            const button = new THREE.Mesh(buttonGeo, buttonMat);
+            button.rotation.x = Math.PI / 2;
+            // Coordenada local X dentro da doorMesh (vai de -doorW/2 a +doorW/2)
+            button.position.set(doorW/2 - 0.25, 0, doorD/2 + 0.03); 
+            doorMesh.add(button); 
+
+            // Luz interna
+            innerLight = new THREE.PointLight(COLORS.white, 0, 10);
+            innerLight.position.set(0, h - 1, d/4);
+            lockerGroup.add(innerLight);
+        }
+
+        function buildKiosk() {
+            const kioskGroup = new THREE.Group();
+            kioskGroup.position.set(3, 0, 0); 
+            scene.add(kioskGroup);
+
+            const darkBlueMat = new THREE.MeshStandardMaterial({ color: COLORS.darkBlue, metalness: 0.2, roughness: 0.6 });
+            const metalMat = new THREE.MeshStandardMaterial({ color: COLORS.metal, metalness: 0.6, roughness: 0.3 });
+
+            const kW = 1.9; // Largura principal
+
+            // 1. Base inferior (Azul)
+            const base = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.15, 2.0), darkBlueMat);
+            base.position.set(0, 0.075, 0);
+            base.castShadow = true;
+            kioskGroup.add(base);
+
+            // 2. Corpo Central (Azul) - Traseira e Laterais
+            const body = new THREE.Mesh(new THREE.BoxGeometry(kW, 8.4, 1.2), darkBlueMat);
+            body.position.set(0, 4.2 + 0.15, -0.2);
+            body.castShadow = true; body.receiveShadow = true;
+            kioskGroup.add(body);
+
+            // 3. Painel Metálico Superior (Onde fica o ecrã)
+            const topMetal = new THREE.Mesh(new THREE.BoxGeometry(kW + 0.02, 4.4, 0.4), metalMat);
+            topMetal.position.set(0, 6.35, 0.4);
+            topMetal.castShadow = true; topMetal.receiveShadow = true;
+            kioskGroup.add(topMetal);
+
+            // 4. Painel Metálico Inferior (Abaixo do scanner)
+            const bottomMetal = new THREE.Mesh(new THREE.BoxGeometry(kW + 0.02, 3.4, 0.4), metalMat);
+            bottomMetal.position.set(0, 1.85, 0.6); // Ligeiramente mais saliente em baixo
+            bottomMetal.castShadow = true; bottomMetal.receiveShadow = true;
+            kioskGroup.add(bottomMetal);
+
+            // 5. Bloco Inclinado (Onde fica o scanner)
+            const wedge = new THREE.Mesh(new THREE.BoxGeometry(kW + 0.02, 1.3, 0.45), metalMat);
+            wedge.rotation.x = -Math.PI / 6.5; // Inclinação perfeita
+            wedge.position.set(0, 3.95, 0.58);
+            wedge.castShadow = true; wedge.receiveShadow = true;
+            kioskGroup.add(wedge);
+
+            // 6. Ecrã (UI Frontal)
+            const screenW = 1.6;
+            const screenH = 3.6;
+            const screenTex = createScreenTexture();
+            screenTex.encoding = THREE.sRGBEncoding; // CORREÇÃO DE COR
+            
+            const screenMat = new THREE.MeshBasicMaterial({ map: screenTex }); 
+            const screenBlock = new THREE.Mesh(new THREE.BoxGeometry(screenW, screenH, 0.05), screenMat);
+            screenBlock.position.set(0, 6.4, 0.61); // Embutido no metal superior
+            kioskGroup.add(screenBlock);
+
+            // Borda do Ecrã
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.8 });
+            const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(screenW + 0.1, screenH + 0.1, 0.02), frameMat);
+            screenFrame.position.set(0, 6.4, 0.60);
+            kioskGroup.add(screenFrame);
+
+            // 7. Área do Scanner
+            const scannerTex = createScannerTexture();
+            scannerTex.encoding = THREE.sRGBEncoding; // CORREÇÃO DE COR
+            
+            const scannerMat = new THREE.MeshBasicMaterial({ map: scannerTex });
+            const scannerBlock = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.05), scannerMat);
+            scannerBlock.rotation.x = -Math.PI / 6.5; // Acompanha a inclinação do wedge
+            scannerBlock.position.set(0, 3.95, 0.81);
+            kioskGroup.add(scannerBlock);
+        }
+
+        // ==========================================
+        // Geração de Texturas
+        // ==========================================
+
+        function createDoorTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 2048;
+            const ctx = canvas.getContext('2d');
+
+            // Fundo Azul Escuro (Preciso)
+            ctx.fillStyle = '#1a2a40';
+            ctx.fillRect(0, 0, 1024, 2048);
+
+            // Borda Verde Viva
+            ctx.strokeStyle = '#27a544';
+            ctx.lineWidth = 45;
+            ctx.strokeRect(22, 22, 980, 2004);
+            
+            ctx.beginPath();
+            ctx.roundRect(45, 45, 934, 1958, [30]);
+            ctx.lineWidth = 25;
+            ctx.stroke();
+
+            // Etiqueta
+            ctx.fillStyle = '#f0f2f5';
+            ctx.beginPath();
+            ctx.roundRect(260, 200, 504, 70, 35);
+            ctx.fill();
+            ctx.fillStyle = '#1a2a40';
+            ctx.font = 'bold 30px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('COMPARTIMENTO 1', 512, 235);
+
+            // Cadeado Verde
+            const cy = 900;
+            ctx.fillStyle = '#27a544';
+            // Haste
+            ctx.beginPath();
+            ctx.arc(512, cy - 90, 90, Math.PI, 0);
+            ctx.lineWidth = 55;
+            ctx.strokeStyle = '#27a544';
+            ctx.stroke();
+            // Corpo
+            ctx.beginPath();
+            ctx.roundRect(372, cy - 70, 280, 230, [30]);
+            ctx.fill();
+            // Fechadura interna
+            ctx.fillStyle = '#1a2a40';
+            ctx.beginPath();
+            ctx.arc(512, cy + 15, 25, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(497, cy + 25);
+            ctx.lineTo(527, cy + 25);
+            ctx.lineTo(512, cy + 90);
+            ctx.fill();
+
+            // Logo Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 80px sans-serif';
+            ctx.fillText('FastLock', 512, 1300);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createScreenTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1080;
+            canvas.height = 1920;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 1080, 1920);
+
+            // Logo no topo
+            ctx.fillStyle = '#27a544';
+            ctx.beginPath();
+            ctx.roundRect(80, 80, 60, 60, [15]);
+            ctx.fill();
+            ctx.fillStyle = '#1a2a40';
+            ctx.font = 'bold 45px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('FastLock', 160, 110);
+
+            // Menu icon
+            ctx.fillStyle = '#888';
+            ctx.fillRect(940, 90, 60, 6);
+            ctx.fillRect(940, 110, 60, 6);
+            ctx.fillRect(940, 130, 60, 6);
+
+            // Títulos
+            ctx.fillStyle = '#111';
+            ctx.font = 'bold 110px sans-serif';
+            ctx.fillText('Guarde com', 80, 420);
+            ctx.fillStyle = '#27a544'; 
+            ctx.fillText('Confiança.', 80, 540);
+            ctx.fillStyle = '#111';
+            ctx.fillText('Explore livre.', 80, 660);
+
+            // Texto Longo
+            ctx.fillStyle = '#555';
+            ctx.font = '36px sans-serif';
+            const text = "Nós revolucionamos o serviço de guarda de volumes. Armazene as suas malas de forma 100% segura, pagando apenas pelo tempo que utilizar. Destranque com a sua biometria e RFID.";
+            wrapText(ctx, text, 80, 850, 920, 55);
+
+            // Botão Principal
+            ctx.fillStyle = '#1a2a40';
+            ctx.beginPath();
+            ctx.roundRect(80, 1200, 920, 140, [25]);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 42px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Quero Guardar Agora ▼', 540, 1270);
+
+            // Botão Secundário
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(80, 1380, 920, 140, [25]);
+            ctx.stroke();
+            ctx.fillStyle = '#333';
+            ctx.fillText('🔐  Tenho uma Reserva', 540, 1450);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createScannerTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1a2a40';
+            ctx.fillRect(0, 0, 1024, 512);
+
+            ctx.strokeStyle = '#334966';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.roundRect(384, 50, 256, 256, [25]);
+            ctx.stroke();
+
+            // Ícone Biometria
+            ctx.fillStyle = '#27a544';
+            ctx.shadowColor = '#27a544';
+            ctx.shadowBlur = 35;
+            for(let i = 1; i <= 4; i++) {
+                ctx.beginPath();
+                ctx.arc(512, 178, i * 22, Math.PI * 1.2, Math.PI * 2.8);
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = '#27a544';
+                ctx.stroke();
+            }
+
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#99aab5';
+            ctx.font = 'bold 30px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Scanner Biométrico e RFID', 512, 380);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            var words = text.split(' ');
+            var line = '';
+            for(var n = 0; n < words.length; n++) {
+                var testLine = line + words[n] + ' ';
+                var metrics = context.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+        }
+
+        // ==========================================
+        // Lógica
+        // ==========================================
+
+        function toggleLocker() {
+            isLockerOpen = !isLockerOpen;
+            const btn = document.getElementById('toggleBtn');
+            const badge = document.getElementById('statusBadge');
+            const desc = document.getElementById('statusDesc');
+
+            if (isLockerOpen) {
+                // Rotação Negativa para abrir a porta para FORA e para a ESQUERDA
+                targetDoorRotation = -Math.PI * 0.7; 
+                
+                btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Encerrar e Fechar Cacifo`;
+                btn.style.background = "#d93025";
+                
+                badge.className = "status-badge status-open";
+                badge.textContent = "🔓 CACIFO ABERTO";
+                desc.textContent = "Retire ou insira os seus pertences. A luz interna está acesa.";
+                
+                innerLight.intensity = 1.2;
+            } else {
+                targetDoorRotation = 0; 
+                
+                btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8z"></path><path d="M15 11V7a3 3 0 0 0-6 0v4"></path></svg> Simular Biometria / Abrir`;
+                btn.style.background = "#1a2a40";
+
+                badge.className = "status-badge status-closed";
+                badge.textContent = "🔒 FECHADO E SEGURO";
+                desc.textContent = "Os seus itens estão protegidos. A aguardar leitura...";
+
+                innerLight.intensity = 0;
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (doorGroup) {
+                doorGroup.rotation.y += (targetDoorRotation - doorGroup.rotation.y) * 0.08;
+            }
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

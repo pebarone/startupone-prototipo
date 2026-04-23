@@ -47,12 +47,12 @@
       <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
         <div class="border-b border-slate-100 px-4 py-4 sm:px-6">
           <p class="text-sm font-bold text-slate-800">Acessos da organizacao</p>
-          <p class="mt-1 text-xs leading-5 text-slate-400">O convite continua visivel até que o membro aceite ou seja desativado.</p>
+          <p class="mt-1 text-xs leading-5 text-slate-500">O convite continua visivel até que o membro aceite ou seja desativado.</p>
         </div>
 
         <div v-if="members.length === 0" class="px-6 py-12 text-center">
           <p class="text-sm font-semibold text-slate-600">Nenhum membro encontrado.</p>
-          <p class="mt-1 text-sm text-slate-400">Envie um convite para iniciar a equipe desta organizacao.</p>
+          <p class="mt-1 text-sm text-slate-500">Envie um convite para iniciar a equipe desta organizacao.</p>
         </div>
 
         <template v-else>
@@ -69,13 +69,13 @@
 
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-slate-900">{{ member.user?.full_name || '—' }}</p>
-                  <p class="mt-1 truncate text-xs text-slate-400">{{ member.invite_email || member.user?.email || '—' }}</p>
+                  <p class="mt-1 truncate text-xs text-slate-500">{{ member.invite_email || member.user?.email || '—' }}</p>
                 </div>
               </div>
 
               <div class="flex flex-wrap gap-2">
                 <BaseBadge :variant="roleVariant(member.role)">{{ roleLabel(member.role) }}</BaseBadge>
-                <BaseBadge :variant="member.status === 'active' ? 'success' : member.status === 'invited' ? 'warning' : 'neutral'" dot>
+                <BaseBadge :variant="statusVariant(member.status)" dot>
                   {{ memberStatusLabel(member.status) }}
                 </BaseBadge>
               </div>
@@ -95,10 +95,10 @@
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b border-slate-100">
-                  <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Membro</th>
-                  <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Papel</th>
-                  <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Status</th>
-                  <th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Acoes</th>
+                  <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Membro</th>
+                  <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Papel</th>
+                  <th class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                  <th class="px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Acoes</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-50">
@@ -114,7 +114,7 @@
                       </div>
                       <div class="min-w-0">
                         <p class="truncate font-medium text-slate-900">{{ member.user?.full_name || '—' }}</p>
-                        <p class="truncate text-xs text-slate-400">{{ member.invite_email || member.user?.email || '—' }}</p>
+                        <p class="truncate text-xs text-slate-500">{{ member.invite_email || member.user?.email || '—' }}</p>
                       </div>
                     </div>
                   </td>
@@ -122,7 +122,7 @@
                     <BaseBadge :variant="roleVariant(member.role)">{{ roleLabel(member.role) }}</BaseBadge>
                   </td>
                   <td class="px-6 py-4">
-                    <BaseBadge :variant="member.status === 'active' ? 'success' : member.status === 'invited' ? 'warning' : 'neutral'" dot>
+                    <BaseBadge :variant="statusVariant(member.status)" dot>
                       {{ memberStatusLabel(member.status) }}
                     </BaseBadge>
                   </td>
@@ -375,7 +375,12 @@ function memberInitial(member) {
 
 /** @param {string} role */
 function roleVariant(role) {
-  return { owner: 'brand', admin: 'info', viewer: 'neutral' }[role] || 'neutral'
+  return { owner: 'brand-light', admin: 'info-light', viewer: 'neutral-light' }[role] || 'neutral-light'
+}
+
+/** @param {string} status */
+function statusVariant(status) {
+  return { active: 'success-light', invited: 'warning-light', disabled: 'neutral-light' }[status] || 'neutral-light'
 }
 
 /** @param {string} role */

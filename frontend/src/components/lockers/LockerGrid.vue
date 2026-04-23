@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import LockerItem from './LockerItem.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
@@ -100,8 +100,10 @@ const props = defineProps({
 
 defineEmits(['select'])
 
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
+
 const gridStyle = computed(() => ({
-  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))'
+  gridTemplateColumns: windowWidth.value < 375 ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(100px, 1fr))'
 }))
 
 function getAnimationState(locker) {
@@ -115,4 +117,16 @@ function getAnimationState(locker) {
 
   return 'idle'
 }
+
+function handleWindowResize() {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleWindowResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleWindowResize)
+})
 </script>

@@ -17,7 +17,7 @@
         :class="[
           'relative z-10 w-full bg-white border border-slate-200 shadow-2xl shadow-slate-900/10 overflow-hidden flex flex-col overscroll-contain',
           'rounded-t-2xl sm:rounded-2xl',
-          'max-h-[92dvh] sm:max-h-[90vh] pb-safe',
+          'max-h-[92dvh] sm:max-h-[90vh] pb-safe pt-safe',
           maxWidthClass
         ]"
         role="dialog"

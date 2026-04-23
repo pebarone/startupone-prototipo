@@ -367,6 +367,8 @@ watch(currentStep, (newStep) => {
   } else if (newStep !== 'choose') {
     stopPolling()
   }
+
+  scrollToTopForStepChange()
 })
 
 onMounted(async () => {
@@ -711,6 +713,15 @@ function animateStep() {
   window.setTimeout(() => {
     gsap.from('.step-content', { opacity: 0, y: 16, duration: 0.45, ease: 'power2.out' })
   }, 30)
+}
+
+function scrollToTopForStepChange() {
+  if (typeof window === 'undefined') return
+
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
+  })
 }
 
 function sizeLabel(size) {

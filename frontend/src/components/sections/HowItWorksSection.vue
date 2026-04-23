@@ -18,6 +18,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
         </div>
+
+        <!-- Mobile scroll progress indicator (hidden on desktop) -->
+        <div class="md:hidden mt-4 flex gap-1 justify-center items-center">
+          <div v-for="i in 5" :key="i" class="h-1 rounded-full transition-all duration-300" :class="i === activeStepCard ? 'w-4 bg-brand-600' : 'w-2 bg-slate-300'"></div>
+        </div>
       </div>
 
       <div class="relative steps-container">
@@ -27,7 +32,7 @@
         </div>
 
         <!-- Mobile: horizontal snap scroll | Desktop: 5-col grid -->
-        <div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-8 md:grid md:grid-cols-5 md:gap-8 md:overflow-visible md:snap-none md:pb-0 relative z-10 hide-scrollbar">
+        <div class="steps-scroll flex gap-4 overflow-x-auto snap-x snap-mandatory pb-8 md:grid md:grid-cols-5 md:gap-8 md:overflow-visible md:snap-none md:pb-0 relative z-10 hide-scrollbar">
 
           <!-- Step 1 -->
           <div class="flex flex-col items-center text-center step-card w-full flex-none snap-center md:w-auto md:snap-none">
@@ -101,9 +106,61 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+const activeStepCard = ref(1)
+let stepsScrollElement = null
+let stepsScrollRaf = 0
+let stepsScrollHandler = null
+let stepsResizeHandler = null
+
+function updateActiveStepCard() {
+  if (!stepsScrollElement) {
+    return
+  }
+
+  if (window.innerWidth >= 768) {
+    activeStepCard.value = 1
+    return
+  }
+
+  const cards = stepsScrollElement.querySelectorAll('.step-card')
+  if (!cards.length) {
+    return
+  }
+
+  const containerRect = stepsScrollElement.getBoundingClientRect()
+  const containerCenter = containerRect.left + (containerRect.width / 2)
+
+  let closestIndex = 1
+  let closestDistance = Number.POSITIVE_INFINITY
+
+  cards.forEach((card, index) => {
+    const cardRect = card.getBoundingClientRect()
+    const cardCenter = cardRect.left + (cardRect.width / 2)
+    const distance = Math.abs(cardCenter - containerCenter)
+
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closestIndex = index + 1
+    }
+  })
+
+  activeStepCard.value = closestIndex
+}
+
+function scheduleStepsProgressUpdate() {
+  if (stepsScrollRaf) {
+    return
+  }
+
+  stepsScrollRaf = window.requestAnimationFrame(() => {
+    stepsScrollRaf = 0
+    updateActiveStepCard()
+  })
+}
 
 onMounted(() => {
   gsap.from('.section-header', {
@@ -143,6 +200,37 @@ onMounted(() => {
     duration: 2,
     ease: 'power2.inOut'
   })
+
+  stepsScrollElement = document.querySelector('.steps-scroll')
+  if (!stepsScrollElement) {
+    return
+  }
+
+  stepsScrollHandler = () => {
+    scheduleStepsProgressUpdate()
+  }
+  stepsResizeHandler = () => {
+    scheduleStepsProgressUpdate()
+  }
+
+  stepsScrollElement.addEventListener('scroll', stepsScrollHandler, { passive: true })
+  window.addEventListener('resize', stepsResizeHandler)
+  scheduleStepsProgressUpdate()
+})
+
+onUnmounted(() => {
+  if (stepsScrollElement && stepsScrollHandler) {
+    stepsScrollElement.removeEventListener('scroll', stepsScrollHandler)
+  }
+
+  if (stepsResizeHandler) {
+    window.removeEventListener('resize', stepsResizeHandler)
+  }
+
+  if (stepsScrollRaf) {
+    window.cancelAnimationFrame(stepsScrollRaf)
+    stepsScrollRaf = 0
+  }
 })
 </script>
 

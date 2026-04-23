@@ -74,7 +74,7 @@
 
             <!-- Dropdown -->
             <Transition name="fadeDrop">
-              <div v-if="dropdownOpen" class="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50" role="menu">
+              <div v-if="dropdownOpen" class="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 max-h-[calc(100vh-140px)] overflow-y-auto sm:max-h-none" role="menu">
                 <RouterLink to="/account" class="flex items-center gap-2.5 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors" role="menuitem" @click="dropdownOpen = false">
                   <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
