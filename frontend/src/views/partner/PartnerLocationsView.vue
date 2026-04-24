@@ -281,7 +281,7 @@
                 class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
             </div>
           </div>
-          <p class="mt-2 text-xs text-slate-400">Valores em reais (R$). Cobran&#231;a por hora cheia usada pelo cliente.</p>
+          <p class="mt-2 text-xs text-slate-400">Valores em reais (R$). Cobran&#231;a por hora iniciada pelo cliente.</p>
         </div>
 
         <div v-if="formError" class="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">

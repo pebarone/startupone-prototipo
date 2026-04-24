@@ -51,14 +51,14 @@ export function deriveMinutesUsed(unlockedAt, finishedAt) {
 }
 
 /**
- * Mirrors the backend rule: extra charge only accrues after each completed hour.
+ * Mirrors the backend rule: every started hour is billable after usage begins.
  * @param {number|null|undefined} minutesUsed
  * @param {number|null|undefined} hourlyRateCents
  * @returns {number}
  */
 export function estimateExtraChargeCents(minutesUsed, hourlyRateCents) {
   const normalizedMinutes = Math.max(0, Number(minutesUsed) || 0)
-  const billableHours = Math.floor(normalizedMinutes / 60)
+  const billableHours = normalizedMinutes > 0 ? Math.ceil(normalizedMinutes / 60) : 0
 
   return billableHours * (Number(hourlyRateCents) || 0)
 }

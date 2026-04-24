@@ -56,7 +56,7 @@
            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
          </div>
          <h4 class="text-xl font-bold text-slate-900 mb-3 relative z-10">Pague pelo Tempo</h4>
-         <p class="text-slate-600 relative z-10 leading-relaxed font-medium">Cobrança justa por hora cheia usada. Não pague mais do que o necessário. Transparente e simples.</p>
+         <p class="text-slate-600 relative z-10 leading-relaxed font-medium">Cobrança justa por hora iniciada. Não pague mais do que o necessário. Transparente e simples.</p>
        </div>
     </div>
   </section>

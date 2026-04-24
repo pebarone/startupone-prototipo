@@ -256,7 +256,7 @@ const faqs = [
       {
         id: 'billing',
         question: 'Como funciona a cobrança?',
-        answer: 'Há uma Taxa de Ativação inicial (paga via PIX para abrir a porta) e uma Taxa por Hora (cobrada proporcionalmente no final do uso). Ao retirar os itens, você passa novamente pela biometria, o sistema calcula o tempo extra e solicita o pagamento final (se houver).'
+        answer: 'Há uma Taxa de Ativação inicial (paga via PIX para abrir a porta) e uma Taxa por Hora cobrada por hora iniciada no final do uso. Ao retirar os itens, você passa novamente pela biometria, o sistema calcula o tempo extra e solicita o pagamento final (se houver).'
       },
       {
         id: 'insurance',

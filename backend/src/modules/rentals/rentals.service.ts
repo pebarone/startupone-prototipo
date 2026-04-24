@@ -804,7 +804,8 @@ function calculateRetrievalCharges(
   initialFeeCents: number,
   hourlyRateCents: number
 ) {
-  const billableHours = Math.floor(Math.max(0, minutesUsed) / 60);
+  const normalizedMinutes = Math.max(0, minutesUsed);
+  const billableHours = normalizedMinutes > 0 ? Math.ceil(normalizedMinutes / 60) : 0;
   const extraChargeCents = billableHours * hourlyRateCents;
 
   return {

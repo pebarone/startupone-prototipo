@@ -203,6 +203,23 @@ Frontend local com OAuth:
 
 O deploy em container agora builda o frontend e serve o bundle pela propria API Fastify na mesma imagem.
 
+Deploy local para Azure Container Apps:
+
+```powershell
+.\scripts\deploy-azure.ps1
+```
+
+O script executa `bun run typecheck` no backend, `bun run build` no frontend, builda a imagem Docker com as tags `latest` e `vX.X`, faz push para `pbrnx/fast-lock` no Docker Hub e atualiza `fast-lock-monolito` no resource group `br-south-rm99781`.
+
+Parametros uteis:
+
+```powershell
+.\scripts\deploy-azure.ps1 -Version v1.2.3
+.\scripts\deploy-azure.ps1 -LatestVersion v1.11
+.\scripts\deploy-azure.ps1 -ImageRepository pbrnx/fast-lock
+.\scripts\deploy-azure.ps1 -WhatIfDeploy
+```
+
 Build:
 
 ```bash
