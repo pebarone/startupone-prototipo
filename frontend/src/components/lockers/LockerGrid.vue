@@ -27,7 +27,7 @@
     <!-- Grid -->
     <div
       v-else
-      class="grid gap-4 transition-all duration-500"
+      class="grid gap-5 transition-all duration-500"
       :style="gridStyle"
     >
       <LockerItem
@@ -103,7 +103,7 @@ defineEmits(['select'])
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
 
 const gridStyle = computed(() => ({
-  gridTemplateColumns: windowWidth.value < 375 ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(100px, 1fr))'
+  gridTemplateColumns: windowWidth.value < 375 ? 'repeat(2, minmax(80px, 1fr))' : 'repeat(auto-fill, minmax(120px, 1fr))'
 }))
 
 function getAnimationState(locker) {

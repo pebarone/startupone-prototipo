@@ -1,10 +1,11 @@
 <template>
   <button
     type="button"
-    class="locker-item group relative block w-full transition-[transform,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
+    class="locker-item group relative block w-full transition-[transform,box-shadow,opacity,filter] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
     :class="[
       isButtonDisabled ? 'cursor-default' : 'cursor-pointer',
-      selected ? 'z-10' : 'z-0'
+      selected ? 'z-10' : 'z-0',
+      isMaintenance ? 'opacity-60 grayscale-[0.35]' : 'opacity-100'
     ]"
     :disabled="isButtonDisabled"
     :aria-label="ariaLabel"
@@ -46,12 +47,12 @@
       </svg>
     </div>
 
-    <div class="mt-2 flex items-end justify-between px-0.5">
-      <div>
-        <p class="font-mono text-xs font-black tracking-tight" :class="textClass">{{ locker.code }}</p>
-        <p class="mt-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">{{ sizeLabel }}</p>
+    <div class="mt-2 flex items-end justify-between gap-1 px-0.5">
+      <div class="min-w-0">
+        <p class="truncate font-mono text-[11px] font-black tracking-tight" :class="textClass">{{ locker.code }}</p>
+        <p class="mt-0.5 truncate text-[8px] font-bold uppercase tracking-[0.14em] text-slate-500">{{ sizeLabel }}</p>
       </div>
-      <span class="rounded-full px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em]" :class="statusBadgeClass">{{ statusLabel }}</span>
+      <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.12em]" :class="statusBadgeClass">{{ statusLabel }}</span>
     </div>
   </button>
 </template>
@@ -90,6 +91,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 const isAvailable = computed(() => props.locker.status === 'free')
+const isMaintenance = computed(() => props.locker.status === 'maintenance')
 const isButtonDisabled = computed(() => props.disabled || !props.interactive || (props.requireAvailable && !isAvailable.value))
 
 const statusLabel = computed(() => {
@@ -100,7 +102,7 @@ const statusLabel = computed(() => {
   return {
     free: 'Livre',
     occupied: 'Ocupado',
-    maintenance: 'Manutenção'
+    maintenance: 'Manut.'
   }[props.locker.status] || props.locker.status
 })
 
@@ -119,7 +121,7 @@ const sizeClass = computed(() => {
 const shellClass = computed(() => {
   if (props.locker.status === 'free') return 'border-emerald-200 bg-emerald-50/60 hover:-translate-y-0.5 hover:shadow-emerald-100'
   if (props.locker.status === 'occupied') return 'border-red-200 bg-red-50/60 hover:-translate-y-0.5 hover:shadow-red-100'
-  if (props.locker.status === 'maintenance') return 'border-amber-200 bg-amber-50/60 hover:-translate-y-0.5 hover:shadow-amber-100'
+  if (props.locker.status === 'maintenance') return 'border-amber-200 bg-amber-50/60'
   return 'border-slate-200 bg-slate-50/70'
 })
 

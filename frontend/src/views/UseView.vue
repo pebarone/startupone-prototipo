@@ -97,7 +97,7 @@
               </div>
 
               <LockerGrid 
-                :lockers="lockers"
+                :lockers="sortedLockers"
                 :selected-locker-id="selectedLocker?.id"
                 :loading="isLockersLoading"
                 :polling="isPolling"
@@ -283,6 +283,18 @@ let pollingInterval = null
 const steps = [{ key: 'choose', label: 'Localizar' }, { key: 'biometric', label: 'Biometria' }, { key: 'pay', label: 'Pagamento inicial' }, { key: 'open', label: 'Locker aberto' }, { key: 'storing', label: 'Armazenando' }]
 const currentStepIndex = computed(() => Math.max(0, steps.findIndex((step) => step.key === currentStep.value)))
 const selectedLocation = computed(() => locations.value.find((item) => item.id === selectedLocationId.value) || null)
+const sortedLockers = computed(() => {
+  const order = { free: 0, occupied: 1, maintenance: 2 }
+  return [...lockers.value].sort((a, b) => {
+    const statusA = a.status || 'maintenance'
+    const statusB = b.status || 'maintenance'
+    if (order[statusA] !== order[statusB]) {
+      return order[statusA] - order[statusB]
+    }
+    return (a.code || '').localeCompare(b.code || '')
+  })
+})
+
 const availableLockers = computed(() => lockers.value.filter(l => l.status === 'free'))
 const occupiedLockers = computed(() => lockers.value.filter(l => l.status === 'occupied'))
 const maintenanceLockers = computed(() => lockers.value.filter(l => l.status === 'maintenance'))
@@ -735,6 +747,7 @@ function formatCents(cents) {
 function isProbablyWebAuthnError(error) {
   return !!error?.name && !error?.response
 }
+
 </script>
 
 <style scoped>
